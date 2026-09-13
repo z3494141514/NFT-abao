@@ -149,7 +149,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px}
 .cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
 /* ---------- Toast / Loader ---------- */
-.toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:10001;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:rise .3s ease;max-width:92vw;text-align:center;backdrop-filter:blur(16px)}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+.toast{position:fixed;top:20px;right:16px;background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:10001;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:toastIn .25s cubic-bezier(.22,.8,.36,1);max-width:80vw;text-align:left;backdrop-filter:blur(16px)}
 .toast.error{border-color:rgba(251,113,133,.55);color:#ffd7dd}
 .toast.success{border-color:rgba(52,211,153,.55);color:#d1fae5}
 .global-loader{position:fixed;inset:0;background:rgba(5,7,13,.7);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center}
@@ -211,7 +212,7 @@ body{-webkit-tap-highlight-color:transparent}
 .admin-grid-item .data-row,.admin-block .data-row{padding:9px 0}
 .admin-grid-item .flex,.admin-block .flex{gap:7px}
 .admin-grid-item .btn,.admin-block .btn{padding:9px 13px;font-size:12px}
-.toast{font-size:12.5px;padding:11px 18px;top:14px;border-radius:12px}
+.toast{font-size:12.5px;padding:11px 18px;top:14px;right:12px;border-radius:12px;max-width:78vw}
 .invite-wrap{max-width:100%}
 }
 </style>
