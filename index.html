@@ -131,6 +131,18 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 /* ---------- 实时刷新徽标 ---------- */
 .live-chip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.08);padding:5px 12px;border-radius:99px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+/* ---------- 绑定确认弹窗 ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,6,12,.72);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{width:100%;max-width:430px;background:rgba(16,19,34,.98);border:1px solid var(--border-hi);border-radius:20px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.6);animation:rise .28s cubic-bezier(.22,.8,.36,1)}
+.modal-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.modal-tip{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px}
+.modal-addr{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:13px 15px;font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all}
+/* ---------- 团队列表 ---------- */
+.team-row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;flex-wrap:wrap}
+.team-idx{font-size:12px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0}
+.team-addr{font-family:ui-monospace,monospace;font-size:13px;color:var(--text);word-break:break-all;flex:1;min-width:180px}
+.team-copy{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:5px 12px;font-size:11.5px;transition:all .2s}
+.team-copy:hover{color:var(--cyan);border-color:var(--border-hi)}
 /* ---------- 卡牌 ---------- */
 .page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
@@ -244,6 +256,8 @@ body{-webkit-tap-highlight-color:transparent}
 .live-chip{font-size:10.5px;padding:4px 10px}
 .qty-btn{width:30px;height:30px;font-size:15px}
 .qty-value{font-size:15px;min-width:24px}
+.modal-box{padding:20px;border-radius:16px}
+.team-addr{font-size:12px}
 }
 </style>
 </head>
@@ -395,92 +409,36 @@ body{-webkit-tap-highlight-color:transparent}
     </div>
   </div>
 
-  <!-- ================= 管理 ================= -->
-  <div id="adminPage" class="page">
-    <div class="empty-tip" id="adminEmpty">连接管理员钱包后显示管理面板</div>
-    <div id="adminPanels" style="display:none">
-      <div class="admin-grid">
-        <div class="admin-grid-item" id="adminSaleBlock" style="display:none">
-          <div class="admin-title">销售合约</div>
-          <div class="data-row"><span class="data-label">开盘状态</span><span class="data-value" id="adminLaunched"></span></div>
-          <div class="data-row"><span class="data-label">合约暂停</span><span class="data-value" id="adminPaused"></span></div>
-          <div class="data-row"><span class="data-label">有效卡牌</span><span class="data-value" id="adminActiveCards"></span></div>
-          <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminSaleCoreLocked"></span></div>
-          <div class="flex mt12">
-            <button id="adminLaunchBtn" class="btn btn-primary btn-sm">开盘</button>
-            <button id="adminPauseBtn" class="btn btn-ghost btn-sm">暂停</button>
-            <button id="adminUnpauseBtn" class="btn btn-ghost btn-sm">恢复</button>
-            <button id="adminSaleLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
-          </div>
-          <div class="mt16">
-            <textarea id="adminMintList" class="input" placeholder="预分发卡牌（每行一个钱包地址，仅开盘前）"></textarea>
-            <button id="adminMintBtn" class="btn btn-primary btn-sm mt12">预分发</button>
-          </div>
-        </div>
+  <!-- ================= 团队 ================= -->
+  <div id="teamPage" class="page">
+    <div class="page-head">
+      <div class="page-title">团队 · 一级下级 <span id="teamCount">0</span></div>
+    </div>
+    <div class="mini-kpis" style="grid-template-columns:1fr 1fr">
+      <div class="mini-kpi">
+        <span class="mini-label">一级下级</span>
+        <span class="mini-value" id="teamCount2">0</span>
+      </div>
+      <div class="mini-kpi gold">
+        <span class="mini-label">我的上级</span>
+        <span class="mini-value" id="teamMyReferrer" style="font-size:15px">--</span>
+      </div>
+    </div>
+    <div id="teamList"><div class="empty-tip">连接钱包后查看团队</div></div>
+  </div>
 
-        <div class="admin-grid-item" id="adminTokenBlock" style="display:none">
-          <div class="admin-title">代币</div>
-          <div class="data-row"><span class="data-label">交易状态</span><span class="data-value" id="adminTradingEnabled"></span></div>
-          <div class="data-row"><span class="data-label">分红池</span><span class="data-value hi" id="adminDividendPool"></span></div>
-          <div class="data-row"><span class="data-label">预言机</span><span class="data-value hi" id="adminOracleAddr"></span></div>
-          <div class="data-row"><span class="data-label">待生效预言机</span><span class="data-value" id="adminPendingOracle"></span></div>
-          <div class="data-row"><span class="data-label">开盘保护</span><span class="data-value" id="adminLaunchWindow"></span></div>
-          <div class="mt12"><input type="text" id="adminSetPoolInput" class="input" placeholder="分红池地址"><button id="adminSetPoolBtn" class="btn btn-primary btn-sm mt8">设置分红池</button></div>
-          <div class="mt12"><input type="text" id="adminSetOracleInput" class="input" placeholder="预言机地址（仅首次）"><button id="adminSetOracleBtn" class="btn btn-primary btn-sm mt8">设置预言机</button></div>
-          <div class="mt12"><input type="text" id="adminProposeOracleInput" class="input" placeholder="新预言机地址（24h 时间锁）">
-            <div class="flex mt8"><button id="adminProposeOracleBtn" class="btn btn-ghost btn-sm">提议更换</button><button id="adminApplyOracleBtn" class="btn btn-ghost btn-sm">应用变更</button></div>
-          </div>
-          <div class="mt12"><input type="text" id="adminAddLpInput" class="input" placeholder="新 LP 交易对地址"><button id="adminAddLpBtn" class="btn btn-primary btn-sm mt8">登记 LP</button></div>
-          <div class="flex mt12">
-            <button id="adminEnableTradingBtn" class="btn btn-primary btn-sm">开启交易</button>
-            <button id="adminGrantMinterBtn" class="btn btn-ghost btn-sm">授予铸币权</button>
-          </div>
-        </div>
-
-        <div class="admin-grid-item" id="adminPoolBlock" style="display:none">
-          <div class="admin-title">分红池</div>
-          <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
-          <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
-          <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
-          <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
-          <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminPoolCoreLocked"></span></div>
-          <div class="flex mt12">
-            <button id="adminPoolPauseBtn" class="btn btn-danger btn-sm">暂停领取</button>
-            <button id="adminPoolUnpauseBtn" class="btn btn-ghost btn-sm">恢复领取</button>
-          </div>
-          <div class="flex mt12">
-            <button id="adminSweepBtn" class="btn btn-ghost btn-sm">清理出局</button>
-            <button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm">提取超额</button>
-            <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
-          </div>
-          <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
-        </div>
-
-        <div class="admin-grid-item" id="adminOracleBlock" style="display:none">
-          <div class="admin-title">预言机</div>
-          <div class="data-row"><span class="data-label">最新价格</span><span class="data-value" id="adminOraclePrice"></span></div>
-          <div class="data-row"><span class="data-label">基准价</span><span class="data-value" id="adminOracleBase"></span></div>
-          <div class="data-row"><span class="data-label">最近更新</span><span class="data-value" id="adminOracleLast"></span></div>
-          <div class="data-row"><span class="data-label">价格偏差</span><span class="data-value" id="adminOracleDeviation"></span></div>
-          <div id="adminUpdaterBlock" style="display:none" class="mt12">
-            <input type="number" step="any" id="adminPriceInput" class="input" placeholder="最新价格 U/枚">
-            <button id="adminSetPriceBtn" class="btn btn-primary btn-sm mt8">推送价格</button>
-            <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill"></div></div>
-          </div>
-          <div id="adminBasePriceBlock" style="display:none" class="mt12">
-            <input type="number" step="any" id="adminBasePriceInput" class="input" placeholder="基准价 U/枚">
-            <button id="adminSetBasePriceBtn" class="btn btn-primary btn-sm mt8">设置基准价</button>
-          </div>
-          <div id="adminUpdaterManageBlock" style="display:none" class="mt12">
-            <input type="text" id="adminAddUpdaterInput" class="input" placeholder="推送者地址">
-            <button id="adminAddUpdaterBtn" class="btn btn-primary btn-sm mt8">添加推送者</button>
-          </div>
-        </div>
-
-        <div class="admin-grid-item" id="adminNftBlock" style="display:none">
-          <div class="admin-title">卡牌 NFT</div>
-          <div class="mt12"><input type="number" min="1" id="adminBurnInput" class="input" placeholder="tokenId 销毁异常卡牌"><button id="adminBurnBtn" class="btn btn-danger btn-sm mt8">销毁卡牌</button></div>
-        </div>
+  <!-- 邀请绑定确认弹窗 -->
+  <div class="modal-overlay" id="bindModal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="module-title">绑定邀请人</span>
+        <span class="module-badge">INVITE</span>
+      </div>
+      <p class="modal-tip">您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？</p>
+      <div class="modal-addr" id="bindModalAddr"></div>
+      <div class="flex mt16" style="justify-content:flex-end">
+        <button id="bindModalCancel" class="btn btn-ghost">暂不绑定</button>
+        <button id="bindModalConfirm" class="btn btn-primary">确认绑定</button>
       </div>
     </div>
   </div>
@@ -490,7 +448,7 @@ body{-webkit-tap-highlight-color:transparent}
     <button class="nav-item active" data-page="homePage"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8"/><path d="M5 9.5V21h14V9.5"/></svg>首页</button>
     <button class="nav-item" data-page="cardsPage"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>我的卡牌</button>
     <button class="nav-item" data-page="invitePage"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg>邀请</button>
-    <button class="nav-item" data-page="adminPage"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>管理</button>
+    <button class="nav-item" data-page="teamPage"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5.5 20c.9-3.6 3.4-5.6 6.5-5.6s5.6 2 6.5 5.6"/><path d="M17 5.5h4M19 3.5v4"/></svg>团队</button>
   </div>
 </div>
 
@@ -580,7 +538,9 @@ const ABIS = {
     'function unpause()',
     'function owner() view returns (address)',
     'function coreLocked() view returns (bool)',
-    'function lockCore()'
+    'function lockCore()',
+    'function referralCountOf(address) view returns (uint256)',
+    'function referralAt(address, uint256) view returns (address)'
   ],
   pool: [
     'function getCardInfo(uint256) view returns (address, uint256, uint256, uint256, uint256, bool)',
@@ -633,31 +593,9 @@ const DOM = {
   cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
-  adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'),
-  adminSaleBlock: $('adminSaleBlock'), adminLaunched: $('adminLaunched'), adminPaused: $('adminPaused'), adminActiveCards: $('adminActiveCards'),
-  adminSaleCoreLocked: $('adminSaleCoreLocked'), adminSaleLockCoreBtn: $('adminSaleLockCoreBtn'),
-  adminLaunchBtn: $('adminLaunchBtn'), adminPauseBtn: $('adminPauseBtn'), adminUnpauseBtn: $('adminUnpauseBtn'),
-  adminMintList: $('adminMintList'), adminMintBtn: $('adminMintBtn'),
-  adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'), adminOracleBase: $('adminOracleBase'),
-  adminOracleLast: $('adminOracleLast'), adminOracleDeviation: $('adminOracleDeviation'),
-  adminUpdaterBlock: $('adminUpdaterBlock'), adminPriceInput: $('adminPriceInput'), adminSetPriceBtn: $('adminSetPriceBtn'), cooldownFill: $('cooldownFill'),
-  adminBasePriceBlock: $('adminBasePriceBlock'), adminBasePriceInput: $('adminBasePriceInput'), adminSetBasePriceBtn: $('adminSetBasePriceBtn'),
-  adminUpdaterManageBlock: $('adminUpdaterManageBlock'), adminAddUpdaterInput: $('adminAddUpdaterInput'), adminAddUpdaterBtn: $('adminAddUpdaterBtn'),
-  adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
-  adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
-  adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
-  adminForceExitInput: $('adminForceExitInput'), adminForceExitBtn: $('adminForceExitBtn'),
-  adminSweepBtn: $('adminSweepBtn'), adminWithdrawExcessBtn: $('adminWithdrawExcessBtn'),
-  adminNftBlock: $('adminNftBlock'), adminBurnInput: $('adminBurnInput'), adminBurnBtn: $('adminBurnBtn'),
-  adminTokenBlock: $('adminTokenBlock'), adminTradingEnabled: $('adminTradingEnabled'), adminDividendPool: $('adminDividendPool'),
-  adminOracleAddr: $('adminOracleAddr'), adminLaunchWindow: $('adminLaunchWindow'),
-  adminSetPoolInput: $('adminSetPoolInput'), adminSetPoolBtn: $('adminSetPoolBtn'),
-  adminSetOracleInput: $('adminSetOracleInput'), adminSetOracleBtn: $('adminSetOracleBtn'),
-  adminPendingOracle: $('adminPendingOracle'),
-  adminProposeOracleInput: $('adminProposeOracleInput'), adminProposeOracleBtn: $('adminProposeOracleBtn'),
-  adminApplyOracleBtn: $('adminApplyOracleBtn'),
-  adminAddLpInput: $('adminAddLpInput'), adminAddLpBtn: $('adminAddLpBtn'),
-  adminEnableTradingBtn: $('adminEnableTradingBtn'), adminGrantMinterBtn: $('adminGrantMinterBtn')
+  teamCount: $('teamCount'), teamCount2: $('teamCount2'), teamMyReferrer: $('teamMyReferrer'), teamList: $('teamList'),
+  bindModal: $('bindModal'), bindModalAddr: $('bindModalAddr'),
+  bindModalConfirm: $('bindModalConfirm'), bindModalCancel: $('bindModalCancel')
 };
 
 /* ============================================================
@@ -666,11 +604,11 @@ const DOM = {
 let provider = null, signer = null, userAddress = '';
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
-let refreshTimer = null, cooldownTimer = null;
-let lastOracleData = null; // {price, base, lastUpdate, deviation}
+let refreshTimer = null;
 let buyQuantity = 1;              // 购买数量
 let unitPriceTokens = null;       // 单卡所需代币（BigNumber）
 let remainingSlots = 520;         // 剩余可购买名额
+let pendingRef = '';              // 邀请链接带入的待绑定上级
 
 /* ============================================================
  * 工具函数
@@ -863,8 +801,11 @@ function disconnectWallet() {
   DOM.cardsTotalAccrued.innerText = '0.00 U';
   DOM.cardsTotalClaimed.innerText = '0.00 U';
   DOM.cardsTotalPending.innerText = '0.00 U';
-  DOM.adminPanels.style.display = 'none';
-  DOM.adminEmpty.style.display = '';
+  DOM.teamCount.innerText = '0';
+  DOM.teamCount2.innerText = '0';
+  DOM.teamMyReferrer.innerText = '--';
+  DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
+  DOM.bindModal.style.display = 'none';
   buyQuantity = 1;
   unitPriceTokens = null;
   remainingSlots = 520;
@@ -898,7 +839,7 @@ async function checkChain() {
 async function loadAll() {
   if (!userAddress) return;
   try {
-    await Promise.all([loadStats(), loadUser(), loadCards()]);
+    await Promise.all([loadStats(), loadUser(), loadCards(), loadTeam()]);
   } catch (e) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
   }
@@ -912,9 +853,8 @@ async function loadStats() {
   DOM.activeCardsDisplay.innerText = `${activeCards.toString()} / 520`;
   remainingSlots = Math.max(0, 520 - Number(activeCards.toString()));
 
-  // 预言机（价格用于金本位折算与后台管理展示，首页不单独展示价格模块）
+  // 预言机（价格用于金本位折算）
   const pd = await oracleC.getPriceData();
-  lastOracleData = { price: pd[0], base: pd[1], lastUpdate: pd[2], deviation: pd[3] };
   const price = pd[0];
   DOM.poolBalanceU.innerText = (price.isZero() ? '--' : fmtCents(tokensToUCents(balBN, price)));
 
@@ -954,9 +894,6 @@ async function loadStats() {
     unitPriceTokens = await saleC.requiredTokensForCard();
   } catch (e) { unitPriceTokens = null; }
   updateBuyDisplay();
-
-  // 管理面板数据
-  loadAdminData();
 }
 
 async function loadUser() {
@@ -966,12 +903,57 @@ async function loadUser() {
     DOM.boundArea.style.display = '';
     DOM.myReferrerAddress.innerText = shortAddr(ref);
     DOM.inviteMyReferrer.innerText = shortAddr(ref);
+    DOM.teamMyReferrer.innerText = shortAddr(ref);
   } else {
     DOM.bindArea.style.display = '';
     DOM.boundArea.style.display = 'none';
     DOM.inviteMyReferrer.innerText = '未绑定';
+    DOM.teamMyReferrer.innerText = '未绑定';
   }
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
+}
+
+/* 团队：一级下级人数与地址列表 */
+async function loadTeam() {
+  let cnt = 0;
+  try {
+    const c = await saleC.referralCountOf(userAddress);
+    cnt = toNum(c);
+    if (!Number.isFinite(cnt) || cnt < 0 || cnt > 100000) cnt = 0;
+  } catch (e) { cnt = 0; }
+  DOM.teamCount.innerText = cnt;
+  DOM.teamCount2.innerText = cnt;
+
+  if (cnt === 0) {
+    DOM.teamList.innerHTML = '<div class="empty-tip">暂无下级，快去邀请好友吧</div>';
+    return;
+  }
+
+  const addrs = [];
+  for (let i = 0; i < cnt; i++) {
+    try {
+      const a = await saleC.referralAt(userAddress, i);
+      addrs.push(a);
+    } catch (e) { break; }
+  }
+
+  DOM.teamList.innerHTML = addrs.map((a, i) => `
+    <div class="team-row">
+      <span class="team-idx">#${i + 1}</span>
+      <span class="team-addr">${a}</span>
+      <button class="team-copy" data-addr="${a}">复制</button>
+    </div>`).join('');
+
+  document.querySelectorAll('.team-copy').forEach(btn => {
+    btn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.addr);
+        showToast('地址已复制', 'success');
+      } catch (e) {
+        showToast('复制失败', 'error');
+      }
+    };
+  });
 }
 
 async function loadCards() {
@@ -1069,125 +1051,32 @@ async function loadCards() {
   });
 }
 
-async function loadAdminData() {
-  if (!userAddress) return;
-  try {
-    const saleOwner = await saleC.owner();
-    const poolOwner = await poolC.owner();
-    const oracleOwner = await oracleC.owner();
-    const isUpdater = await oracleC.isUpdater(userAddress);
-    const isTokenAdmin = await tokenC.hasRole(DEFAULT_ADMIN_ROLE, userAddress);
-    const isNftAdmin = await nftC.hasRole(DEFAULT_ADMIN_ROLE, userAddress);
-
-    const isAny = saleOwner.toLowerCase() === userAddress.toLowerCase()
-      || poolOwner.toLowerCase() === userAddress.toLowerCase()
-      || oracleOwner.toLowerCase() === userAddress.toLowerCase()
-      || isUpdater
-      || isTokenAdmin
-      || isNftAdmin;
-
-    DOM.adminEmpty.style.display = isAny ? 'none' : '';
-    DOM.adminPanels.style.display = isAny ? '' : 'none';
-    if (!isAny) return;
-
-    // 销售
-    const isSaleOwner = saleOwner.toLowerCase() === userAddress.toLowerCase();
-    DOM.adminSaleBlock.style.display = isSaleOwner ? '' : 'none';
-    if (isSaleOwner) {
-      const launched = await saleC.launched();
-      const paused = await saleC.paused();
-      const active = await poolC.activeCardCount();
-      const saleCoreLocked = await saleC.coreLocked();
-      DOM.adminLaunched.innerText = launched ? '✅ 已开盘' : '❌ 未开盘';
-      DOM.adminPaused.innerText = paused ? '✅ 已暂停' : '❌ 运行中';
-      DOM.adminActiveCards.innerText = `${active.toString()} / 520`;
-      DOM.adminSaleCoreLocked.innerText = saleCoreLocked ? '🔒 已锁定' : '🔓 未锁定';
-      DOM.adminLaunchBtn.disabled = launched;
-      DOM.adminSaleLockCoreBtn.disabled = saleCoreLocked;
-    }
-
-    // 预言机
-    const isOracleOwner = oracleOwner.toLowerCase() === userAddress.toLowerCase();
-    DOM.adminOracleBlock.style.display = (isOracleOwner || isUpdater) ? '' : 'none';
-    if (isOracleOwner || isUpdater) {
-      DOM.adminOraclePrice.innerText = lastOracleData ? fmtPrice(lastOracleData.price) : '--';
-      DOM.adminOracleBase.innerText = lastOracleData ? fmtPrice(lastOracleData.base) : '--';
-      DOM.adminOracleLast.innerText = lastOracleData ? fmtTime(lastOracleData.lastUpdate) : '--';
-      DOM.adminOracleDeviation.innerText = lastOracleData && lastOracleData.deviation.lt(100000)
-        ? (Number(lastOracleData.deviation) / 100).toFixed(2) + '%' : '--';
-      DOM.adminUpdaterBlock.style.display = isUpdater ? '' : 'none';
-      DOM.adminBasePriceBlock.style.display = isOracleOwner ? '' : 'none';
-      DOM.adminUpdaterManageBlock.style.display = isOracleOwner ? '' : 'none';
-    }
-
-    // 分红池
-    const isPoolOwner = poolOwner.toLowerCase() === userAddress.toLowerCase();
-    DOM.adminPoolBlock.style.display = isPoolOwner ? '' : 'none';
-    if (isPoolOwner) {
-      const s = await poolC.getPoolStats();
-      DOM.adminPoolBalance.innerText = fmtTokens(s[0]) + ' ' + tokenSymbol;
-      DOM.adminPoolLiability.innerText = fmtCents(s[2]);
-      const excess = await poolC.excessTokens();
-      DOM.adminPoolExcess.innerText = fmtTokens(excess) + ' ' + tokenSymbol;
-      const poolPaused = await poolC.paused();
-      DOM.adminPoolPaused.innerText = poolPaused ? '⏸ 已暂停（禁止领取）' : '▶ 运行中';
-      DOM.adminPoolPauseBtn.disabled = poolPaused;
-      DOM.adminPoolUnpauseBtn.disabled = !poolPaused;
-      const poolCoreLocked = await poolC.coreLocked();
-      DOM.adminPoolCoreLocked.innerText = poolCoreLocked ? '🔒 已锁定' : '🔓 未锁定';
-      DOM.adminPoolLockCoreBtn.disabled = poolCoreLocked;
-    }
-
-    // NFT 管理
-    DOM.adminNftBlock.style.display = isNftAdmin ? '' : 'none';
-
-    // 代币
-    DOM.adminTokenBlock.style.display = isTokenAdmin ? '' : 'none';
-    if (isTokenAdmin) {
-      const trading = await tokenC.tradingEnabled();
-      const dp = await tokenC.dividendPool();
-      const oc = await tokenC.oracle();
-      DOM.adminTradingEnabled.innerText = trading ? '✅ 已开启' : '❌ 未开启';
-      DOM.adminDividendPool.innerText = shortAddr(dp);
-      DOM.adminOracleAddr.innerText = shortAddr(oc);
-      const pendingOc = await tokenC.pendingOracle();
-      if (pendingOc && pendingOc !== ZERO_ADDR) {
-        const changeTime = (await tokenC.oracleChangeTime()).toNumber();
-        DOM.adminPendingOracle.innerText = shortAddr(pendingOc) + '（' + fmtTime(ethers.BigNumber.from(changeTime)) + ' 生效）';
-      } else {
-        DOM.adminPendingOracle.innerText = '--';
-      }
-      const winActive = await tokenC.launchWindowActive();
-      if (winActive) {
-        const remaining = (await tokenC.launchWindowRemaining()).toNumber();
-        DOM.adminLaunchWindow.innerText = `⏳ 进行中（剩余 ${remaining} 秒：卖出税 18% · 限购 50U）`;
-      } else {
-        DOM.adminLaunchWindow.innerText = trading ? '✅ 已结束（常规税率 3%/3% · 不限购）' : '-- 未开盘';
-      }
-    }
-  } catch (e) {
-    console.warn('管理面板加载失败', e);
-  }
-}
+/* 管理面板已剥离至 admin.html，普通用户端不再包含管理逻辑 */
 
 /* ============================================================
  * 业务操作
  * ============================================================ */
-async function bindReferrer() {
-  const ref = DOM.referrerInput.value.trim();
+async function doBindReferrer(ref) {
   if (!ethers.utils.isAddress(ref)) { showToast('请输入合法的钱包地址', 'error'); return; }
   if (ref.toLowerCase() === userAddress.toLowerCase()) { showToast('不能绑定自己', 'error'); return; }
   showLoading();
   try {
     const tx = await saleC.connect(signer).bindReferrer(ref);
     await tx.wait();
-    showToast('绑定上级成功', 'success');
+    showToast('🎉 绑定上级成功！', 'success');
+    DOM.bindModal.style.display = 'none';
+    pendingRef = '';
     loadUser();
+    loadTeam();
   } catch (e) {
     showToast(parseError(e), 'error');
   } finally {
     hideLoading();
   }
+}
+
+async function bindReferrer() {
+  await doBindReferrer(DOM.referrerInput.value.trim());
 }
 
 async function buyCard() {
@@ -1274,282 +1163,6 @@ async function claimAll() {
 }
 
 /* ============================================================
- * 管理操作
- * ============================================================ */
-function parseAddressList(text) {
-  return text.split(/[\s,;，；]+/).map(s => s.trim()).filter(s => s.length > 0);
-}
-
-async function adminLaunch() {
-  if (!confirm('确认开盘？开盘后公开购买开启，且不可撤销。')) return;
-  showLoading();
-  try {
-    const tx = await saleC.connect(signer).launch();
-    await tx.wait();
-    showToast('已开盘', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminPauseToggle(pause) {
-  showLoading();
-  try {
-    const tx = pause ? await saleC.connect(signer).pause() : await saleC.connect(signer).unpause();
-    await tx.wait();
-    showToast(pause ? '合约已暂停' : '合约已恢复', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminMint() {
-  const addrs = parseAddressList(DOM.adminMintList.value);
-  if (addrs.length === 0) { showToast('请输入至少一个钱包地址', 'error'); return; }
-  for (const a of addrs) {
-    if (!ethers.utils.isAddress(a)) { showToast(`非法地址：${a}`, 'error'); return; }
-  }
-  if (!confirm(`确认预分发 ${addrs.length} 张卡牌？（仅开盘前可用，无推荐奖励）`)) return;
-  showLoading();
-  try {
-    let done = 0;
-    for (let i = 0; i < addrs.length; i += 50) {
-      const chunk = addrs.slice(i, i + 50);
-      const tx = await saleC.connect(signer).adminMintCards(chunk);
-      await tx.wait();
-      done += chunk.length;
-    }
-    showToast(`已预分发 ${done} 张卡牌`, 'success');
-    DOM.adminMintList.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminSetPrice() {
-  const v = parseFloat(DOM.adminPriceInput.value);
-  if (!(v > 0)) { showToast('请输入大于 0 的价格', 'error'); return; }
-  const p = BN.from(Math.round(v * PRICE_SCALE));
-  showLoading();
-  try {
-    const tx = await oracleC.connect(signer).setPrice(p);
-    await tx.wait();
-    showToast('价格推送成功', 'success');
-    DOM.adminPriceInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminSetBasePrice() {
-  const v = parseFloat(DOM.adminBasePriceInput.value);
-  if (!(v > 0)) { showToast('请输入大于 0 的基准价', 'error'); return; }
-  const p = BN.from(Math.round(v * PRICE_SCALE));
-  showLoading();
-  try {
-    const tx = await oracleC.connect(signer).setBasePrice(p);
-    await tx.wait();
-    showToast('基准价设置成功', 'success');
-    DOM.adminBasePriceInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminAddUpdater() {
-  const a = DOM.adminAddUpdaterInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的推送者地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await oracleC.connect(signer).addUpdater(a);
-    await tx.wait();
-    showToast('推送者已添加', 'success');
-    DOM.adminAddUpdaterInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminPoolPauseToggle(pause) {
-  showLoading();
-  try {
-    const tx = pause ? await poolC.connect(signer).pause() : await poolC.connect(signer).unpause();
-    await tx.wait();
-    showToast(pause ? '分红池已暂停（禁止领取）' : '分红池已恢复', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminAddLp() {
-  const a = DOM.adminAddLpInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的交易对地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).addLpPair(a);
-    await tx.wait();
-    showToast('LP 交易对已登记', 'success');
-    DOM.adminAddLpInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminLockCore(which) {
-  if (!confirm('确认永久锁定核心配置？锁定后不可再修改 token/nft/pool/oracle 等核心地址（不可逆）。')) return;
-  showLoading();
-  try {
-    const tx = which === 'sale'
-      ? await saleC.connect(signer).lockCore()
-      : await poolC.connect(signer).lockCore();
-    await tx.wait();
-    showToast('核心配置已锁定', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminForceExit() {
-  const id = DOM.adminForceExitInput.value.trim();
-  if (!id || isNaN(Number(id)) || Number(id) <= 0) { showToast('请输入合法的 tokenId', 'error'); return; }
-  if (!confirm(`确认将卡牌 #${id} 强制出局？（释放名额，待领取分红保留）`)) return;
-  showLoading();
-  try {
-    const tx = await poolC.connect(signer).adminForceExit(id);
-    await tx.wait();
-    showToast(`卡牌 #${id} 已强制出局`, 'success');
-    DOM.adminForceExitInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminBurnCard() {
-  const id = DOM.adminBurnInput.value.trim();
-  if (!id || isNaN(Number(id)) || Number(id) <= 0) { showToast('请输入合法的 tokenId', 'error'); return; }
-  if (!confirm(`确认销毁卡牌 #${id}？（不可逆）`)) return;
-  showLoading();
-  try {
-    // L-01：先强制出局释放名额，再销毁 NFT，一步完成避免状态不同步
-    let exitDone = false;
-    try {
-      const tx1 = await poolC.connect(signer).adminForceExit(id);
-      await tx1.wait();
-      exitDone = true;
-    } catch (e1) { /* 当前钱包不是分红池 Owner 时跳过，仍继续销毁 */ }
-    const tx2 = await nftC.connect(signer).adminBurn(id);
-    await tx2.wait();
-    showToast(exitDone
-      ? `卡牌 #${id} 已强制出局并销毁`
-      : `卡牌 #${id} 已销毁（⚠️ 未强制出局：当前钱包不是分红池 Owner，请另用池 Owner 调用强制出局）`, exitDone ? 'success' : '');
-    DOM.adminBurnInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminSweep() {
-  showLoading();
-  try {
-    const tx = await poolC.connect(signer).sweepExited(100);
-    await tx.wait();
-    showToast('出局卡牌清理完成', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminWithdrawExcess() {
-  if (!confirm('确认提取超额资金？（不影响卡牌待领取分红负债）')) return;
-  showLoading();
-  try {
-    const tx = await poolC.connect(signer).withdrawExcess(userAddress);
-    await tx.wait();
-    showToast('超额资金已提取', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminSetPool() {
-  const a = DOM.adminSetPoolInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的分红池地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).setDividendPool(a);
-    await tx.wait();
-    showToast('分红池地址设置成功', 'success');
-    DOM.adminSetPoolInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminSetOracle() {
-  const a = DOM.adminSetOracleInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的预言机地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).setOracle(a);
-    await tx.wait();
-    showToast('预言机地址设置成功', 'success');
-    DOM.adminSetOracleInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminProposeOracle() {
-  const a = DOM.adminProposeOracleInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的预言机地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).proposeOracle(a);
-    await tx.wait();
-    showToast('已提议更换预言机（24 小时后可应用）', 'success');
-    DOM.adminProposeOracleInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminApplyOracle() {
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).applyOracle();
-    await tx.wait();
-    showToast('预言机变更已应用', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminEnableTrading() {
-  if (!confirm('确认开启交易？开启后买卖税手续费将自动转入分红池。')) return;
-  showLoading();
-  try {
-    const tx = await tokenC.connect(signer).enableTrading();
-    await tx.wait();
-    showToast('交易已开启', 'success');
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-async function adminGrantMinter() {
-  showLoading();
-  try {
-    const role = await nftC.MINTER_ROLE();
-    const has = await nftC.hasRole(role, CONFIG.contracts.sale);
-    if (has) { showToast('销售合约已拥有铸币权', ''); return; }
-    const tx = await nftC.connect(signer).grantRole(role, CONFIG.contracts.sale);
-    await tx.wait();
-    showToast('已授予销售合约铸币权', 'success');
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
-/* ============================================================
  * 页面导航 / 粒子 / 事件绑定
  * ============================================================ */
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1595,28 +1208,12 @@ DOM.copyBtn.addEventListener('click', async () => {
     showToast('邀请链接已复制', 'success');
   }
 });
-DOM.adminLaunchBtn.addEventListener('click', throttle(adminLaunch, 1500));
-DOM.adminPauseBtn.addEventListener('click', throttle(() => adminPauseToggle(true), 1500));
-DOM.adminUnpauseBtn.addEventListener('click', throttle(() => adminPauseToggle(false), 1500));
-DOM.adminMintBtn.addEventListener('click', throttle(adminMint, 2000));
-DOM.adminSetPriceBtn.addEventListener('click', throttle(adminSetPrice, 1500));
-DOM.adminSetBasePriceBtn.addEventListener('click', throttle(adminSetBasePrice, 1500));
-DOM.adminAddUpdaterBtn.addEventListener('click', throttle(adminAddUpdater, 1500));
-DOM.adminPoolPauseBtn.addEventListener('click', throttle(() => adminPoolPauseToggle(true), 1500));
-DOM.adminPoolUnpauseBtn.addEventListener('click', throttle(() => adminPoolPauseToggle(false), 1500));
-DOM.adminAddLpBtn.addEventListener('click', throttle(adminAddLp, 1500));
-DOM.adminSaleLockCoreBtn.addEventListener('click', throttle(() => adminLockCore('sale'), 2000));
-DOM.adminPoolLockCoreBtn.addEventListener('click', throttle(() => adminLockCore('pool'), 2000));
-DOM.adminForceExitBtn.addEventListener('click', throttle(adminForceExit, 2000));
-DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
-DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
-DOM.adminWithdrawExcessBtn.addEventListener('click', throttle(adminWithdrawExcess, 2000));
-DOM.adminSetPoolBtn.addEventListener('click', throttle(adminSetPool, 1500));
-DOM.adminSetOracleBtn.addEventListener('click', throttle(adminSetOracle, 1500));
-DOM.adminProposeOracleBtn.addEventListener('click', throttle(adminProposeOracle, 1500));
-DOM.adminApplyOracleBtn.addEventListener('click', throttle(adminApplyOracle, 1500));
-DOM.adminEnableTradingBtn.addEventListener('click', throttle(adminEnableTrading, 2000));
-DOM.adminGrantMinterBtn.addEventListener('click', throttle(adminGrantMinter, 1500));
+/* 绑定弹窗 */
+DOM.bindModalConfirm.addEventListener('click', throttle(() => doBindReferrer(pendingRef), 1500));
+DOM.bindModalCancel.addEventListener('click', () => {
+  DOM.bindModal.style.display = 'none';
+  pendingRef = '';
+});
 
 /* ============================================================
  * 初始化
@@ -1624,7 +1221,20 @@ DOM.adminGrantMinterBtn.addEventListener('click', throttle(adminGrantMinter, 150
 const urlParams = new URLSearchParams(window.location.search);
 const refParam = urlParams.get('ref');
 if (refParam && ethers.utils.isAddress(refParam)) {
+  pendingRef = refParam;
   DOM.referrerInput.value = refParam;
+}
+
+/* 邀请链接进入：连接钱包后若未绑定上级，弹出确认绑定弹窗 */
+async function checkInviteBindModal() {
+  if (!pendingRef || !userAddress) return;
+  if (pendingRef.toLowerCase() === userAddress.toLowerCase()) { pendingRef = ''; return; }
+  try {
+    const ref = await saleC.referrerOf(userAddress);
+    if (ref && ref !== ZERO_ADDR) { pendingRef = ''; return; } // 已绑定，不打扰
+    DOM.bindModalAddr.innerText = pendingRef;
+    DOM.bindModal.style.display = 'flex';
+  } catch (e) { /* ignore */ }
 }
 
 window.addEventListener('load', async () => {
@@ -1633,32 +1243,24 @@ window.addEventListener('load', async () => {
     // 已授权时自动恢复连接
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) await setupProvider(accounts[0]);
+      if (accounts.length > 0) {
+        await setupProvider(accounts[0]);
+        checkInviteBindModal();
+      }
     } catch (e) { /* ignore */ }
 
     window.ethereum.on('accountsChanged', (accs) => {
-      if (accs.length > 0) setupProvider(accs[0]);
-      else disconnectWallet();
+      if (accs.length > 0) {
+        setupProvider(accs[0]).then(() => checkInviteBindModal());
+      } else {
+        disconnectWallet();
+      }
     });
     window.ethereum.on('chainChanged', () => {
       checkChain();
       if (userAddress) loadAll();
     });
   }
-
-  // 预言机 30 秒冷却进度条
-  cooldownTimer = setInterval(() => {
-    if (!lastOracleData || DOM.adminUpdaterBlock.style.display === 'none') {
-      DOM.cooldownFill.style.width = '100%';
-      DOM.adminSetPriceBtn.disabled = false;
-      return;
-    }
-    const elapsed = Math.floor(Date.now() / 1000) - toNum(lastOracleData.lastUpdate);
-    const interval = 30;
-    const pct = Math.min(100, Math.max(0, elapsed / interval * 100));
-    DOM.cooldownFill.style.width = pct + '%';
-    DOM.adminSetPriceBtn.disabled = elapsed < interval;
-  }, 1000);
 });
 })();
 </script>
