@@ -3,114 +3,192 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-<title>NFT 卡牌分红系统</title>
+<title>卡牌分红 · NFT Dividend</title>
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 <style>
+:root{
+  --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
+  --border:rgba(148,163,184,.14);--border-hi:rgba(34,211,238,.35);
+  --text:#e9edf5;--muted:#8b93a7;--cyan:#22d3ee;--violet:#8b5cf6;--gold:#f5c14c;
+  --green:#34d399;--red:#fb7185;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter','PingFang SC','Microsoft YaHei',sans-serif;background:radial-gradient(ellipse at 20% 30%,#0a0a1a,#050510);color:#fff;min-height:100vh}
-button{font-family:inherit}
-.bg-particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
-.particle{position:absolute;background:radial-gradient(circle,rgba(0,212,255,.3) 0%,rgba(0,212,255,0) 70%);border-radius:50%;animation:float linear infinite;top:calc(100%*var(--rand-y));left:calc(100%*var(--rand-x));opacity:0;animation-delay:var(--delay);animation-duration:var(--duration)}
-@keyframes float{0%{transform:translateY(0) scale(0);opacity:0}15%{opacity:.4}85%{opacity:.4}100%{transform:translateY(-100vh) scale(1);opacity:0}}
+html{scroll-behavior:smooth}
+body{font-family:'Inter','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora::before,.aurora::after{content:'';position:absolute;border-radius:50%;filter:blur(120px);opacity:.22}
+.aurora::before{width:60vw;height:60vw;left:-15vw;top:-20vw;background:radial-gradient(circle,#22d3ee,transparent 65%);animation:drift1 26s ease-in-out infinite alternate}
+.aurora::after{width:55vw;height:55vw;right:-12vw;top:30vh;background:radial-gradient(circle,#8b5cf6,transparent 65%);animation:drift2 32s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(8vw,10vh) scale(1.1)}}
+@keyframes drift2{to{transform:translate(-6vw,-8vh) scale(1.15)}}
+.grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(148,163,184,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.05) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 75%)}
+.bg-particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+.particle{position:absolute;background:radial-gradient(circle,rgba(34,211,238,.4) 0%,transparent 70%);border-radius:50%;animation:float linear infinite;top:calc(100%*var(--rand-y));left:calc(100%*var(--rand-x));opacity:0;animation-delay:var(--delay);animation-duration:var(--duration)}
+@keyframes float{0%{transform:translateY(0) scale(0);opacity:0}15%{opacity:.35}85%{opacity:.35}100%{transform:translateY(-100vh) scale(1);opacity:0}}
 .app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
-.header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:rgba(10,10,26,.8);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,212,255,.2);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
-.logo{display:flex;align-items:center;gap:12px}
-.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#00d4ff,#7b2cbf);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.logo-text{font-size:20px;font-weight:700;background:linear-gradient(135deg,#fff,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.chain-badge{font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(255,193,7,.12);border:1px solid rgba(255,193,7,.4);color:#ffc107;margin-left:8px}
-.wallet-btn{background:linear-gradient(135deg,rgba(0,212,255,.13),rgba(123,44,191,.13));border:1px solid rgba(0,212,255,.3);color:#00d4ff;padding:10px 22px;border-radius:40px;font-size:14px;font-weight:500;cursor:pointer;transition:all .3s ease}
-.wallet-btn:hover{background:linear-gradient(135deg,rgba(0,212,255,.25),rgba(123,44,191,.25));border-color:#00d4ff;transform:translateY(-2px)}
-.wallet-info{display:flex;align-items:center;gap:10px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:40px;padding:6px 14px}
-.wallet-dot{width:8px;height:8px;background:#00d4ff;border-radius:50%;box-shadow:0 0 8px rgba(0,212,255,.6);animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 4px rgba(0,212,255,.4)}50%{box-shadow:0 0 12px rgba(0,212,255,.8)}}
-.wallet-address{font-size:13px;font-weight:500;color:#e0e0ff}
-.wallet-disconnect-btn{background:transparent;border:none;color:#8a8ab3;cursor:pointer;padding:4px;border-radius:50%;display:flex;align-items:center;justify-content:center;width:28px;height:28px}
-.wallet-disconnect-btn:hover{color:#ff6b81;background:rgba(255,71,87,.15)}
-.wallet-disconnect-btn svg{width:16px;height:16px}
-.bottom-nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:rgba(20,20,40,.95);backdrop-filter:blur(20px);padding:8px 20px;border-radius:60px;border:1px solid rgba(0,212,255,.2);z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.3);max-width:96vw;overflow-x:auto}
-.nav-item{flex:1;text-align:center;padding:10px 20px;border-radius:40px;cursor:pointer;transition:all .3s ease;font-weight:500;font-size:14px;color:#8a8ab3;white-space:nowrap;border:none;background:transparent}
-.nav-item:hover{color:#fff;background:rgba(0,212,255,.1)}
-.nav-item.active{background:linear-gradient(135deg,#00d4ff,#7b2cbf);color:#fff;box-shadow:0 4px 15px rgba(0,212,255,.3)}
-.page{display:none;padding:24px 24px 140px;max-width:1100px;margin:0 auto;width:100%;flex:1;animation:fadeIn .4s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* ---------- 顶栏 ---------- */
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 28px;background:rgba(8,10,20,.72);backdrop-filter:blur(22px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:13px}
+.brand-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 22px rgba(34,211,238,.35)}
+.brand-text{display:flex;flex-direction:column;line-height:1.15}
+.brand-title{font-size:17px;font-weight:800;letter-spacing:.5px}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase}
+.chain-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 11px;border-radius:99px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
+.chain-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.wallet-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);border:none;color:#fff;padding:11px 24px;border-radius:99px;font-size:14px;font-weight:600;transition:all .25s ease;box-shadow:0 4px 18px rgba(34,211,238,.28)}
+.wallet-btn:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(139,92,246,.4)}
+.wallet-pill{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:6px 8px 6px 16px;backdrop-filter:blur(10px)}
+.wallet-pill .addr{font-size:13px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.wallet-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.icon-btn{background:transparent;border:1px solid transparent;color:var(--muted);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.icon-btn:hover{color:var(--red);background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.3)}
+.icon-btn svg{width:15px;height:15px}
+/* ---------- 底部导航 ---------- */
+.bottom-nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(10,12,24,.85);backdrop-filter:blur(24px);padding:7px;border-radius:99px;border:1px solid var(--border);z-index:100;box-shadow:0 14px 44px rgba(0,0,0,.5)}
+.nav-item{flex:1;display:flex;align-items:center;gap:7px;text-align:center;padding:11px 20px;border-radius:99px;transition:all .25s ease;font-weight:600;font-size:13px;color:var(--muted);white-space:nowrap;border:none;background:transparent}
+.nav-item .nav-ic{font-size:15px}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.nav-item.active{background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;box-shadow:0 4px 18px rgba(34,211,238,.35)}
+/* ---------- 页面 ---------- */
+.page{display:none;padding:30px 28px 140px;max-width:1240px;margin:0 auto;width:100%;flex:1;animation:rise .45s cubic-bezier(.22,.8,.36,1)}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 .page.active{display:block}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px}
-.stat-card{background:linear-gradient(135deg,rgba(0,212,255,.07),rgba(123,44,191,.07));border:1px solid rgba(0,212,255,.2);border-radius:16px;padding:18px}
-.stat-label{font-size:13px;color:#8a8ab3;margin-bottom:8px}
-.stat-value{font-size:22px;font-weight:700;color:#fff}
-.stat-sub{font-size:12px;color:#5f6b8a;margin-top:6px}
-.card{background:rgba(16,16,34,.75);border:1px solid rgba(0,212,255,.16);border-radius:18px;padding:22px;margin-bottom:18px;backdrop-filter:blur(10px)}
-.card h3{font-size:17px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.input-group{margin-bottom:14px}
-.input-label{display:block;font-size:13px;color:#8a8ab3;margin-bottom:6px}
-.input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(0,212,255,.25);border-radius:12px;padding:12px 14px;color:#fff;font-size:14px;outline:none;transition:border .2s}
-.input:focus{border-color:#00d4ff}
-textarea.input{resize:vertical;min-height:100px;font-family:monospace}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .3s ease}
-.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
-.btn-primary{background:linear-gradient(135deg,#00d4ff,#7b2cbf);color:#fff;box-shadow:0 4px 18px rgba(0,212,255,.25)}
-.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,212,255,.4)}
-.btn-secondary{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:#00d4ff}
-.btn-secondary:hover:not(:disabled){background:rgba(0,212,255,.2)}
-.btn-danger{background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.35);color:#ff6b81}
-.btn-danger:hover:not(:disabled){background:rgba(255,71,87,.22)}
-.btn-sm{padding:8px 16px;font-size:13px;border-radius:30px}
-.info-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap}
-.info-label{font-size:13px;color:#8a8ab3}
-.info-value{font-size:14px;color:#fff;word-break:break-all}
-.info-value.highlight{color:#00d4ff}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
-.badge-active{background:rgba(46,213,115,.15);border:1px solid rgba(46,213,115,.4);color:#2ed573}
-.badge-exited{background:rgba(255,107,129,.12);border:1px solid rgba(255,107,129,.35);color:#ff6b81}
-.badge-gray{background:rgba(138,138,179,.12);border:1px solid rgba(138,138,179,.3);color:#8a8ab3}
-.badge-yellow{background:rgba(255,193,7,.12);border:1px solid rgba(255,193,7,.4);color:#ffc107}
-.card-row{background:rgba(255,255,255,.03);border:1px solid rgba(0,212,255,.14);border-radius:14px;padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
-.card-row-head{display:flex;align-items:center;gap:10px}
-.card-id{font-size:18px;font-weight:700;color:#00d4ff}
-.card-row-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 24px;flex:1;min-width:260px}
-.card-cell{font-size:13px;color:#8a8ab3}
-.card-cell b{display:block;font-size:15px;color:#fff;margin-top:2px}
-.card-cell b.pending{color:#ffd166}
-.empty-tip{text-align:center;color:#5f6b8a;padding:40px 0;font-size:14px}
-.rules-list{list-style:none;font-size:13px;color:#a8b0c8;line-height:1.9}
-.rules-list li{padding-left:18px;position:relative}
-.rules-list li::before{content:'◆';position:absolute;left:0;color:#00d4ff;font-size:10px;top:2px}
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(20,20,45,.96);border:1px solid rgba(0,212,255,.35);color:#fff;padding:12px 22px;border-radius:40px;font-size:14px;z-index:10001;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .25s ease;max-width:90vw;text-align:center}
-.toast.error{border-color:rgba(255,71,87,.5)}
-.toast.success{border-color:rgba(46,213,115,.5)}
-.global-loader{position:fixed;inset:0;background:rgba(5,5,16,.7);backdrop-filter:blur(4px);z-index:9999;display:none;align-items:center;justify-content:center}
-.global-loader.active{display:flex}
-.spinner{width:46px;height:46px;border:4px solid rgba(0,212,255,.2);border-top-color:#00d4ff;border-radius:50%;animation:spin .9s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.admin-block{border:1px dashed rgba(255,193,7,.35);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(255,193,7,.03)}
-.admin-title{font-size:14px;font-weight:700;color:#ffc107;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+/* ---------- KPI 模块 ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.kpi{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(16px);transition:all .3s ease;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),transparent);opacity:0;transition:opacity .3s}
+.kpi:hover{transform:translateY(-4px);border-color:var(--border-hi);background:var(--panel-hi)}
+.kpi:hover::before{opacity:1}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.kpi-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.16));border:1px solid rgba(34,211,238,.22)}
+.kpi-value{font-size:25px;font-weight:800;letter-spacing:.3px;font-variant-numeric:tabular-nums;line-height:1.2;word-break:break-all}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:7px;font-variant-numeric:tabular-nums}
+.kpi-sub .u{color:var(--gold);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid}
+.chip-ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1)}
+.chip-warn{color:var(--gold);border-color:rgba(245,193,76,.4);background:rgba(245,193,76,.1)}
+.chip-off{color:var(--red);border-color:rgba(251,113,133,.4);background:rgba(251,113,133,.1)}
+.chip-info{color:var(--cyan);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)}
+/* ---------- 开盘窗口状态条 ---------- */
+.launch-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(251,113,133,.12),rgba(245,193,76,.08));border:1px solid rgba(251,113,133,.35);border-radius:16px;padding:14px 20px;margin-bottom:18px;backdrop-filter:blur(14px)}
+.launch-bar .lb-ic{font-size:22px;animation:pulse 1.6s infinite}
+.launch-bar .lb-txt{font-size:13px;color:#ffd7dd;font-weight:600;letter-spacing:.3px}
+.launch-bar .lb-txt b{color:#fff}
+/* ---------- 模块卡片 ---------- */
+.modules{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.module{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:24px;backdrop-filter:blur(16px);transition:border-color .3s}
+.module:hover{border-color:var(--border-hi)}
+.module-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.module-title{font-size:15px;font-weight:700;letter-spacing:.5px}
+.module-badge{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);border:1px solid rgba(34,211,238,.35);padding:2px 9px;border-radius:99px;background:rgba(34,211,238,.08)}
+.data-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px dashed rgba(148,163,184,.12);flex-wrap:wrap}
+.data-row:last-child{border-bottom:none}
+.data-label{font-size:12.5px;color:var(--muted)}
+.data-value{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;word-break:break-all}
+.data-value.hi{color:var(--cyan)}
+.data-value.gold{color:var(--gold)}
+.input{width:100%;background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:12px;padding:12px 15px;color:var(--text);font-size:14px;outline:none;transition:border .2s}
+.input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospace;font-size:12.5px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 26px;border-radius:14px;font-size:14px;font-weight:700;letter-spacing:.3px;border:none;transition:all .25s ease}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-primary{background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;box-shadow:0 6px 20px rgba(34,211,238,.25)}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(139,92,246,.4)}
+.btn-ghost{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.35);color:var(--cyan)}
+.btn-ghost:hover:not(:disabled){background:rgba(34,211,238,.16)}
+.btn-danger{background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.4);color:var(--red)}
+.btn-danger:hover:not(:disabled){background:rgba(251,113,133,.2)}
+.btn-sm{padding:9px 18px;font-size:13px;border-radius:11px}
+.btn-block{width:100%}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+/* ---------- 卡牌 ---------- */
+.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
+.page-title span{color:var(--cyan)}
+.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.nft-card{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(16px);transition:all .3s ease;display:flex;flex-direction:column;gap:16px}
+.nft-card:hover{transform:translateY(-3px);border-color:var(--border-hi);background:var(--panel-hi)}
+.nft-card.exited{opacity:.75}
+.nft-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.nft-id{font-size:19px;font-weight:800;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.nft-id small{color:var(--muted);font-weight:600}
+.nft-entry{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:99px}
+.badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4)}
+.badge-exited{color:var(--red);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35)}
+.nft-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.1);border-radius:13px;padding:11px 12px}
+.metric-label{display:block;font-size:10.5px;letter-spacing:1px;color:var(--muted);margin-bottom:5px}
+.metric-value{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.metric-gold .metric-value{color:var(--gold)}
+.exit-progress{display:flex;flex-direction:column;gap:7px}
+.exit-track{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
+.exit-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);box-shadow:0 0 12px rgba(139,92,246,.6);transition:width .8s cubic-bezier(.22,.8,.36,1)}
+.exit-fill.done{background:linear-gradient(90deg,#f5c14c,#fb7185)}
+.exit-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.exit-meta .pct{color:var(--cyan);font-weight:700}
+/* ---------- 邀请 ---------- */
+.invite-wrap{max-width:560px;margin:0 auto}
+/* ---------- 管理 ---------- */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.admin-block{background:var(--panel);border:1px solid rgba(245,193,76,.22);border-radius:18px;padding:20px;margin-bottom:16px;backdrop-filter:blur(14px)}
+.admin-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:1px;color:var(--gold);margin-bottom:14px;text-transform:uppercase}
+.admin-grid-item{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:16px;backdrop-filter:blur(14px)}
+.admin-grid-item .admin-title{color:var(--cyan)}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
-.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:8px}
-.cooldown-fill{height:100%;background:linear-gradient(90deg,#00d4ff,#7b2cbf);transition:width .5s linear;width:0}
+.empty-tip{text-align:center;color:var(--muted);padding:56px 0;font-size:13.5px;letter-spacing:.5px}
+.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px}
+.cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
+/* ---------- Toast / Loader ---------- */
+.toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:10001;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:rise .3s ease;max-width:92vw;text-align:center;backdrop-filter:blur(16px)}
+.toast.error{border-color:rgba(251,113,133,.55);color:#ffd7dd}
+.toast.success{border-color:rgba(52,211,153,.55);color:#d1fae5}
+.global-loader{position:fixed;inset:0;background:rgba(5,7,13,.7);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center}
+.global-loader.active{display:flex}
+.spinner{width:46px;height:46px;border:3px solid rgba(34,211,238,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.modules{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr}}
 @media(max-width:640px){
-.header{padding:14px 16px}
-.page{padding:16px 14px 130px}
-.stat-value{font-size:18px}
+.header{padding:12px 16px}
+.page{padding:20px 14px 130px}
+.kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+.kpi{padding:15px;border-radius:16px}
+.kpi-value{font-size:19px}
+.kpi-ic{width:32px;height:32px;font-size:14px;border-radius:10px}
+.brand-sub{display:none}
+.nft-grid{grid-template-columns:1fr}
+.bottom-nav{padding:6px}
+.nav-item{padding:10px 14px;font-size:12px}
+.nav-item .nav-ic{margin-right:0}
 }
 </style>
 </head>
 <body>
+<div class="aurora"></div>
+<div class="grid-overlay"></div>
 <div class="bg-particles" id="particles"></div>
 <div class="global-loader" id="globalLoader"><div class="spinner"></div></div>
 <div class="app">
+  <!-- ================= 顶栏 ================= -->
   <div class="header">
-    <div class="logo">
-      <div class="logo-icon">🔷</div>
-      <span class="logo-text">NFT 卡牌分红</span>
-      <span class="chain-badge" id="chainBadge">网络检测中…</span>
+    <div class="brand">
+      <div class="brand-mark">◈</div>
+      <div class="brand-text">
+        <span class="brand-title">卡牌分红</span>
+        <span class="brand-sub">NFT Dividend Protocol</span>
+      </div>
+      <span class="chain-chip" id="chainBadge"><span class="dot"></span><span id="chainText">检测中…</span></span>
     </div>
     <div class="flex">
-      <button class="wallet-btn" id="connectBtn">🔌 连接钱包</button>
-      <div class="wallet-info" id="walletInfo" style="display:none">
-        <div class="wallet-dot"></div>
-        <span class="wallet-address" id="walletAddressDisplay"></span>
-        <button class="wallet-disconnect-btn" id="disconnectBtn" title="断开钱包">
+      <button class="wallet-btn" id="connectBtn">⛓ 连接钱包</button>
+      <div class="wallet-pill" id="walletInfo" style="display:none">
+        <span class="dot"></span>
+        <span class="addr" id="walletAddressDisplay"></span>
+        <button class="icon-btn" id="disconnectBtn" title="断开钱包">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         </button>
       </div>
@@ -119,102 +197,106 @@ textarea.input{resize:vertical;min-height:100px;font-family:monospace}
 
   <!-- ================= 首页 ================= -->
   <div id="homePage" class="page active">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">💰 分红池余额</div>
-        <div class="stat-value" id="poolTokenBalance">--</div>
-        <div class="stat-sub" id="poolBalanceU">≈ -- U</div>
+    <!-- KPI 数据模块 -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">分红池</span><span class="kpi-ic">◉</span></div>
+        <div class="kpi-value" id="poolTokenBalance">--</div>
+        <div class="kpi-sub">≈ <span class="u" id="poolBalanceU">-- U</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">📊 代币价格（金本位）</div>
-        <div class="stat-value" id="priceDisplay">-- U</div>
-        <div class="stat-sub">基准价 <span id="basePriceDisplay">--</span> U · 偏差 <span id="deviationDisplay">--</span></div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">代币价格</span><span class="kpi-ic">◈</span></div>
+        <div class="kpi-value" id="priceDisplay">-- U</div>
+        <div class="kpi-sub">基准 <span id="basePriceDisplay">--</span> · 偏差 <span id="deviationDisplay">--</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">🎴 在线有效卡牌</div>
-        <div class="stat-value" id="activeCardsDisplay">-- / 520</div>
-        <div class="stat-sub" id="launchStatus">开盘状态：检测中…</div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">有效卡牌</span><span class="kpi-ic">▤</span></div>
+        <div class="kpi-value" id="activeCardsDisplay">-- / 520</div>
+        <div class="kpi-sub"><span id="launchStatus">--</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">🪙 我的代币余额</div>
-        <div class="stat-value" id="userTokenBalance">--</div>
-        <div class="stat-sub" id="userTokenBalanceU">≈ -- U</div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">我的代币</span><span class="kpi-ic">◎</span></div>
+        <div class="kpi-value" id="userTokenBalance">--</div>
+        <div class="kpi-sub">≈ <span class="u" id="userTokenBalanceU">-- U</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">我的卡牌</span><span class="kpi-ic">▦</span></div>
+        <div class="kpi-value" id="dashCardCount">0</div>
+        <div class="kpi-sub">灵魂绑定 · 独立计息</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">待领取分红</span><span class="kpi-ic">✦</span></div>
+        <div class="kpi-value" id="myTotalPending" style="color:var(--gold)">-- U</div>
+        <div class="kpi-sub">出局线 300 U</div>
       </div>
     </div>
 
-    <div class="card" id="launchWindowBanner" style="display:none;border-color:rgba(255,107,129,.5)">
-      <h3>🚀 开盘保护进行中（防机器人）</h3>
-      <ul class="rules-list">
-        <li>剩余 <b id="launchWindowRemaining" style="color:#ff6b81">--</b> 秒后恢复常规税率（买卖各 3%）</li>
-        <li>当前卖出税 <b style="color:#ff6b81">18%</b>，买入税 3%</li>
-        <li>每个地址最多买入等值 <b style="color:#ff6b81">50U</b> 的代币，3 分钟后取消限制</li>
-      </ul>
+    <!-- 开盘保护状态条（实时状态，非规则说明） -->
+    <div class="launch-bar" id="launchWindowBanner" style="display:none">
+      <span class="lb-ic">⚡</span>
+      <span class="lb-txt">开盘保护 · 剩余 <b id="launchWindowRemaining">--</b> 秒</span>
     </div>
 
-    <div class="card">
-      <h3>🔗 绑定上级（推荐人）</h3>
-      <div id="bindArea">
-        <div class="input-group">
-          <label class="input-label">推荐人钱包地址（每个钱包仅可绑定一次，永久锁定）</label>
-          <input type="text" id="referrerInput" class="input" placeholder="0x...">
+    <!-- 操作模块 -->
+    <div class="modules">
+      <div class="module">
+        <div class="module-head">
+          <span class="module-title">上级绑定</span>
+          <span class="module-badge">ONE-TIME</span>
         </div>
-        <button id="bindBtn" class="btn btn-primary">绑定上级</button>
-      </div>
-      <div id="boundArea" style="display:none">
-        <div class="info-row">
-          <span class="info-label">您的上级</span>
-          <span class="info-value highlight" id="myReferrerAddress"></span>
+        <div id="bindArea">
+          <input type="text" id="referrerInput" class="input" placeholder="推荐人钱包地址 0x…" style="margin-bottom:14px">
+          <button id="bindBtn" class="btn btn-primary btn-block">绑定</button>
         </div>
-        <div class="info-row">
-          <span class="info-label">推荐奖励</span>
-          <span class="info-value">每笔购买卡牌资金的 30% 自动转入上级钱包</span>
+        <div id="boundArea" style="display:none">
+          <div class="data-row">
+            <span class="data-label">已绑定</span>
+            <span class="data-value hi" id="myReferrerAddress"></span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <h3>🎴 购买卡牌</h3>
-      <div class="info-row"><span class="info-label">单卡成本（金本位）</span><span class="info-value">100.00 U</span></div>
-      <div class="info-row"><span class="info-label">按当前价格需支付</span><span class="info-value highlight" id="buyTokensNeeded">--</span></div>
-      <div class="info-row"><span class="info-label">资金去向</span><span class="info-value">30% 推荐奖励 → 上级 · 70% 永久销毁</span></div>
-      <div class="info-row"><span class="info-label">出局规则</span><span class="info-value">单卡累计应得分红达 300.00 U 三倍出局</span></div>
-      <button id="buyBtn" class="btn btn-primary mt12">🛒 购买卡牌</button>
-    </div>
-
-    <div class="card">
-      <h3>📜 玩法说明</h3>
-      <ul class="rules-list">
-        <li>代币总量固定 1000 万枚，永不增发；池子全部交易手续费自动进入分红池。</li>
-        <li>常规税率：买入 3%、卖出 3%；开盘 3 分钟内卖出税 18%、每地址限购 50U（防机器人），3 分钟后恢复常规。</li>
-        <li>系统内在线有效卡牌最多 520 张，卡牌出局释放名额、循环补充。</li>
-        <li>每张卡牌独立计时：从自身铸造时间起，按权重瓜分分红池手续费（金本位 U）。</li>
-        <li>单卡累计应得分红（已领取 + 待领取）达 300U 即出局，出局后待领取分红仍可领取。</li>
-        <li>分红手动领取，未领取部分持续累积；领取不影响出局判断。</li>
-        <li>购买前置条件：有效卡牌 &lt; 520 且已绑定上级；预言机报价偏离基准 ±10% 时购买回滚。</li>
-      </ul>
+      <div class="module">
+        <div class="module-head">
+          <span class="module-title">购买卡牌</span>
+          <span class="module-badge">100 U</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">按当前价格需支付</span>
+          <span class="data-value hi" id="buyTokensNeeded">--</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">我的代币余额</span>
+          <span class="data-value" id="buyBalanceHint">--</span>
+        </div>
+        <button id="buyBtn" class="btn btn-primary btn-block mt16">购买卡牌</button>
+      </div>
     </div>
   </div>
 
   <!-- ================= 我的卡牌 ================= -->
   <div id="cardsPage" class="page">
-    <div class="flex" style="justify-content:space-between;margin-bottom:16px">
-      <h3 style="font-size:18px">🎴 我的卡牌（<span id="myCardCount">0</span> 张）</h3>
+    <div class="page-head">
+      <div class="page-title">我的卡牌 · <span id="myCardCount">0</span></div>
       <button id="claimAllBtn" class="btn btn-primary btn-sm">一键领取全部</button>
     </div>
-    <div id="cardList"><div class="empty-tip">连接钱包后查看卡牌分红</div></div>
+    <div id="cardList"><div class="empty-tip">连接钱包后查看</div></div>
   </div>
 
   <!-- ================= 邀请 ================= -->
   <div id="invitePage" class="page">
-    <div class="card">
-      <h3>🤝 邀请好友</h3>
-      <div class="info-row"><span class="info-label">我的上级</span><span class="info-value highlight" id="inviteMyReferrer">未绑定</span></div>
-      <div class="info-row"><span class="info-label">推荐奖励</span><span class="info-value">好友每次购买卡牌，其支付金额的 30% 自动转入您的钱包</span></div>
-      <div class="input-group mt16">
-        <label class="input-label">我的邀请链接（好友打开后自动填入推荐人）</label>
-        <input type="text" id="inviteLink" class="input" readonly>
+    <div class="module invite-wrap">
+      <div class="module-head">
+        <span class="module-title">邀请</span>
+        <span class="module-badge">INVITE</span>
       </div>
-      <button id="copyBtn" class="btn btn-secondary">📋 复制邀请链接</button>
+      <div class="data-row">
+        <span class="data-label">我的上级</span>
+        <span class="data-value hi" id="inviteMyReferrer">--</span>
+      </div>
+      <div class="mt16">
+        <input type="text" id="inviteLink" class="input" readonly style="margin-bottom:14px">
+        <button id="copyBtn" class="btn btn-ghost btn-block">复制邀请链接</button>
+      </div>
     </div>
   </div>
 
@@ -222,137 +304,98 @@ textarea.input{resize:vertical;min-height:100px;font-family:monospace}
   <div id="adminPage" class="page">
     <div class="empty-tip" id="adminEmpty">连接管理员钱包后显示管理面板</div>
     <div id="adminPanels" style="display:none">
-
-      <div class="admin-block" id="adminSaleBlock" style="display:none">
-        <div class="admin-title">🛒 销售合约管理（Owner）</div>
-        <div class="info-row"><span class="info-label">开盘状态</span><span class="info-value" id="adminLaunched"></span></div>
-        <div class="info-row"><span class="info-label">合约暂停</span><span class="info-value" id="adminPaused"></span></div>
-        <div class="info-row"><span class="info-label">有效卡牌</span><span class="info-value" id="adminActiveCards"></span></div>
-        <div class="info-row"><span class="info-label">核心配置</span><span class="info-value" id="adminSaleCoreLocked"></span></div>
-        <div class="flex mt12">
-          <button id="adminLaunchBtn" class="btn btn-primary btn-sm">开盘</button>
-          <button id="adminPauseBtn" class="btn btn-secondary btn-sm">暂停合约</button>
-          <button id="adminUnpauseBtn" class="btn btn-secondary btn-sm">恢复合约</button>
-          <button id="adminSaleLockCoreBtn" class="btn btn-danger btn-sm">🔒 锁定核心配置</button>
-        </div>
-        <div class="mt16">
-          <div class="input-group">
-            <label class="input-label">预分发卡牌（仅开盘前可用；每行一个钱包地址）</label>
-            <textarea id="adminMintList" class="input" placeholder="0x...&#10;0x..."></textarea>
+      <div class="admin-grid">
+        <div class="admin-grid-item" id="adminSaleBlock" style="display:none">
+          <div class="admin-title">销售合约</div>
+          <div class="data-row"><span class="data-label">开盘状态</span><span class="data-value" id="adminLaunched"></span></div>
+          <div class="data-row"><span class="data-label">合约暂停</span><span class="data-value" id="adminPaused"></span></div>
+          <div class="data-row"><span class="data-label">有效卡牌</span><span class="data-value" id="adminActiveCards"></span></div>
+          <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminSaleCoreLocked"></span></div>
+          <div class="flex mt12">
+            <button id="adminLaunchBtn" class="btn btn-primary btn-sm">开盘</button>
+            <button id="adminPauseBtn" class="btn btn-ghost btn-sm">暂停</button>
+            <button id="adminUnpauseBtn" class="btn btn-ghost btn-sm">恢复</button>
+            <button id="adminSaleLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
-          <button id="adminMintBtn" class="btn btn-primary btn-sm">预分发卡牌</button>
+          <div class="mt16">
+            <textarea id="adminMintList" class="input" placeholder="预分发卡牌（每行一个钱包地址，仅开盘前）"></textarea>
+            <button id="adminMintBtn" class="btn btn-primary btn-sm mt12">预分发</button>
+          </div>
+        </div>
+
+        <div class="admin-grid-item" id="adminTokenBlock" style="display:none">
+          <div class="admin-title">代币</div>
+          <div class="data-row"><span class="data-label">交易状态</span><span class="data-value" id="adminTradingEnabled"></span></div>
+          <div class="data-row"><span class="data-label">分红池</span><span class="data-value hi" id="adminDividendPool"></span></div>
+          <div class="data-row"><span class="data-label">预言机</span><span class="data-value hi" id="adminOracleAddr"></span></div>
+          <div class="data-row"><span class="data-label">待生效预言机</span><span class="data-value" id="adminPendingOracle"></span></div>
+          <div class="data-row"><span class="data-label">开盘保护</span><span class="data-value" id="adminLaunchWindow"></span></div>
+          <div class="mt12"><input type="text" id="adminSetPoolInput" class="input" placeholder="分红池地址"><button id="adminSetPoolBtn" class="btn btn-primary btn-sm mt8">设置分红池</button></div>
+          <div class="mt12"><input type="text" id="adminSetOracleInput" class="input" placeholder="预言机地址（仅首次）"><button id="adminSetOracleBtn" class="btn btn-primary btn-sm mt8">设置预言机</button></div>
+          <div class="mt12"><input type="text" id="adminProposeOracleInput" class="input" placeholder="新预言机地址（24h 时间锁）">
+            <div class="flex mt8"><button id="adminProposeOracleBtn" class="btn btn-ghost btn-sm">提议更换</button><button id="adminApplyOracleBtn" class="btn btn-ghost btn-sm">应用变更</button></div>
+          </div>
+          <div class="mt12"><input type="text" id="adminAddLpInput" class="input" placeholder="新 LP 交易对地址"><button id="adminAddLpBtn" class="btn btn-primary btn-sm mt8">登记 LP</button></div>
+          <div class="flex mt12">
+            <button id="adminEnableTradingBtn" class="btn btn-primary btn-sm">开启交易</button>
+            <button id="adminGrantMinterBtn" class="btn btn-ghost btn-sm">授予铸币权</button>
+          </div>
+        </div>
+
+        <div class="admin-grid-item" id="adminPoolBlock" style="display:none">
+          <div class="admin-title">分红池</div>
+          <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
+          <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
+          <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
+          <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
+          <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminPoolCoreLocked"></span></div>
+          <div class="flex mt12">
+            <button id="adminPoolPauseBtn" class="btn btn-danger btn-sm">暂停领取</button>
+            <button id="adminPoolUnpauseBtn" class="btn btn-ghost btn-sm">恢复领取</button>
+          </div>
+          <div class="flex mt12">
+            <button id="adminSweepBtn" class="btn btn-ghost btn-sm">清理出局</button>
+            <button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm">提取超额</button>
+            <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
+          </div>
+          <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
+        </div>
+
+        <div class="admin-grid-item" id="adminOracleBlock" style="display:none">
+          <div class="admin-title">预言机</div>
+          <div class="data-row"><span class="data-label">最新价格</span><span class="data-value" id="adminOraclePrice"></span></div>
+          <div class="data-row"><span class="data-label">基准价</span><span class="data-value" id="adminOracleBase"></span></div>
+          <div class="data-row"><span class="data-label">最近更新</span><span class="data-value" id="adminOracleLast"></span></div>
+          <div class="data-row"><span class="data-label">价格偏差</span><span class="data-value" id="adminOracleDeviation"></span></div>
+          <div id="adminUpdaterBlock" style="display:none" class="mt12">
+            <input type="number" step="any" id="adminPriceInput" class="input" placeholder="最新价格 U/枚">
+            <button id="adminSetPriceBtn" class="btn btn-primary btn-sm mt8">推送价格</button>
+            <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill"></div></div>
+          </div>
+          <div id="adminBasePriceBlock" style="display:none" class="mt12">
+            <input type="number" step="any" id="adminBasePriceInput" class="input" placeholder="基准价 U/枚">
+            <button id="adminSetBasePriceBtn" class="btn btn-primary btn-sm mt8">设置基准价</button>
+          </div>
+          <div id="adminUpdaterManageBlock" style="display:none" class="mt12">
+            <input type="text" id="adminAddUpdaterInput" class="input" placeholder="推送者地址">
+            <button id="adminAddUpdaterBtn" class="btn btn-primary btn-sm mt8">添加推送者</button>
+          </div>
+        </div>
+
+        <div class="admin-grid-item" id="adminNftBlock" style="display:none">
+          <div class="admin-title">卡牌 NFT</div>
+          <div class="mt12"><input type="number" min="1" id="adminBurnInput" class="input" placeholder="tokenId 销毁异常卡牌"><button id="adminBurnBtn" class="btn btn-danger btn-sm mt8">销毁卡牌</button></div>
         </div>
       </div>
-
-      <div class="admin-block" id="adminOracleBlock" style="display:none">
-        <div class="admin-title">🔮 预言机管理</div>
-        <div class="info-row"><span class="info-label">最新价格</span><span class="info-value" id="adminOraclePrice"></span></div>
-        <div class="info-row"><span class="info-label">基准价</span><span class="info-value" id="adminOracleBase"></span></div>
-        <div class="info-row"><span class="info-label">最近更新时间</span><span class="info-value" id="adminOracleLast"></span></div>
-        <div class="info-row"><span class="info-label">价格偏差</span><span class="info-value" id="adminOracleDeviation"></span></div>
-        <div id="adminUpdaterBlock" style="display:none" class="mt16">
-          <div class="input-group">
-            <label class="input-label">推送最新价格（U/枚，每 30 秒一次）</label>
-            <input type="number" step="any" id="adminPriceInput" class="input" placeholder="0.01">
-          </div>
-          <button id="adminSetPriceBtn" class="btn btn-primary btn-sm">推送价格</button>
-          <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill"></div></div>
-        </div>
-        <div id="adminBasePriceBlock" style="display:none" class="mt16">
-          <div class="input-group">
-            <label class="input-label">设置基准价（U/枚，±10% 波动校验的基准）</label>
-            <input type="number" step="any" id="adminBasePriceInput" class="input" placeholder="0.01">
-          </div>
-          <button id="adminSetBasePriceBtn" class="btn btn-primary btn-sm">设置基准价</button>
-        </div>
-        <div id="adminUpdaterManageBlock" style="display:none" class="mt16">
-          <div class="input-group">
-            <label class="input-label">添加推送者（白名单地址，可多套脚本互为备份）</label>
-            <input type="text" id="adminAddUpdaterInput" class="input" placeholder="0x...">
-          </div>
-          <button id="adminAddUpdaterBtn" class="btn btn-primary btn-sm">添加推送者</button>
-        </div>
-      </div>
-
-      <div class="admin-block" id="adminPoolBlock" style="display:none">
-        <div class="admin-title">💰 分红池管理（Owner）</div>
-        <div class="info-row"><span class="info-label">池内代币余额</span><span class="info-value" id="adminPoolBalance"></span></div>
-        <div class="info-row"><span class="info-label">金本位负债（待领取合计）</span><span class="info-value" id="adminPoolLiability"></span></div>
-        <div class="info-row"><span class="info-label">超额资金</span><span class="info-value" id="adminPoolExcess"></span></div>
-        <div class="info-row"><span class="info-label">暂停状态（紧急止损）</span><span class="info-value" id="adminPoolPaused"></span></div>
-        <div class="info-row"><span class="info-label">核心配置</span><span class="info-value" id="adminPoolCoreLocked"></span></div>
-        <div class="flex mt12">
-          <button id="adminSweepBtn" class="btn btn-secondary btn-sm">清理出局卡牌</button>
-          <button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm">提取超额资金</button>
-          <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">🔒 锁定核心配置</button>
-        </div>
-        <div class="flex mt12">
-          <button id="adminPoolPauseBtn" class="btn btn-danger btn-sm">⏸ 暂停领取</button>
-          <button id="adminPoolUnpauseBtn" class="btn btn-secondary btn-sm">▶ 恢复领取</button>
-        </div>
-        <div class="mt16">
-          <div class="input-group">
-            <label class="input-label">异常卡牌处理：输入 tokenId 强制出局（释放名额，待领取分红保留）</label>
-            <input type="number" min="1" id="adminForceExitInput" class="input" placeholder="1">
-          </div>
-          <button id="adminForceExitBtn" class="btn btn-danger btn-sm">强制出局</button>
-        </div>
-      </div>
-
-      <div class="admin-block" id="adminNftBlock" style="display:none">
-        <div class="admin-title">🎴 卡牌管理（NFT Admin）</div>
-        <div class="input-group">
-          <label class="input-label">异常卡牌销毁：输入 tokenId（先在分红池强制出局，再销毁）</label>
-          <input type="number" min="1" id="adminBurnInput" class="input" placeholder="1">
-        </div>
-        <button id="adminBurnBtn" class="btn btn-danger btn-sm">销毁卡牌</button>
-      </div>
-
-      <div class="admin-block" id="adminTokenBlock" style="display:none">
-        <div class="admin-title">🪙 代币管理（Admin）</div>
-        <div class="info-row"><span class="info-label">交易状态</span><span class="info-value" id="adminTradingEnabled"></span></div>
-        <div class="info-row"><span class="info-label">分红池地址</span><span class="info-value highlight" id="adminDividendPool"></span></div>
-        <div class="info-row"><span class="info-label">预言机地址</span><span class="info-value highlight" id="adminOracleAddr"></span></div>
-        <div class="info-row"><span class="info-label">开盘保护窗口</span><span class="info-value" id="adminLaunchWindow"></span></div>
-        <div class="input-group mt16">
-          <label class="input-label">设置分红池地址</label>
-          <input type="text" id="adminSetPoolInput" class="input" placeholder="0x...">
-        </div>
-        <button id="adminSetPoolBtn" class="btn btn-primary btn-sm">设置分红池</button>
-        <div class="info-row"><span class="info-label">待生效预言机</span><span class="info-value highlight" id="adminPendingOracle"></span></div>
-        <div class="input-group mt16">
-          <label class="input-label">设置预言机地址（仅首次设置，立即生效；开启交易前必填）</label>
-          <input type="text" id="adminSetOracleInput" class="input" placeholder="0x...">
-        </div>
-        <button id="adminSetOracleBtn" class="btn btn-primary btn-sm">设置预言机</button>
-        <div class="input-group mt16">
-          <label class="input-label">提议更换预言机（24 小时时间锁后生效）</label>
-          <input type="text" id="adminProposeOracleInput" class="input" placeholder="0x...">
-        </div>
-        <div class="flex">
-          <button id="adminProposeOracleBtn" class="btn btn-secondary btn-sm">提议更换</button>
-          <button id="adminApplyOracleBtn" class="btn btn-secondary btn-sm">应用已到期变更</button>
-        </div>
-        <div class="input-group mt16">
-          <label class="input-label">添加 LP 交易对地址（上线新 DEX 时登记，仅白名单内交易对征税）</label>
-          <input type="text" id="adminAddLpInput" class="input" placeholder="0x...">
-        </div>
-        <button id="adminAddLpBtn" class="btn btn-primary btn-sm">添加 LP 交易对</button>
-        <div class="flex mt12">
-          <button id="adminEnableTradingBtn" class="btn btn-primary btn-sm">开启交易</button>
-          <button id="adminGrantMinterBtn" class="btn btn-secondary btn-sm">授予销售合约铸币权</button>
-        </div>
-      </div>
-
     </div>
   </div>
 
   <!-- 底部导航 -->
   <div class="bottom-nav">
-    <button class="nav-item active" data-page="homePage">🏠 首页</button>
-    <button class="nav-item" data-page="cardsPage">🎴 我的卡牌</button>
-    <button class="nav-item" data-page="invitePage">🤝 邀请</button>
-    <button class="nav-item" data-page="adminPage">⚙️ 管理</button>
+    <button class="nav-item active" data-page="homePage"><span class="nav-ic">◈</span>首页</button>
+    <button class="nav-item" data-page="cardsPage"><span class="nav-ic">▦</span>我的卡牌</button>
+    <button class="nav-item" data-page="invitePage"><span class="nav-ic">✦</span>邀请</button>
+    <button class="nav-item" data-page="adminPage"><span class="nav-ic">⚙</span>管理</button>
   </div>
 </div>
 
@@ -479,7 +522,7 @@ const ABIS = {
  * ============================================================ */
 const $ = (id) => document.getElementById(id);
 const DOM = {
-  globalLoader: $('globalLoader'), chainBadge: $('chainBadge'),
+  globalLoader: $('globalLoader'), chainBadge: $('chainBadge'), chainText: $('chainText'),
   connectBtn: $('connectBtn'), walletInfo: $('walletInfo'),
   walletAddressDisplay: $('walletAddressDisplay'), disconnectBtn: $('disconnectBtn'),
   particles: $('particles'),
@@ -488,9 +531,10 @@ const DOM = {
   activeCardsDisplay: $('activeCardsDisplay'), launchStatus: $('launchStatus'),
   launchWindowBanner: $('launchWindowBanner'), launchWindowRemaining: $('launchWindowRemaining'),
   userTokenBalance: $('userTokenBalance'), userTokenBalanceU: $('userTokenBalanceU'),
+  dashCardCount: $('dashCardCount'), myTotalPending: $('myTotalPending'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
-  buyTokensNeeded: $('buyTokensNeeded'), buyBtn: $('buyBtn'),
+  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyBtn: $('buyBtn'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
   adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'),
@@ -676,8 +720,10 @@ function disconnectWallet() {
   DOM.walletInfo.style.display = 'none';
   DOM.bindArea.style.display = '';
   DOM.boundArea.style.display = 'none';
-  DOM.cardList.innerHTML = '<div class="empty-tip">连接钱包后查看卡牌分红</div>';
+  DOM.cardList.innerHTML = '<div class="empty-tip">连接钱包后查看</div>';
   DOM.myCardCount.innerText = '0';
+  DOM.dashCardCount.innerText = '0';
+  DOM.myTotalPending.innerText = '-- U';
   DOM.userTokenBalance.innerText = '--';
   DOM.userTokenBalanceU.innerText = '≈ -- U';
   DOM.adminPanels.style.display = 'none';
@@ -687,21 +733,21 @@ function disconnectWallet() {
 
 async function checkChain() {
   if (!window.ethereum) {
-    DOM.chainBadge.innerText = '未检测到钱包';
-    DOM.chainBadge.style.color = '#ff6b81';
+    DOM.chainText.innerText = '未检测到钱包';
+    DOM.chainBadge.style.color = '#fb7185';
     return;
   }
   try {
     const cid = await window.ethereum.request({ method: 'eth_chainId' });
     if (cid === CONFIG.chainIdHex) {
-      DOM.chainBadge.innerText = CONFIG.chainName;
-      DOM.chainBadge.style.color = '#2ed573';
+      DOM.chainText.innerText = CONFIG.chainName;
+      DOM.chainBadge.style.color = '';
     } else {
-      DOM.chainBadge.innerText = '网络错误，点击连接以切换';
-      DOM.chainBadge.style.color = '#ffc107';
+      DOM.chainText.innerText = '网络错误，点击连接以切换';
+      DOM.chainBadge.style.color = '#f5c14c';
     }
   } catch (e) {
-    DOM.chainBadge.innerText = '网络检测失败';
+    DOM.chainText.innerText = '网络检测失败';
   }
 }
 
@@ -733,18 +779,22 @@ async function loadStats() {
   const dev = pd[3];
   DOM.deviationDisplay.innerText = dev.gt(100000)
     ? '--' : (Number(dev) / 100).toFixed(2) + '%';
-  DOM.poolBalanceU.innerText = '≈ ' + (price.isZero() ? '--' : fmtCents(tokensToUCents(balBN, price))) + '（金本位）';
+  DOM.poolBalanceU.innerText = (price.isZero() ? '--' : fmtCents(tokensToUCents(balBN, price)));
 
   // 开盘状态
   try {
     const launched = await saleC.launched();
     const paused = await saleC.paused();
-    DOM.launchStatus.innerText = launched
-      ? (paused ? '状态：已开盘 · 已暂停' : '状态：已开盘 · 分红进行中')
-      : '状态：未开盘（仅管理员预分发）';
+    if (launched) {
+      DOM.launchStatus.innerHTML = paused
+        ? '<span class="chip chip-off">已暂停</span>'
+        : '<span class="chip chip-ok">分红进行中</span>';
+    } else {
+      DOM.launchStatus.innerHTML = '<span class="chip chip-warn">未开盘</span>';
+    }
   } catch (e) { /* ignore */ }
 
-  // 开盘防机器人窗口横幅
+  // 开盘防机器人窗口状态条
   try {
     const winActive = await tokenC.launchWindowActive();
     if (winActive) {
@@ -760,7 +810,8 @@ async function loadStats() {
   if (userAddress) {
     const bal = await tokenC.balanceOf(userAddress);
     DOM.userTokenBalance.innerText = fmtTokens(bal) + ' ' + tokenSymbol;
-    DOM.userTokenBalanceU.innerText = '≈ ' + (price.isZero() ? '--' : fmtCents(tokensToUCents(bal, price))) + ' U（金本位）';
+    DOM.userTokenBalanceU.innerText = (price.isZero() ? '--' : fmtCents(tokensToUCents(bal, price)));
+    DOM.buyBalanceHint.innerText = fmtTokens(bal) + ' ' + tokenSymbol;
   }
 
   // 购买所需代币
@@ -768,7 +819,7 @@ async function loadStats() {
     const need = await saleC.requiredTokensForCard();
     DOM.buyTokensNeeded.innerText = need.isZero()
       ? '--（价格未就绪）'
-      : fmtTokensFull(need) + ' ' + tokenSymbol + '（约 100 U）';
+      : fmtTokensFull(need) + ' ' + tokenSymbol;
   } catch (e) { DOM.buyTokensNeeded.innerText = '--'; }
 
   // 管理面板数据
@@ -785,7 +836,7 @@ async function loadUser() {
   } else {
     DOM.bindArea.style.display = '';
     DOM.boundArea.style.display = 'none';
-    DOM.inviteMyReferrer.innerText = '未绑定（购买前必须先绑定）';
+    DOM.inviteMyReferrer.innerText = '未绑定';
   }
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
@@ -794,9 +845,11 @@ async function loadCards() {
   const bal = await nftC.balanceOf(userAddress);
   const count = Number(bal.toString());
   DOM.myCardCount.innerText = count;
+  DOM.dashCardCount.innerText = count;
 
   if (count === 0) {
-    DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌，快去购买或绑定上级吧</div>';
+    DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
+    DOM.myTotalPending.innerText = '0.00 U';
     return;
   }
 
@@ -813,22 +866,43 @@ async function loadCards() {
   }
   rows.sort((a, b) => a.tokenId.lt(b.tokenId) ? -1 : 1);
 
+  // 待领取合计（首页 KPI）
+  let totalPending = BN.from(0);
+  rows.forEach(r => { totalPending = totalPending.add(r.pending); });
+  DOM.myTotalPending.innerText = fmtCents(totalPending);
+
   DOM.cardList.innerHTML = rows.map(r => {
     const pendingZero = r.pending.isZero();
+    const pct = Math.min(100, Number(r.accrued) / 300); // 300U 出局线进度
     return `
-    <div class="card-row" data-token="${r.tokenId.toString()}">
-      <div class="card-row-head">
-        <span class="card-id">#${r.tokenId.toString()}</span>
-        ${r.active ? '<span class="badge badge-active">有效</span>' : '<span class="badge badge-exited">已出局</span>'}
+    <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
+      <div class="nft-top">
+        <div class="flex">
+          <span class="nft-id">#${r.tokenId.toString()}</span>
+          ${r.active ? '<span class="badge badge-active">有效</span>' : '<span class="badge badge-exited">已出局</span>'}
+        </div>
+        <div class="nft-entry">入场<br>${fmtTime(r.entryTime)}</div>
       </div>
-      <div class="card-row-grid">
-        <div class="card-cell">入场时间<b>${fmtTime(r.entryTime)}</b></div>
-        <div class="card-cell">累计应得<b>${fmtCents(r.accrued)}</b></div>
-        <div class="card-cell">已领取<b>${fmtCents(r.claimed)}</b></div>
-        <div class="card-cell">待领取<b class="pending">${fmtCents(r.pending)}</b></div>
+      <div class="nft-metrics">
+        <div class="metric">
+          <span class="metric-label">累计应得</span>
+          <span class="metric-value">${fmtCents(r.accrued)}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">已领取</span>
+          <span class="metric-value">${fmtCents(r.claimed)}</span>
+        </div>
+        <div class="metric metric-gold">
+          <span class="metric-label">待领取</span>
+          <span class="metric-value">${fmtCents(r.pending)}</span>
+        </div>
       </div>
-      <button class="btn btn-primary btn-sm claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero ? 'disabled' : ''}>
-        ${r.active ? '领取分红' : (pendingZero ? '无待领取' : '领取分红')}
+      <div class="exit-progress">
+        <div class="exit-track"><div class="exit-fill${pct >= 100 ? ' done' : ''}" style="width:${pct.toFixed(2)}%"></div></div>
+        <div class="exit-meta"><span class="pct">${pct.toFixed(2)}%</span><span>出局线 300 U</span></div>
+      </div>
+      <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero ? 'disabled' : ''}>
+        ${pendingZero ? '无待领取' : '领取分红'}
       </button>
     </div>`;
   }).join('');
@@ -1326,14 +1400,14 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 });
 
 (function makeParticles() {
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 40; i++) {
     const p = document.createElement('div');
     p.className = 'particle';
     p.style.setProperty('--rand-x', Math.random().toFixed(3));
     p.style.setProperty('--rand-y', Math.random().toFixed(3));
     p.style.setProperty('--delay', (Math.random() * 18).toFixed(1) + 's');
     p.style.setProperty('--duration', (10 + Math.random() * 14).toFixed(1) + 's');
-    p.style.width = p.style.height = (2 + Math.random() * 5).toFixed(0) + 'px';
+    p.style.width = p.style.height = (2 + Math.random() * 4).toFixed(0) + 'px';
     DOM.particles.appendChild(p);
   }
 })();
