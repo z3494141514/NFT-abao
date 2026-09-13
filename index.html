@@ -110,6 +110,22 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .btn-sm{padding:9px 18px;font-size:13px;border-radius:11px}
 .btn-block{width:100%}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+/* ---------- 数量选择器 ---------- */
+.qty-stepper{display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:99px;padding:4px 5px}
+.qty-btn{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+.qty-btn:disabled{opacity:.35;cursor:not-allowed}
+.qty-btn:hover:not(:disabled){transform:scale(1.1);box-shadow:0 4px 12px rgba(34,211,238,.4)}
+.qty-value{min-width:28px;text-align:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+/* ---------- 卡牌页汇总模块 ---------- */
+.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.mini-kpi{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px 17px;backdrop-filter:blur(14px);transition:border-color .3s}
+.mini-kpi:hover{border-color:var(--border-hi)}
+.mini-label{display:block;font-size:10.5px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;font-weight:700}
+.mini-value{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.mini-kpi.gold .mini-value{color:var(--gold)}
+/* ---------- 实时刷新徽标 ---------- */
+.live-chip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.08);padding:5px 12px;border-radius:99px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 /* ---------- 卡牌 ---------- */
 .page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
@@ -214,6 +230,13 @@ body{-webkit-tap-highlight-color:transparent}
 .admin-grid-item .btn,.admin-block .btn{padding:9px 13px;font-size:12px}
 .toast{font-size:12.5px;padding:11px 18px;top:14px;right:12px;border-radius:12px;max-width:78vw}
 .invite-wrap{max-width:100%}
+.mini-kpis{gap:8px;margin-bottom:12px}
+.mini-kpi{padding:11px 12px;border-radius:13px}
+.mini-value{font-size:15.5px}
+.mini-label{font-size:9px;margin-bottom:4px}
+.live-chip{font-size:10.5px;padding:4px 10px}
+.qty-btn{width:30px;height:30px;font-size:15px}
+.qty-value{font-size:15px;min-width:24px}
 }
 </style>
 </head>
@@ -308,10 +331,18 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="module">
         <div class="module-head">
           <span class="module-title">购买卡牌</span>
-          <span class="module-badge">100 U</span>
+          <span class="module-badge">100 U / 张</span>
         </div>
         <div class="data-row">
-          <span class="data-label">按当前价格需支付</span>
+          <span class="data-label">购买数量</span>
+          <div class="qty-stepper">
+            <button class="qty-btn" id="minusBtn" aria-label="减少">−</button>
+            <span class="qty-value" id="quantity">1</span>
+            <button class="qty-btn" id="plusBtn" aria-label="增加">+</button>
+          </div>
+        </div>
+        <div class="data-row">
+          <span class="data-label">需支付（<span id="buyQtyHint">1</span> 张）</span>
           <span class="data-value hi" id="buyTokensNeeded">--</span>
         </div>
         <div class="data-row">
@@ -327,7 +358,24 @@ body{-webkit-tap-highlight-color:transparent}
   <div id="cardsPage" class="page">
     <div class="page-head">
       <div class="page-title">我的卡牌 · <span id="myCardCount">0</span></div>
-      <button id="claimAllBtn" class="btn btn-primary btn-sm">一键领取全部</button>
+      <div class="flex">
+        <span class="live-chip"><span class="live-dot"></span>实时 · 10s 刷新</span>
+        <button id="claimAllBtn" class="btn btn-primary btn-sm">一键领取全部</button>
+      </div>
+    </div>
+    <div class="mini-kpis">
+      <div class="mini-kpi">
+        <span class="mini-label">总分红</span>
+        <span class="mini-value" id="cardsTotalAccrued">0.00 U</span>
+      </div>
+      <div class="mini-kpi">
+        <span class="mini-label">已领取</span>
+        <span class="mini-value" id="cardsTotalClaimed">0.00 U</span>
+      </div>
+      <div class="mini-kpi gold">
+        <span class="mini-label">待领取</span>
+        <span class="mini-value" id="cardsTotalPending">0.00 U</span>
+      </div>
     </div>
     <div id="cardList"><div class="empty-tip">连接钱包后查看</div></div>
   </div>
@@ -519,6 +567,7 @@ const ABIS = {
   ],
   sale: [
     'function mintCard()',
+    'function mintCardBatch(uint256 quantity)',
     'function bindReferrer(address referrer)',
     'function referrerOf(address) view returns (address)',
     'function launched() view returns (bool)',
@@ -585,6 +634,8 @@ const DOM = {
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
   buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyBtn: $('buyBtn'),
+  minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
+  cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
   adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'),
@@ -622,6 +673,9 @@ let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let refreshTimer = null, cooldownTimer = null;
 let lastOracleData = null; // {price, base, lastUpdate, deviation}
+let buyQuantity = 1;              // 购买数量
+let unitPriceTokens = null;       // 单卡所需代币（BigNumber）
+let remainingSlots = 520;         // 剩余可购买名额
 
 /* ============================================================
  * 工具函数
@@ -680,6 +734,7 @@ const parseError = (e) => {
   if (m.includes('update too fast')) return '推送过快，需等待 30 秒';
   if (m.includes('card already exists')) return '卡牌已存在';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
+  if (m.includes('buy batch too large')) return '单笔最多购买 10 张卡牌';
   if (m.includes('launch buy limit')) return '开盘 3 分钟内每个地址最多买入 50U 代币';
   if (m.includes('launch price not ready')) return '开盘窗口内价格未就绪，暂时无法买入';
   if (m.includes('not updater')) return '当前钱包不是预言机推送者';
@@ -715,6 +770,20 @@ const throttle = (fn, delay = 1000) => {
   };
 };
 const tokensToUCents = (tokensBN, priceBN) => tokensBN.mul(priceBN).mul(100).div(BN.from(10).pow(26));
+
+/* 购买数量联动展示 */
+function updateBuyDisplay() {
+  DOM.quantity.innerText = buyQuantity;
+  DOM.buyQtyHint.innerText = buyQuantity;
+  DOM.minusBtn.disabled = buyQuantity <= 1;
+  DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
+  DOM.buyBtn.innerText = `购买 ${buyQuantity} 张卡牌`;
+  if (unitPriceTokens && !unitPriceTokens.isZero()) {
+    DOM.buyTokensNeeded.innerText = fmtTokensFull(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
+  } else {
+    DOM.buyTokensNeeded.innerText = '--（价格未就绪）';
+  }
+}
 
 /* ============================================================
  * 钱包连接
@@ -796,10 +865,17 @@ function disconnectWallet() {
   DOM.myCardCount.innerText = '0';
   DOM.dashCardCount.innerText = '0';
   DOM.myTotalPending.innerText = '-- U';
+  DOM.cardsTotalAccrued.innerText = '0.00 U';
+  DOM.cardsTotalClaimed.innerText = '0.00 U';
+  DOM.cardsTotalPending.innerText = '0.00 U';
   DOM.userTokenBalance.innerText = '--';
   DOM.userTokenBalanceU.innerText = '≈ -- U';
   DOM.adminPanels.style.display = 'none';
   DOM.adminEmpty.style.display = '';
+  buyQuantity = 1;
+  unitPriceTokens = null;
+  remainingSlots = 520;
+  updateBuyDisplay();
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
 }
 
@@ -841,6 +917,7 @@ async function loadStats() {
   const [balBN, accU, liability, activeCards] = stats;
   DOM.poolTokenBalance.innerText = fmtTokens(balBN) + ' ' + tokenSymbol;
   DOM.activeCardsDisplay.innerText = `${activeCards.toString()} / 520`;
+  remainingSlots = Math.max(0, 520 - Number(activeCards.toString()));
 
   // 预言机
   const pd = await oracleC.getPriceData();
@@ -886,13 +963,11 @@ async function loadStats() {
     DOM.buyBalanceHint.innerText = fmtTokens(bal) + ' ' + tokenSymbol;
   }
 
-  // 购买所需代币
+  // 购买所需代币（单价 × 数量实时联动）
   try {
-    const need = await saleC.requiredTokensForCard();
-    DOM.buyTokensNeeded.innerText = need.isZero()
-      ? '--（价格未就绪）'
-      : fmtTokensFull(need) + ' ' + tokenSymbol;
-  } catch (e) { DOM.buyTokensNeeded.innerText = '--'; }
+    unitPriceTokens = await saleC.requiredTokensForCard();
+  } catch (e) { unitPriceTokens = null; }
+  updateBuyDisplay();
 
   // 管理面板数据
   loadAdminData();
@@ -928,6 +1003,9 @@ async function loadCards() {
   if (count === 0) {
     DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
     DOM.myTotalPending.innerText = '0.00 U';
+    DOM.cardsTotalAccrued.innerText = '0.00 U';
+    DOM.cardsTotalClaimed.innerText = '0.00 U';
+    DOM.cardsTotalPending.innerText = '0.00 U';
     return;
   }
 
@@ -944,13 +1022,20 @@ async function loadCards() {
   }
   rows.sort((a, b) => a.tokenId.lt(b.tokenId) ? -1 : 1);
 
-  // 待领取合计（首页 KPI）；单卡累计应得封顶 300U（30000 分），超出即异常数据，钳制为 0
+  // 汇总模块：总分红 / 已领取 / 待领取（单卡累计应得封顶 300U = 30000 分，超出即异常数据，钳制为 0）
   const clampCents = (v) => {
     const n = toNum(v);
     return (n >= 0 && n <= 30000) ? n : 0;
   };
-  let totalPending = 0;
-  rows.forEach(r => { totalPending += clampCents(r.pending); });
+  let totalAccrued = 0, totalClaimed = 0, totalPending = 0;
+  rows.forEach(r => {
+    totalAccrued += clampCents(r.accrued);
+    totalClaimed += clampCents(r.claimed);
+    totalPending += clampCents(r.pending);
+  });
+  DOM.cardsTotalAccrued.innerText = (totalAccrued / 100).toFixed(2) + ' U';
+  DOM.cardsTotalClaimed.innerText = (totalClaimed / 100).toFixed(2) + ' U';
+  DOM.cardsTotalPending.innerText = (totalPending / 100).toFixed(2) + ' U';
   DOM.myTotalPending.innerText = (totalPending / 100).toFixed(2) + ' U';
 
   DOM.cardList.innerHTML = rows.map(r => {
@@ -1130,21 +1215,22 @@ async function buyCard() {
     const need = await saleC.requiredTokensForCard();
     if (need.isZero()) { showToast('预言机价格未就绪', 'error'); return; }
 
+    const total = need.mul(buyQuantity);
     const bal = await tokenC.balanceOf(userAddress);
-    if (bal.lt(need)) { showToast('代币余额不足', 'error'); return; }
+    if (bal.lt(total)) { showToast('代币余额不足', 'error'); return; }
 
     const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
-    if (allowance.lt(need)) {
+    if (allowance.lt(total)) {
       showToast('请先在钱包中确认授权…', '');
       // 精确授权本次购买所需数量（不使用无限授权，降低风险敞口）
-      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, need);
+      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, total);
       await tx.wait();
       showToast('授权成功，继续购买…', 'success');
     }
 
-    const tx = await saleC.connect(signer).mintCard();
+    const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
     await tx.wait();
-    showToast('购买成功！卡牌已开始累积分红 🎉', 'success');
+    showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
@@ -1506,6 +1592,12 @@ DOM.connectBtn.addEventListener('click', connectWallet);
 DOM.disconnectBtn.addEventListener('click', disconnectWallet);
 DOM.bindBtn.addEventListener('click', throttle(bindReferrer, 1500));
 DOM.buyBtn.addEventListener('click', throttle(buyCard, 2000));
+DOM.minusBtn.addEventListener('click', () => {
+  if (buyQuantity > 1) { buyQuantity--; updateBuyDisplay(); }
+});
+DOM.plusBtn.addEventListener('click', () => {
+  if (buyQuantity < Math.min(10, remainingSlots)) { buyQuantity++; updateBuyDisplay(); }
+});
 DOM.claimAllBtn.addEventListener('click', throttle(claimAll, 2000));
 DOM.copyBtn.addEventListener('click', async () => {
   try {
