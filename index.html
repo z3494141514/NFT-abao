@@ -502,12 +502,12 @@ body{-webkit-tap-highlight-color:transparent}
  * 配置区：部署合约后把下面的地址替换为实际部署地址
  * ============================================================ */
 const CONFIG = {
-  chainId: 97,                                  // BSC 测试网
-  chainIdHex: '0x61',
-  chainName: 'BSC Testnet',
-  rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545/',
+  chainId: 56,                                  // BSC 主网
+  chainIdHex: '0x38',
+  chainName: 'BSC Mainnet',
+  rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
-    token:  '0x0000000000000000000000000000000000000001', // TODO 替换为 OfficialToken 地址
+    token:  '0x0000000000000000000000000000000000000001', // TODO 替换为 OfficialToken 主网地址
     nft:    '0x0000000000000000000000000000000000000002', // TODO 替换为 OfficialNFT 地址
     sale:   '0x0000000000000000000000000000000000000003', // TODO 替换为 OfficialNFTSale 地址
     pool:   '0x0000000000000000000000000000000000000004', // TODO 替换为 CardDividendPool 地址
