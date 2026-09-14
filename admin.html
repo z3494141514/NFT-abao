@@ -396,6 +396,7 @@ const throttle = (fn, delay = 1000) => {
   let t = null;
   return function(...a) {
     if (t) { showToast('操作太频繁，请稍后再试', 'error'); return; }
+    if (!userAddress) { showToast('请先连接钱包', 'error'); return; }
     t = setTimeout(() => { t = null; }, delay);
     return fn.apply(this, a);
   };
