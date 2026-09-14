@@ -376,7 +376,7 @@ body{-webkit-tap-highlight-color:transparent}
     </div>
     <div class="mini-kpis">
       <div class="mini-kpi">
-        <span class="mini-label">总分红</span>
+        <span class="mini-label">总累计应得</span>
         <span class="mini-value" id="cardsTotalAccrued">0.00 U</span>
       </div>
       <div class="mini-kpi">
@@ -698,11 +698,21 @@ const throttle = (fn, delay = 1000) => {
   let t = null;
   return function(...a) {
     if (t) { showToast('操作太频繁，请稍后再试', 'error'); return; }
+    if (!userAddress) { showToast('请先连接钱包', 'error'); return; }
     t = setTimeout(() => { t = null; }, delay);
     return fn.apply(this, a);
   };
 };
 const tokensToUCents = (tokensBN, priceBN) => tokensBN.mul(priceBN).mul(100).div(BN.from(10).pow(26));
+
+/* 未连接钱包的统一友好拦截 */
+const requireWallet = () => {
+  if (!userAddress) {
+    showToast('请先连接钱包', 'error');
+    return false;
+  }
+  return true;
+};
 
 /* 购买数量联动展示 */
 function updateBuyDisplay() {
@@ -1057,6 +1067,7 @@ async function loadCards() {
  * 业务操作
  * ============================================================ */
 async function doBindReferrer(ref) {
+  if (!requireWallet()) return;
   if (!ethers.utils.isAddress(ref)) { showToast('请输入合法的钱包地址', 'error'); return; }
   if (ref.toLowerCase() === userAddress.toLowerCase()) { showToast('不能绑定自己', 'error'); return; }
   showLoading();
@@ -1080,6 +1091,7 @@ async function bindReferrer() {
 }
 
 async function buyCard() {
+  if (!requireWallet()) return;
   showLoading();
   try {
     const launched = await saleC.launched();
@@ -1115,6 +1127,7 @@ async function buyCard() {
 }
 
 async function claimCard(tokenId) {
+  if (!requireWallet()) return;
   showLoading();
   try {
     const tx = await poolC.connect(signer).claim(tokenId);
@@ -1129,6 +1142,7 @@ async function claimCard(tokenId) {
 }
 
 async function claimAll() {
+  if (!requireWallet()) return;
   showLoading();
   try {
     const bal = await nftC.balanceOf(userAddress);
@@ -1199,6 +1213,7 @@ DOM.plusBtn.addEventListener('click', () => {
 });
 DOM.claimAllBtn.addEventListener('click', throttle(claimAll, 2000));
 DOM.copyBtn.addEventListener('click', async () => {
+  if (!requireWallet()) return;
   try {
     await navigator.clipboard.writeText(DOM.inviteLink.value);
     showToast('邀请链接已复制', 'success');
