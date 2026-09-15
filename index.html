@@ -1296,7 +1296,8 @@ async function loadCards() {
     const pndC = clampCents(r.pending);
     const fmtU = (c) => (c / 100).toFixed(2) + ' U';
     const pct = Math.min(100, accC / 300);
-    const remain = Math.max(0, 300 - accC);
+    // accC 单位是「分」，先换算成 U 再与 300U 相减
+    const remain = Math.max(0, 300 - accC / 100);
     const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
     const progressTxt = r.active
       ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
