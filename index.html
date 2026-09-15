@@ -180,6 +180,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 /* ---------- 推荐奖励金色大奖卡 ---------- */
 .reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12)),linear-gradient(180deg,rgba(26,27,44,.98),rgba(13,14,26,.99));border:1px solid rgba(245,193,76,.5);border-radius:22px;padding:26px 28px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;box-shadow:0 10px 40px rgba(245,193,76,.12)}
 .reward-hero::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:shine 3.6s ease-in-out 1.2s infinite;pointer-events:none}
+.reward-hero.anim-restart::after{animation:none}
 @keyframes shine{0%{left:-60%}55%,100%{left:130%}}
 .reward-hero-ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,193,76,.45);flex-shrink:0}
 .reward-hero-ic .ic{width:32px;height:32px;stroke:#fff;stroke-width:1.6}
@@ -1659,6 +1660,16 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     $(btn.dataset.page).classList.add('active');
+
+    // 团队页流光动画：display:none→block 时部分浏览器不重启动画，
+    // 强制重启一次（先挂 animation:none 再移除），保证从任意页面切入都正常跑
+    if (btn.dataset.page === 'teamPage') {
+      const heroes = document.querySelectorAll('#teamPage .reward-hero');
+      heroes.forEach(h => h.classList.add('anim-restart'));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        heroes.forEach(h => h.classList.remove('anim-restart'));
+      }));
+    }
   });
 });
 
