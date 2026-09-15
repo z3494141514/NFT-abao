@@ -649,7 +649,7 @@ const CONFIG = {
     nft:    '0x8C597CcECFCD796E4D8C8D8239cAa74ed05d2700', // OfficialNFT 主网
     sale:   '0xBF6A8B548f5402a929fb2501edAe2dE75983996B', // OfficialNFTSale 主网
     pool:   '0xcEb6aD1CA982Cf170E3D037d8FfFEe32D5fA28d3', // CardDividendPool 主网
-    oracle: '0xD80444b98d0528c5403163d7bF5191Ff306570BA'  // PriceOracle 主网
+    oracle: '0xD80444b98d0528c5403163d7bF5191Ff306570BA'  // PriceOracle 主网（⚠️ 已改版为 TWAP 适配器，重部署后必须更新）
   },
   refreshInterval: 10000  // 分红实时刷新间隔（毫秒）
 };
@@ -766,15 +766,7 @@ const ABIS = {
     'function swapFeesToUsdt()'
   ],
   oracle: [
-    'function getPriceData() view returns (uint256, uint256, uint256, uint256)',
-    'function setPrice(uint256)',
-    'function setBasePrice(uint256)',
-    'function owner() view returns (address)',
-    'function updater() view returns (address)',
-    'function isUpdater(address) view returns (bool)',
-    'function addUpdater(address)',
-    'function removeUpdater(address)',
-    'function MIN_UPDATE_INTERVAL() view returns (uint256)'
+    'function getPriceData() view returns (uint256, uint256, uint256, uint256)'
   ]
 };
 
@@ -884,7 +876,6 @@ const parseError = (e) => {
   if (m.includes('not launched')) return '尚未开盘';
   if (m.includes('pre-launch limit reached')) return '开盘前名额已满（220 张）';
   if (m.includes('usdt not configured')) return '预售收款币种未配置';
-  if (m.includes('base pool wallet not configured')) return '底池钱包未配置';
   if (m.includes('profit wallet not configured')) return '利润钱包未配置';
   if (m.includes('token reserve insufficient')) return '代币储备不足，请联系管理员充值';
   if (m.includes('pool not configured')) return '分红池地址未配置（需先 updateCore）';
@@ -892,31 +883,24 @@ const parseError = (e) => {
   if (m.includes('referrer already bound') || m.includes('已绑定')) return '已绑定过上级，不可更换';
   if (m.includes('cannot bind self')) return '不能绑定自己';
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
-  if (m.includes('price deviation')) return '价格波动超过 ±10%，购买已回滚';
-  if (m.includes('price too old')) return '预言机价格已过期';
   if (m.includes('nothing to claim')) return '暂无待领取分红';
   if (m.includes('not card owner')) return '您不是该卡牌的持有者';
   if (m.includes('already launched')) return '已开盘';
-  if (m.includes('update too fast')) return '推送过快，需等待 30 秒';
   if (m.includes('card already exists')) return '卡牌已存在';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
   if (m.includes('buy batch too large')) return '单笔最多购买 10 张卡牌';
   if (m.includes('claim batch too large')) return '单笔最多领取 100 张卡牌';
   if (m.includes('empty batch')) return '没有可领取的卡牌';
   if (m.includes('launch buy limit')) return '开盘 3 分钟内每个地址最多买入 50U 代币';
-  if (m.includes('launch price not ready')) return '开盘窗口内价格未就绪，暂时无法买入';
-  if (m.includes('not updater')) return '当前钱包不是预言机推送者';
+  if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）';
   if (m.includes('soulbound')) return '卡牌不可转让/转赠（灵魂绑定）';
   if (m.includes('paused')) return '合约已暂停，操作被拒绝';
-  if (m.includes('base change too large')) return '基准价单次调整不得超过 ±20%';
-  if (m.includes('base update too fast')) return '基准价调整过快，请 30 秒后再试';
   if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
   if (m.includes('card not found')) return '卡牌不存在';
   if (m.includes('oracle already set')) return '预言机已设置；更换请使用「提议更换」（24 小时生效）';
   if (m.includes('no pending oracle')) return '没有待应用的预言机变更';
   if (m.includes('oracle timelock')) return '预言机变更时间锁未到期（24 小时）';
   if (m.includes('dividend pool locked')) return '分红池地址已锁定（开盘后不可更换）';
-  if (m.includes('price change too large')) return '价格单次推送波动超过 ±10%，已拒绝';
   if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
   if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
   if (m.includes('only token contract')) return '该操作仅限代币合约调用';
@@ -1541,6 +1525,17 @@ async function buyCardPreLaunch() {
   const qty = Math.min(buyQuantity, preLaunchRemain);
   const ref = await saleC.referrerOf(userAddress);
   if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
+
+  // 预售储备预检：每张卡合约需消耗 7000 TTT（5000 加池 + 2000 空投）。
+  // 储备不足时合约会原子回滚（USDT 不会转出），这里提前拦截避免发出注定失败的交易。
+  try {
+    const needReserve = ethers.BigNumber.from(qty).mul(ethers.utils.parseUnits('7000', 18));
+    const reserve = await tokenC.balanceOf(CONFIG.contracts.sale);
+    if (reserve.lt(needReserve)) {
+      showToast('预售代币储备不足，请稍后再试或联系管理员充值', 'error');
+      return;
+    }
+  } catch (e) { /* 预检失败不阻断（合约仍会兜底回滚） */ }
 
   const usdtAddr = await saleC.usdt();
   if (!usdtAddr || usdtAddr === ZERO_ADDR) { showToast('预售收款币种未配置', 'error'); return; }

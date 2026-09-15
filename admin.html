@@ -68,7 +68,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
 .empty-tip{text-align:center;color:var(--muted);padding:56px 0;font-size:13.5px;letter-spacing:.5px}
-.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px}
+.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px;display:none}
 .cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
 .toast{background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:76vw;text-align:left;backdrop-filter:blur(16px);animation:toastIn .25s cubic-bezier(.22,.8,.36,1)}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
@@ -152,6 +152,13 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <button id="adminPreConfigSaveBtn" class="btn btn-primary btn-sm mt12">保存预售配置</button>
           <button id="adminWithdrawReserveBtn" class="btn btn-primary btn-sm mt8">提取 TTT 储备（未用完部分）</button>
           <button id="adminWithdrawPreUsdtBtn" class="btn btn-ghost btn-sm mt8">提取滞留 USDT（滑点粉尘）</button>
+          <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
+          <div class="mt12"><input type="text" id="adminUpdateCoreToken" class="input" placeholder="代币地址"></div>
+          <div class="mt12"><input type="text" id="adminUpdateCoreRouter" class="input" placeholder="路由地址"></div>
+          <div class="mt12"><input type="text" id="adminUpdateCoreNft" class="input" placeholder="NFT 地址"></div>
+          <div class="mt12"><input type="text" id="adminUpdateCorePool" class="input" placeholder="分红池地址"></div>
+          <div class="mt12"><input type="text" id="adminUpdateCoreOracle" class="input" placeholder="预言机地址"></div>
+          <button id="adminUpdateCoreBtn" class="btn btn-primary btn-sm mt12">更新核心配置</button>
         </div>
 
         <div class="admin-grid-item" id="adminTokenBlock" style="display:none">
@@ -175,6 +182,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <div class="flex mt8"><button id="adminProposeOracleBtn" class="btn btn-ghost btn-sm">提议更换</button><button id="adminApplyOracleBtn" class="btn btn-ghost btn-sm">应用变更</button></div>
           </div>
           <div class="mt12"><input type="text" id="adminAddLpInput" class="input" placeholder="新 LP 交易对地址"><button id="adminAddLpBtn" class="btn btn-primary btn-sm mt8">登记 LP</button></div>
+          <div class="mt12"><input type="text" id="adminSetLpPairInput" class="input" placeholder="主 LP 交易对地址（启动 1h 时间锁，开盘必需）"><button id="adminSetLpPairBtn" class="btn btn-primary btn-sm mt8">设置主 LP</button></div>
           <div class="flex mt12">
             <button id="adminEnableTradingBtn" class="btn btn-primary btn-sm">开启交易</button>
             <button id="adminGrantMinterBtn" class="btn btn-ghost btn-sm">授予铸币权</button>
@@ -201,34 +209,34 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
+          <div class="mt12"><input type="number" min="1" id="adminReleaseBurnedInput" class="input" placeholder="tokenId 释放已销毁卡牌负债"><button id="adminReleaseBurnedBtn" class="btn btn-ghost btn-sm mt8">释放负债</button></div>
           <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
           <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
+          <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
+          <div class="mt12"><input type="text" id="adminPoolCoreToken" class="input" placeholder="代币地址"></div>
+          <div class="mt12"><input type="text" id="adminPoolCoreUsdt" class="input" placeholder="USDT 地址"></div>
+          <div class="mt12"><input type="text" id="adminPoolCoreRouter" class="input" placeholder="路由地址"></div>
+          <div class="mt12"><input type="text" id="adminPoolCoreNft" class="input" placeholder="NFT 地址"></div>
+          <div class="mt12"><input type="text" id="adminPoolCoreSale" class="input" placeholder="销售合约地址"></div>
+          <button id="adminPoolCoreBtn" class="btn btn-primary btn-sm mt12">更新核心配置</button>
         </div>
 
         <div class="admin-grid-item" id="adminOracleBlock" style="display:none">
-          <div class="admin-title">预言机</div>
-          <div class="data-row"><span class="data-label">最新价格</span><span class="data-value" id="adminOraclePrice"></span></div>
-          <div class="data-row"><span class="data-label">基准价</span><span class="data-value" id="adminOracleBase"></span></div>
-          <div class="data-row"><span class="data-label">最近更新</span><span class="data-value" id="adminOracleLast"></span></div>
-          <div class="data-row"><span class="data-label">价格偏差</span><span class="data-value" id="adminOracleDeviation"></span></div>
-          <div id="adminUpdaterBlock" style="display:none" class="mt12">
-            <input type="number" step="any" id="adminPriceInput" class="input" placeholder="最新价格 U/枚">
-            <button id="adminSetPriceBtn" class="btn btn-primary btn-sm mt8">推送价格</button>
-            <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill"></div></div>
-          </div>
-          <div id="adminBasePriceBlock" style="display:none" class="mt12">
-            <input type="number" step="any" id="adminBasePriceInput" class="input" placeholder="基准价 U/枚">
-            <button id="adminSetBasePriceBtn" class="btn btn-primary btn-sm mt8">设置基准价</button>
-          </div>
-          <div id="adminUpdaterManageBlock" style="display:none" class="mt12">
-            <input type="text" id="adminAddUpdaterInput" class="input" placeholder="推送者地址">
-            <button id="adminAddUpdaterBtn" class="btn btn-primary btn-sm mt8">添加推送者</button>
-          </div>
+          <div class="admin-title">实时价格（5 分钟 TWAP · 全自动）</div>
+          <div class="data-row"><span class="data-label">当前 TWAP 价格</span><span class="data-value hi" id="adminOraclePrice"></span></div>
+          <div class="data-row"><span class="data-label">价格观测点</span><span class="data-value" id="adminOracleObs"></span></div>
+          <div class="data-row"><span class="data-label">最低流动性门槛</span><span class="data-value" id="adminOracleMinLiq"></span></div>
+          <div class="data-row"><span class="data-label">配置锁定</span><span class="data-value" id="adminOracleLocked"></span></div>
+          <div class="mt12"><button id="adminPokeBtn" class="btn btn-primary btn-sm">记录价格观测点</button></div>
+          <div class="mt12"><input type="number" step="any" id="adminMinLiqInput" class="input" placeholder="最低流动性门槛（USDT，如 3000；0=关闭）"><button id="adminSetMinLiqBtn" class="btn btn-primary btn-sm mt8">设置门槛</button></div>
+          <div class="mt12"><button id="adminLockOracleBtn" class="btn btn-danger btn-sm">永久锁定配置</button></div>
+          <div class="data-tip mt8">价格 = 交易对过去 5 分钟的时间加权均价（TWAP）：闪电贷拉价无法撼动，市场大涨大跌自动跟随，零手动。任何人可点「记录价格观测点」（每 5 分钟一次）；池子低于门槛时拒读价格；3% 卖出税已修正，买卡=精确 100U。</div>
         </div>
 
         <div class="admin-grid-item" id="adminNftBlock" style="display:none">
           <div class="admin-title">卡牌 NFT</div>
           <div class="mt12"><input type="number" min="1" id="adminBurnInput" class="input" placeholder="tokenId 销毁异常卡牌"><button id="adminBurnBtn" class="btn btn-danger btn-sm mt8">销毁卡牌</button></div>
+          <div class="mt12"><input type="text" id="adminRevokeMinterInput" class="input" placeholder="要撤销铸币权的地址（如部署时的临时 minter）"><button id="adminRevokeMinterBtn" class="btn btn-danger btn-sm mt8">撤销铸币权</button></div>
         </div>
       </div>
     </div>
@@ -259,7 +267,7 @@ const CONFIG = {
     nft:    '0x8C597CcECFCD796E4D8C8D8239cAa74ed05d2700', // OfficialNFT 主网
     sale:   '0xBF6A8B548f5402a929fb2501edAe2dE75983996B', // OfficialNFTSale 主网（重部署后更新）
     pool:   '0xcEb6aD1CA982Cf170E3D037d8FfFEe32D5fA28d3', // CardDividendPool 主网（重部署后更新）
-    oracle: '0xD80444b98d0528c5403163d7bF5191Ff306570BA'  // PriceOracle 主网
+    oracle: '0xD80444b98d0528c5403163d7bF5191Ff306570BA'  // PriceOracle 主网（⚠️ 已改版为 TWAP 适配器，重部署后必须更新）
   },
   refreshInterval: 10000
 };
@@ -289,6 +297,7 @@ const ABIS = {
     'function pendingOracle() view returns (address)',
     'function oracleChangeTime() view returns (uint256)',
     'function addLpPair(address)',
+    'function setLpPair(address)',
     'function lpPairs(address) view returns (bool)',
     'function launchPartner() view returns (address)',
     'function setLaunchPartner(address)'
@@ -329,6 +338,7 @@ const ABIS = {
     'function withdrawExcess(address)',
     'function sweepExited(uint256)',
     'function adminForceExit(uint256)',
+    'function adminReleaseBurnedCard(uint256)',
     'function owner() view returns (address)',
     'function paused() view returns (bool)',
     'function pause()',
@@ -340,16 +350,23 @@ const ABIS = {
     'function swapFeesToUsdt()',
     'function withdrawStrandedTokens(address)',
     'function swapThreshold() view returns (uint256)',
-    'function setSwapThreshold(uint256)'
+    'function setSwapThreshold(uint256)',
+    'function updateCore(address, address, address, address, address)'
   ],
   oracle: [
     'function getPriceData() view returns (uint256, uint256, uint256, uint256)',
-    'function setPrice(uint256)',
-    'function setBasePrice(uint256)',
-    'function owner() view returns (address)',
-    'function isUpdater(address) view returns (bool)',
-    'function addUpdater(address)',
-    'function MIN_UPDATE_INTERVAL() view returns (uint256)'
+    'function token() view returns (address)',
+    'function quoteToken() view returns (address)',
+    'function router() view returns (address)',
+    'function minLiquidityWei() view returns (uint256)',
+    'function configLocked() view returns (bool)',
+    'function observationCount() view returns (uint256)',
+    'function lastPokeTime() view returns (uint256)',
+    'function TWAP_WINDOW() view returns (uint256)',
+    'function poke()',
+    'function setMinLiquidity(uint256)',
+    'function lockConfig()',
+    'function owner() view returns (address)'
   ]
 };
 
@@ -368,19 +385,26 @@ const DOM = {
   adminPreProfitInput: $('adminPreProfitInput'),
   adminPreConfigSaveBtn: $('adminPreConfigSaveBtn'), adminWithdrawPreUsdtBtn: $('adminWithdrawPreUsdtBtn'),
   adminWithdrawReserveBtn: $('adminWithdrawReserveBtn'),
-  adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'), adminOracleBase: $('adminOracleBase'),
-  adminOracleLast: $('adminOracleLast'), adminOracleDeviation: $('adminOracleDeviation'),
-  adminUpdaterBlock: $('adminUpdaterBlock'), adminPriceInput: $('adminPriceInput'), adminSetPriceBtn: $('adminSetPriceBtn'), cooldownFill: $('cooldownFill'),
-  adminBasePriceBlock: $('adminBasePriceBlock'), adminBasePriceInput: $('adminBasePriceInput'), adminSetBasePriceBtn: $('adminSetBasePriceBtn'),
-  adminUpdaterManageBlock: $('adminUpdaterManageBlock'), adminAddUpdaterInput: $('adminAddUpdaterInput'), adminAddUpdaterBtn: $('adminAddUpdaterBtn'),
+  adminUpdateCoreToken: $('adminUpdateCoreToken'), adminUpdateCoreRouter: $('adminUpdateCoreRouter'),
+  adminUpdateCoreNft: $('adminUpdateCoreNft'), adminUpdateCorePool: $('adminUpdateCorePool'),
+  adminUpdateCoreOracle: $('adminUpdateCoreOracle'), adminUpdateCoreBtn: $('adminUpdateCoreBtn'),
+  adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'),
+  adminOracleObs: $('adminOracleObs'), adminOracleMinLiq: $('adminOracleMinLiq'), adminOracleLocked: $('adminOracleLocked'),
+  adminPokeBtn: $('adminPokeBtn'),
+  adminMinLiqInput: $('adminMinLiqInput'), adminSetMinLiqBtn: $('adminSetMinLiqBtn'),
+  adminLockOracleBtn: $('adminLockOracleBtn'),
   adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
   adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
   adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
+  adminPoolCoreToken: $('adminPoolCoreToken'), adminPoolCoreUsdt: $('adminPoolCoreUsdt'), adminPoolCoreRouter: $('adminPoolCoreRouter'),
+  adminPoolCoreNft: $('adminPoolCoreNft'), adminPoolCoreSale: $('adminPoolCoreSale'), adminPoolCoreBtn: $('adminPoolCoreBtn'),
   adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
   adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
   adminForceExitInput: $('adminForceExitInput'), adminForceExitBtn: $('adminForceExitBtn'),
+  adminReleaseBurnedInput: $('adminReleaseBurnedInput'), adminReleaseBurnedBtn: $('adminReleaseBurnedBtn'),
   adminSweepBtn: $('adminSweepBtn'), adminWithdrawExcessBtn: $('adminWithdrawExcessBtn'),
   adminNftBlock: $('adminNftBlock'), adminBurnInput: $('adminBurnInput'), adminBurnBtn: $('adminBurnBtn'),
+  adminRevokeMinterInput: $('adminRevokeMinterInput'), adminRevokeMinterBtn: $('adminRevokeMinterBtn'),
   adminTokenBlock: $('adminTokenBlock'), adminTradingEnabled: $('adminTradingEnabled'), adminDividendPool: $('adminDividendPool'),
   adminOracleAddr: $('adminOracleAddr'), adminLaunchWindow: $('adminLaunchWindow'),
   adminLaunchPartner: $('adminLaunchPartner'),
@@ -392,6 +416,7 @@ const DOM = {
   adminProposeOracleInput: $('adminProposeOracleInput'), adminProposeOracleBtn: $('adminProposeOracleBtn'),
   adminApplyOracleBtn: $('adminApplyOracleBtn'),
   adminAddLpInput: $('adminAddLpInput'), adminAddLpBtn: $('adminAddLpBtn'),
+  adminSetLpPairInput: $('adminSetLpPairInput'), adminSetLpPairBtn: $('adminSetLpPairBtn'),
   adminEnableTradingBtn: $('adminEnableTradingBtn'), adminGrantMinterBtn: $('adminGrantMinterBtn')
 };
 
@@ -399,8 +424,7 @@ let provider = null, signer = null, userAddress = '';
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
-let refreshTimer = null, cooldownTimer = null;
-let lastOracleData = null;
+let refreshTimer = null;
 
 const BN = ethers.BigNumber;
 const toNum = (v) => {
@@ -449,16 +473,21 @@ const parseError = (e) => {
   if (m.includes('pool not configured')) return '分红池地址未配置（需先 updateCore）';
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
-  if (m.includes('update too fast')) return '推送过快，需等待 30 秒';
-  if (m.includes('base change too large')) return '基准价单次调整不得超过 ±20%';
-  if (m.includes('base update too fast')) return '基准价调整过快，请 30 秒后再试';
+  if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/未建立/观测点未就绪';
+  if (m.includes('poke too soon')) return '观测点间隔需 ≥5 分钟';
+  if (m.includes('no observations')) return '尚未记录价格观测点（请点「记录价格观测点」初始化）';
+  if (m.includes('observations too young')) return '价格观测引导期未满：首次记录后需等待 5 分钟';
+  if (m.includes('no time elapsed')) return '交易对尚无新交易，价格暂不可用';
+  if (m.includes('pair not created')) return '交易对尚未创建（需先完成一笔预售购买）';
+  if (m.includes('zero price')) return '实时价异常为 0，请稍后再试';
+  if (m.includes('liquidity too low')) return '池子流动性低于门槛，价格拒读';
+  if (m.includes('timelock not expired')) return 'LP 时间锁未到期（设置主 LP 后需等 1 小时）';
   if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
   if (m.includes('card not found')) return '卡牌不存在';
   if (m.includes('dividend pool locked')) return '分红池地址已锁定（开盘后不可更换）';
   if (m.includes('oracle already set')) return '预言机已设置；更换请使用「提议更换」（24 小时生效）';
   if (m.includes('no pending oracle')) return '没有待应用的预言机变更';
   if (m.includes('oracle timelock')) return '预言机变更时间锁未到期（24 小时）';
-  if (m.includes('price change too large')) return '价格单次推送波动超过 ±10%，已拒绝';
   if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
   if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
   if (m.includes('only token contract')) return '该操作仅限代币合约调用';
@@ -594,26 +623,18 @@ async function loadAdminData() {
   const saleOwner = await saleC.owner();
   const poolOwner = await poolC.owner();
   const oracleOwner = await oracleC.owner();
-  const isUpdater = await oracleC.isUpdater(userAddress);
   const isTokenAdmin = await tokenC.hasRole(DEFAULT_ADMIN_ROLE, userAddress);
   const isNftAdmin = await nftC.hasRole(DEFAULT_ADMIN_ROLE, userAddress);
 
   const isAny = saleOwner.toLowerCase() === userAddress.toLowerCase()
     || poolOwner.toLowerCase() === userAddress.toLowerCase()
     || oracleOwner.toLowerCase() === userAddress.toLowerCase()
-    || isUpdater
     || isTokenAdmin
     || isNftAdmin;
 
   DOM.adminEmpty.style.display = isAny ? 'none' : '';
   DOM.adminPanels.style.display = isAny ? '' : 'none';
   if (!isAny) return;
-
-  // 预言机数据（面板共用的价格信息）
-  try {
-    const pd = await oracleC.getPriceData();
-    lastOracleData = { price: pd[0], base: pd[1], lastUpdate: pd[2], deviation: pd[3] };
-  } catch (e) { /* ignore */ }
 
   // 销售
   const isSaleOwner = saleOwner.toLowerCase() === userAddress.toLowerCase();
@@ -648,18 +669,25 @@ async function loadAdminData() {
     } catch (e) { /* ignore */ }
   }
 
-  // 预言机
+  // 实时价格（5 分钟 TWAP · 全自动）
   const isOracleOwner = oracleOwner.toLowerCase() === userAddress.toLowerCase();
-  DOM.adminOracleBlock.style.display = (isOracleOwner || isUpdater) ? '' : 'none';
-  if (isOracleOwner || isUpdater) {
-    DOM.adminOraclePrice.innerText = lastOracleData ? fmtPrice(lastOracleData.price) : '--';
-    DOM.adminOracleBase.innerText = lastOracleData ? fmtPrice(lastOracleData.base) : '--';
-    DOM.adminOracleLast.innerText = lastOracleData ? fmtTime(lastOracleData.lastUpdate) : '--';
-    DOM.adminOracleDeviation.innerText = lastOracleData && lastOracleData.deviation.lt(100000)
-      ? (Number(lastOracleData.deviation) / 100).toFixed(2) + '%' : '--';
-    DOM.adminUpdaterBlock.style.display = isUpdater ? '' : 'none';
-    DOM.adminBasePriceBlock.style.display = isOracleOwner ? '' : 'none';
-    DOM.adminUpdaterManageBlock.style.display = isOracleOwner ? '' : 'none';
+  DOM.adminOracleBlock.style.display = isOracleOwner ? '' : 'none';
+  if (isOracleOwner) {
+    try {
+      const pd = await oracleC.getPriceData();
+      DOM.adminOraclePrice.innerText = pd[0].isZero() ? '--' : fmtPrice(pd[0]);
+    } catch (e) { DOM.adminOraclePrice.innerText = '--（无流动性/未记录观测点）'; }
+    try {
+      const oc = await oracleC.observationCount();
+      const lt = await oracleC.lastPokeTime();
+      DOM.adminOracleObs.innerText = oc.isZero()
+        ? '0 个（请点「记录价格观测点」初始化）'
+        : `${oc.toString()} 个 · 最近 ${fmtTime(lt)}`;
+      const ml = await oracleC.minLiquidityWei();
+      DOM.adminOracleMinLiq.innerText = ml.isZero() ? '已关闭' : fmtAmt(ml, 18) + ' USDT';
+      const locked = await oracleC.configLocked();
+      DOM.adminOracleLocked.innerText = locked ? '🔒 已锁定' : '🔓 未锁定';
+    } catch (e) { DOM.adminOracleObs.innerText = '--'; DOM.adminOracleMinLiq.innerText = '--'; DOM.adminOracleLocked.innerText = '--'; }
   }
 
   // 分红池（USDT 兑付）
@@ -828,20 +856,69 @@ async function adminWithdrawReserve() {
   finally { hideLoading(); }
 }
 
-// PancakeSwap V2 工厂（BSC 主网）：交易对地址可提前确定性算出
+async function adminUpdateCore() {
+  const token = DOM.adminUpdateCoreToken.value.trim();
+  const router = DOM.adminUpdateCoreRouter.value.trim();
+  const nft = DOM.adminUpdateCoreNft.value.trim();
+  const pool = DOM.adminUpdateCorePool.value.trim();
+  const oracle = DOM.adminUpdateCoreOracle.value.trim();
+  if (!ethers.utils.isAddress(token) || !ethers.utils.isAddress(router) || !ethers.utils.isAddress(nft)
+    || !ethers.utils.isAddress(pool) || !ethers.utils.isAddress(oracle)) {
+    showToast('请填写全部 5 个合法地址', 'error'); return;
+  }
+  if (!confirm('确认更新销售合约核心配置？\n代币/路由/NFT/分红池/预言机 将一并更新（开盘前可用，开盘即锁定）。')) return;
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).updateCore(token, router, nft, pool, oracle);
+    await tx.wait();
+    showToast('核心配置已更新', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminRevokeMinter() {
+  const a = DOM.adminRevokeMinterInput.value.trim();
+  if (!ethers.utils.isAddress(a)) { showToast('请输入要撤销的铸币者地址', 'error'); return; }
+  const MINTER_ROLE = '0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6';
+  if (!confirm(`确认撤销 ${a} 的卡牌铸币权？\n（部署后应只保留销售合约拥有铸币权）`)) return;
+  showLoading();
+  try {
+    const tx = await nftC.connect(signer).revokeRole(MINTER_ROLE, a);
+    await tx.wait();
+    showToast('铸币权已撤销', 'success');
+    DOM.adminRevokeMinterInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+// PancakeSwap V2 工厂（BSC 主网）：交易对地址 = CREATE2 确定性地址，
+// 交易对创建前即可算出，用于提前登记白名单防抢跑（getPair 在未创建时返回 0x0，不可用）
 const PANCAKE_FACTORY = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+const PANCAKE_PAIR_INIT_CODE_HASH = '0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5';
+function pairFor(tokenA, tokenB) {
+  const a = tokenA.toLowerCase() < tokenB.toLowerCase() ? tokenA.toLowerCase() : tokenB.toLowerCase();
+  const b = tokenA.toLowerCase() < tokenB.toLowerCase() ? tokenB.toLowerCase() : tokenA.toLowerCase();
+  const salt = ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'address'], [a, b]));
+  return ethers.utils.getCreate2Address(PANCAKE_FACTORY, salt, PANCAKE_PAIR_INIT_CODE_HASH);
+}
 async function adminComputePair() {
   try {
     const usdt = await saleC.usdt();
     if (!usdt || usdt === ZERO_ADDR) { showToast('请先在销售合约配置 USDT 地址', 'error'); return; }
-    const fac = new ethers.Contract(PANCAKE_FACTORY, ['function getPair(address,address) view returns (address)'], provider);
-    const pair = await fac.getPair(usdt, CONFIG.contracts.token);
+    const pair = pairFor(usdt, CONFIG.contracts.token);
     DOM.adminPairAddr.innerText = pair;
-    if (pair === ZERO_ADDR) {
-      showToast('交易对尚未创建（首笔预售购买时会自动创建）', '');
-    } else {
-      showToast('交易对已存在', 'success');
-    }
+    // 探测交易对是否已创建（仅提示用）
+    try {
+      const fac = new ethers.Contract(PANCAKE_FACTORY, ['function getPair(address,address) view returns (address)'], provider);
+      const existing = await fac.getPair(usdt, CONFIG.contracts.token);
+      if (existing !== ZERO_ADDR) {
+        showToast('交易对已存在（与计算结果一致）', 'success');
+      } else {
+        showToast('交易对尚未创建：请先把该地址「设置主 LP」/「登记 LP」加入白名单', '');
+      }
+    } catch (e) { /* 探测失败不影响展示 */ }
   } catch (e) { showToast(parseError(e), 'error'); }
 }
 async function adminCopyPair() {
@@ -855,45 +932,59 @@ async function adminCopyPair() {
   }
 }
 
-async function adminSetPrice() {
-  const v = parseFloat(DOM.adminPriceInput.value);
-  if (!(v > 0)) { showToast('请输入大于 0 的价格', 'error'); return; }
-  const p = BN.from(Math.round(v * PRICE_SCALE));
+async function adminSetMinLiq() {
+  const v = parseFloat(DOM.adminMinLiqInput.value);
+  if (!(v >= 0)) { showToast('请输入 ≥0 的流动性门槛', 'error'); return; }
+  if (!confirm(`确认把最低流动性门槛设置为 ${v} USDT？\n（池子报价币储备低于该值时拒读价格）`)) return;
   showLoading();
   try {
-    const tx = await oracleC.connect(signer).setPrice(p);
+    const tx = await oracleC.connect(signer).setMinLiquidity(ethers.utils.parseUnits(String(v), 18));
     await tx.wait();
-    showToast('价格推送成功', 'success');
-    DOM.adminPriceInput.value = '';
+    showToast('流动性门槛已设置', 'success');
+    DOM.adminMinLiqInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
 }
 
-async function adminSetBasePrice() {
-  const v = parseFloat(DOM.adminBasePriceInput.value);
-  if (!(v > 0)) { showToast('请输入大于 0 的基准价', 'error'); return; }
-  const p = BN.from(Math.round(v * PRICE_SCALE));
+async function adminPokeOracle() {
   showLoading();
   try {
-    const tx = await oracleC.connect(signer).setBasePrice(p);
+    const tx = await oracleC.connect(signer).poke();
     await tx.wait();
-    showToast('基准价设置成功', 'success');
-    DOM.adminBasePriceInput.value = '';
+    showToast('价格观测点已记录', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
 }
 
-async function adminAddUpdater() {
-  const a = DOM.adminAddUpdaterInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的推送者地址', 'error'); return; }
+async function adminLockOracle() {
+  if (!confirm('确认永久锁定价格适配器的路由/报价币配置？（不可逆；流动性门槛不受影响，仍可调整）')) return;
   showLoading();
   try {
-    const tx = await oracleC.connect(signer).addUpdater(a);
+    const tx = await oracleC.connect(signer).lockConfig();
     await tx.wait();
-    showToast('推送者已添加', 'success');
-    DOM.adminAddUpdaterInput.value = '';
+    showToast('价格适配器配置已锁定', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminPoolUpdateCore() {  const token = DOM.adminPoolCoreToken.value.trim();
+  const usdt = DOM.adminPoolCoreUsdt.value.trim();
+  const router = DOM.adminPoolCoreRouter.value.trim();
+  const nft = DOM.adminPoolCoreNft.value.trim();
+  const sale = DOM.adminPoolCoreSale.value.trim();
+  if (!ethers.utils.isAddress(token) || !ethers.utils.isAddress(usdt) || !ethers.utils.isAddress(router)
+    || !ethers.utils.isAddress(nft) || !ethers.utils.isAddress(sale)) {
+    showToast('请填写全部 5 个合法地址', 'error'); return;
+  }
+  if (!confirm('确认更新分红池核心配置？\n代币/USDT/路由/NFT/销售合约 将一并更新（锁定核心后不可再改）。')) return;
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).updateCore(token, usdt, router, nft, sale);
+    await tx.wait();
+    showToast('分红池核心配置已更新', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -924,6 +1015,21 @@ async function adminAddLp() {
   finally { hideLoading(); }
 }
 
+async function adminSetLpPair() {
+  const a = DOM.adminSetLpPairInput.value.trim();
+  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的交易对地址', 'error'); return; }
+  if (!confirm(`确认设置主 LP 为 ${a}？\n将加入征税白名单并启动 1 小时时间锁，时间锁到期后才能「开启交易」。`)) return;
+  showLoading();
+  try {
+    const tx = await tokenC.connect(signer).setLpPair(a);
+    await tx.wait();
+    showToast('主 LP 已设置（1 小时时间锁启动）', 'success');
+    DOM.adminSetLpPairInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
 async function adminLockCore(which) {
   if (!confirm('确认永久锁定核心配置？锁定后不可再修改 token/nft/pool/oracle 等核心地址（不可逆）。')) return;
   showLoading();
@@ -948,6 +1054,21 @@ async function adminForceExit() {
     await tx.wait();
     showToast(`卡牌 #${id} 已强制出局`, 'success');
     DOM.adminForceExitInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminReleaseBurned() {
+  const id = DOM.adminReleaseBurnedInput.value.trim();
+  if (!id || isNaN(Number(id)) || Number(id) <= 0) { showToast('请输入合法的 tokenId', 'error'); return; }
+  if (!confirm(`确认释放卡牌 #${id} 的剩余负债？（仅对 NFT 已销毁的卡牌有效，释放后对应资金进入超额池）`)) return;
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).adminReleaseBurnedCard(id);
+    await tx.wait();
+    showToast(`卡牌 #${id} 负债已释放`, 'success');
+    DOM.adminReleaseBurnedInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1124,18 +1245,23 @@ DOM.adminMintBtn.addEventListener('click', throttle(adminMint, 2000));
 DOM.adminPreConfigSaveBtn.addEventListener('click', throttle(adminSavePreLaunchConfig, 2000));
 DOM.adminWithdrawPreUsdtBtn.addEventListener('click', throttle(adminWithdrawPreUsdt, 2000));
 DOM.adminWithdrawReserveBtn.addEventListener('click', throttle(adminWithdrawReserve, 2000));
+DOM.adminUpdateCoreBtn.addEventListener('click', throttle(adminUpdateCore, 2000));
+DOM.adminRevokeMinterBtn.addEventListener('click', throttle(adminRevokeMinter, 2000));
 DOM.adminSetLaunchPartnerBtn.addEventListener('click', throttle(adminSetLaunchPartner, 2000));
 DOM.adminComputePairBtn.addEventListener('click', throttle(adminComputePair, 2000));
 DOM.adminCopyPairBtn.addEventListener('click', throttle(adminCopyPair, 2000));
-DOM.adminSetPriceBtn.addEventListener('click', throttle(adminSetPrice, 1500));
-DOM.adminSetBasePriceBtn.addEventListener('click', throttle(adminSetBasePrice, 1500));
-DOM.adminAddUpdaterBtn.addEventListener('click', throttle(adminAddUpdater, 1500));
+DOM.adminPoolCoreBtn.addEventListener('click', throttle(adminPoolUpdateCore, 2000));
+DOM.adminPokeBtn.addEventListener('click', throttle(adminPokeOracle, 2000));
+DOM.adminSetMinLiqBtn.addEventListener('click', throttle(adminSetMinLiq, 2000));
+DOM.adminLockOracleBtn.addEventListener('click', throttle(adminLockOracle, 2000));
 DOM.adminPoolPauseBtn.addEventListener('click', throttle(() => adminPoolPauseToggle(true), 1500));
 DOM.adminPoolUnpauseBtn.addEventListener('click', throttle(() => adminPoolPauseToggle(false), 1500));
 DOM.adminAddLpBtn.addEventListener('click', throttle(adminAddLp, 1500));
+DOM.adminSetLpPairBtn.addEventListener('click', throttle(adminSetLpPair, 2000));
 DOM.adminSaleLockCoreBtn.addEventListener('click', throttle(() => adminLockCore('sale'), 2000));
 DOM.adminPoolLockCoreBtn.addEventListener('click', throttle(() => adminLockCore('pool'), 2000));
 DOM.adminForceExitBtn.addEventListener('click', throttle(adminForceExit, 2000));
+DOM.adminReleaseBurnedBtn.addEventListener('click', throttle(adminReleaseBurned, 2000));
 DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
 DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
 DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
@@ -1174,20 +1300,6 @@ window.addEventListener('load', async () => {
       stopRefresh();
     }
   });
-
-  // 预言机 30 秒冷却进度条
-  cooldownTimer = setInterval(() => {
-    if (!lastOracleData || DOM.adminUpdaterBlock.style.display === 'none') {
-      DOM.cooldownFill.style.width = '100%';
-      DOM.adminSetPriceBtn.disabled = false;
-      return;
-    }
-    const elapsed = Math.floor(Date.now() / 1000) - toNum(lastOracleData.lastUpdate);
-    const interval = 30;
-    const pct = Math.min(100, Math.max(0, elapsed / interval * 100));
-    DOM.cooldownFill.style.width = pct + '%';
-    DOM.adminSetPriceBtn.disabled = elapsed < interval;
-  }, 1000);
 });
 })();
 </script>
