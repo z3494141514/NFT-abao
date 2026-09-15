@@ -143,6 +143,22 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .team-addr{font-family:ui-monospace,monospace;font-size:13px;color:var(--text);word-break:break-all;flex:1;min-width:180px}
 .team-copy{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:5px 12px;font-size:11.5px;transition:all .2s}
 .team-copy:hover{color:var(--cyan);border-color:var(--border-hi)}
+/* ---------- 推荐奖励金色大奖卡 ---------- */
+.reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12));border:1px solid rgba(245,193,76,.5);border-radius:22px;padding:26px 28px;margin-bottom:16px;display:flex;align-items:center;gap:20px;backdrop-filter:blur(16px);box-shadow:0 10px 40px rgba(245,193,76,.12)}
+.reward-hero::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%{left:-60%}60%,100%{left:130%}}
+.reward-hero-ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,193,76,.45);flex-shrink:0}
+.reward-hero-ic .ic{width:32px;height:32px;stroke:#fff;stroke-width:1.6}
+.reward-hero-body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.reward-label{font-size:12px;letter-spacing:2.5px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
+.reward-value{font-size:36px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all;animation:goldFlow 4s linear infinite}
+@keyframes goldFlow{to{background-position:200% center}}
+.reward-sub{font-size:12.5px;color:var(--muted)}
+/* ---------- 主按钮流光 ---------- */
+.btn-primary{position:relative;overflow:hidden}
+.btn-primary::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.25),transparent);animation:shine 3s ease-in-out infinite;pointer-events:none}
+/* ---------- 页脚 ---------- */
+.footer{position:relative;z-index:1;text-align:center;padding:18px 16px 104px;font-size:11.5px;color:var(--muted);letter-spacing:1.2px}
 /* ---------- 卡牌 ---------- */
 .page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
@@ -258,6 +274,13 @@ body{-webkit-tap-highlight-color:transparent}
 .qty-value{font-size:15px;min-width:24px}
 .modal-box{padding:20px;border-radius:16px}
 .team-addr{font-size:12px}
+.reward-hero{padding:18px 16px;border-radius:16px;gap:14px;margin-bottom:12px}
+.reward-hero-ic{width:48px;height:48px;border-radius:14px}
+.reward-hero-ic .ic{width:24px;height:24px}
+.reward-value{font-size:26px}
+.reward-label{font-size:10.5px;letter-spacing:1.8px}
+.reward-sub{font-size:11px}
+.footer{padding:12px 16px 96px;font-size:10.5px}
 }
 </style>
 </head>
@@ -360,6 +383,10 @@ body{-webkit-tap-highlight-color:transparent}
           <span class="data-label">我的代币余额</span>
           <span class="data-value" id="buyBalanceHint">--</span>
         </div>
+        <div class="data-row">
+          <span class="data-label">剩余名额</span>
+          <span class="data-value" id="buyRemainingSlots">-- / 520</span>
+        </div>
         <button id="buyBtn" class="btn btn-primary btn-block mt16">购买卡牌</button>
       </div>
     </div>
@@ -411,8 +438,13 @@ body{-webkit-tap-highlight-color:transparent}
 
   <!-- ================= 团队 ================= -->
   <div id="teamPage" class="page">
-    <div class="page-head">
-      <div class="page-title">团队 · 一级下级 <span id="teamCount">0</span></div>
+    <div class="reward-hero">
+      <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
+      <div class="reward-hero-body">
+        <span class="reward-label">已获得推荐奖励</span>
+        <span class="reward-value" id="teamRewardEarned">0.00 TTT</span>
+        <span class="reward-sub">好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
+      </div>
     </div>
     <div class="mini-kpis" style="grid-template-columns:1fr 1fr">
       <div class="mini-kpi">
@@ -423,6 +455,9 @@ body{-webkit-tap-highlight-color:transparent}
         <span class="mini-label">我的上级</span>
         <span class="mini-value" id="teamMyReferrer" style="font-size:15px">--</span>
       </div>
+    </div>
+    <div class="page-head">
+      <div class="page-title">下级列表 · <span id="teamCount">0</span></div>
     </div>
     <div id="teamList"><div class="empty-tip">连接钱包后查看团队</div></div>
   </div>
@@ -450,6 +485,8 @@ body{-webkit-tap-highlight-color:transparent}
     <button class="nav-item" data-page="invitePage"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg>邀请</button>
     <button class="nav-item" data-page="teamPage"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5.5 20c.9-3.6 3.4-5.6 6.5-5.6s5.6 2 6.5 5.6"/><path d="M17 5.5h4M19 3.5v4"/></svg>团队</button>
   </div>
+
+  <div class="footer">卡牌分红协议 · NFT DIVIDEND PROTOCOL · 数据实时上链</div>
 </div>
 
 <script>
@@ -540,7 +577,8 @@ const ABIS = {
     'function coreLocked() view returns (bool)',
     'function lockCore()',
     'function referralCountOf(address) view returns (uint256)',
-    'function referralAt(address, uint256) view returns (address)'
+    'function referralAt(address, uint256) view returns (address)',
+    'function referralRewardsEarned(address) view returns (uint256)'
   ],
   pool: [
     'function getCardInfo(uint256) view returns (address, uint256, uint256, uint256, uint256, bool)',
@@ -558,7 +596,10 @@ const ABIS = {
     'function pause()',
     'function unpause()',
     'function coreLocked() view returns (bool)',
-    'function lockCore()'
+    'function lockCore()',
+    'function usdt() view returns (address)',
+    'function pendingSwapTokens() view returns (uint256)',
+    'function swapFeesToUsdt()'
   ],
   oracle: [
     'function getPriceData() view returns (uint256, uint256, uint256, uint256)',
@@ -588,12 +629,12 @@ const DOM = {
   dashCardCount: $('dashCardCount'), myTotalPending: $('myTotalPending'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
-  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyBtn: $('buyBtn'),
+  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
   minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
   cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
-  teamCount: $('teamCount'), teamCount2: $('teamCount2'), teamMyReferrer: $('teamMyReferrer'), teamList: $('teamList'),
+  teamCount: $('teamCount'), teamCount2: $('teamCount2'), teamMyReferrer: $('teamMyReferrer'), teamList: $('teamList'), teamRewardEarned: $('teamRewardEarned'),
   bindModal: $('bindModal'), bindModalAddr: $('bindModalAddr'),
   bindModalConfirm: $('bindModalConfirm'), bindModalCancel: $('bindModalCancel')
 };
@@ -604,6 +645,7 @@ const DOM = {
 let provider = null, signer = null, userAddress = '';
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
+let usdtDecimals = 18, usdtSymbol = 'USDT';
 let refreshTimer = null;
 let buyQuantity = 1;              // 购买数量
 let unitPriceTokens = null;       // 单卡所需代币（BigNumber）
@@ -641,6 +683,14 @@ const fmtTokensFull = (bn) => {
 const fmtPrice = (p) => {
   if (!p || p.isZero()) return '--';
   return (Number(p) / PRICE_SCALE).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U';
+};
+/* 通用金额格式化（指定精度） */
+const fmtAmt = (bn, dec) => {
+  try {
+    const n = parseFloat(ethers.utils.formatUnits(bn, dec));
+    if (!Number.isFinite(n) || n < 0) return '--';
+    return n.toLocaleString('zh-CN', {maximumFractionDigits: 4});
+  } catch (e) { return '--'; }
 };
 const fmtTime = (ts) => {
   const t = toNum(ts);
@@ -794,6 +844,14 @@ async function setupProvider(address) {
     tokenSymbol = await tokenC.symbol();
   } catch (e) { console.warn('读取代币信息失败，请检查合约地址配置', e); }
 
+  // 分红池兑付资产（USDT）信息
+  try {
+    const uAddr = await poolC.usdt();
+    const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
+    usdtSymbol = await uc.symbol();
+    usdtDecimals = await uc.decimals();
+  } catch (e) { console.warn('读取 USDT 信息失败', e); }
+
   loadAll();
   if (!refreshTimer) refreshTimer = setInterval(loadAll, CONFIG.refreshInterval);
 }
@@ -814,6 +872,7 @@ function disconnectWallet() {
   DOM.teamCount.innerText = '0';
   DOM.teamCount2.innerText = '0';
   DOM.teamMyReferrer.innerText = '--';
+  DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
   DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
   DOM.bindModal.style.display = 'none';
   buyQuantity = 1;
@@ -856,17 +915,21 @@ async function loadAll() {
 }
 
 async function loadStats() {
-  // 分红池
+  // 分红池（USDT 兑付池）
   const stats = await poolC.getPoolStats();
   const [balBN, accU, liability, activeCards] = stats;
-  DOM.poolTokenBalance.innerText = fmtTokens(balBN) + ' ' + tokenSymbol;
+  DOM.poolTokenBalance.innerText = fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol;
   DOM.activeCardsDisplay.innerText = `${activeCards.toString()} / 520`;
   remainingSlots = Math.max(0, 520 - Number(activeCards.toString()));
 
-  // 预言机（价格用于金本位折算）
-  const pd = await oracleC.getPriceData();
-  const price = pd[0];
-  DOM.poolBalanceU.innerText = (price.isZero() ? '--' : fmtCents(tokensToUCents(balBN, price)));
+  // 池内 USDT 的 U 估值（1:1）+ 待兑换 TTT
+  let pendingTtt = '0';
+  try {
+    const pt = await poolC.pendingSwapTokens();
+    pendingTtt = fmtAmt(pt, tokenDecimals);
+  } catch (e) { /* ignore */ }
+  DOM.poolBalanceU.innerText = '≈ ' + (toNum(balBN) / Math.pow(10, usdtDecimals)).toFixed(2) + ' U · 待兑换 ' + pendingTtt;
+  DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
 
   // 开盘状态
   try {
@@ -923,8 +986,14 @@ async function loadUser() {
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
 
-/* 团队：一级下级人数与地址列表 */
+/* 团队：一级下级人数、地址列表与推荐奖励 */
 async function loadTeam() {
+  // 已获得推荐奖励（金色大数字）
+  try {
+    const earned = await saleC.referralRewardsEarned(userAddress);
+    DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
+  } catch (e) { DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol; }
+
   let cnt = 0;
   try {
     const c = await saleC.referralCountOf(userAddress);

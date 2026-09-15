@@ -160,8 +160,9 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
         </div>
 
         <div class="admin-grid-item" id="adminPoolBlock" style="display:none">
-          <div class="admin-title">分红池</div>
+          <div class="admin-title">分红池（USDT 兑付）</div>
           <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
+          <div class="data-row"><span class="data-label">待兑换 TTT</span><span class="data-value" id="adminPoolPending"></span></div>
           <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
           <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
           <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
@@ -171,11 +172,13 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <button id="adminPoolUnpauseBtn" class="btn btn-ghost btn-sm">恢复领取</button>
           </div>
           <div class="flex mt12">
+            <button id="adminSwapBtn" class="btn btn-ghost btn-sm">兑换手续费</button>
             <button id="adminSweepBtn" class="btn btn-ghost btn-sm">清理出局</button>
             <button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm">提取超额</button>
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
+          <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
         </div>
 
         <div class="admin-grid-item" id="adminOracleBlock" style="display:none">
@@ -285,7 +288,11 @@ const ABIS = {
     'function pause()',
     'function unpause()',
     'function coreLocked() view returns (bool)',
-    'function lockCore()'
+    'function lockCore()',
+    'function usdt() view returns (address)',
+    'function pendingSwapTokens() view returns (uint256)',
+    'function swapFeesToUsdt()',
+    'function withdrawStrandedTokens(address)'
   ],
   oracle: [
     'function getPriceData() view returns (uint256, uint256, uint256, uint256)',
@@ -313,7 +320,8 @@ const DOM = {
   adminUpdaterBlock: $('adminUpdaterBlock'), adminPriceInput: $('adminPriceInput'), adminSetPriceBtn: $('adminSetPriceBtn'), cooldownFill: $('cooldownFill'),
   adminBasePriceBlock: $('adminBasePriceBlock'), adminBasePriceInput: $('adminBasePriceInput'), adminSetBasePriceBtn: $('adminSetBasePriceBtn'),
   adminUpdaterManageBlock: $('adminUpdaterManageBlock'), adminAddUpdaterInput: $('adminAddUpdaterInput'), adminAddUpdaterBtn: $('adminAddUpdaterBtn'),
-  adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
+  adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
+  adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
   adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
   adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
   adminForceExitInput: $('adminForceExitInput'), adminForceExitBtn: $('adminForceExitBtn'),
@@ -333,6 +341,7 @@ const DOM = {
 let provider = null, signer = null, userAddress = '';
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
+let usdtDecimals = 18, usdtSymbol = 'USDT';
 let refreshTimer = null, cooldownTimer = null;
 let lastOracleData = null;
 
@@ -354,6 +363,14 @@ const fmtTokens = (bn) => {
 const fmtPrice = (p) => {
   if (!p || p.isZero()) return '--';
   return (Number(p) / PRICE_SCALE).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U';
+};
+/* 通用金额格式化（指定精度） */
+const fmtAmt = (bn, dec) => {
+  try {
+    const n = parseFloat(ethers.utils.formatUnits(bn, dec));
+    if (!Number.isFinite(n) || n < 0) return '--';
+    return n.toLocaleString('zh-CN', {maximumFractionDigits: 4});
+  } catch (e) { return '--'; }
 };
 const fmtTime = (ts) => {
   const t = toNum(ts);
@@ -462,6 +479,14 @@ async function setupProvider(address) {
     tokenSymbol = await tokenC.symbol();
   } catch (e) { console.warn('读取代币信息失败，请检查合约地址配置', e); }
 
+  // 分红池兑付资产（USDT）信息
+  try {
+    const uAddr = await poolC.usdt();
+    const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
+    usdtSymbol = await uc.symbol();
+    usdtDecimals = await uc.decimals();
+  } catch (e) { console.warn('读取 USDT 信息失败', e); }
+
   loadAll();
   if (!refreshTimer) refreshTimer = setInterval(loadAll, CONFIG.refreshInterval);
 }
@@ -539,15 +564,21 @@ async function loadAdminData() {
     DOM.adminUpdaterManageBlock.style.display = isOracleOwner ? '' : 'none';
   }
 
-  // 分红池
+  // 分红池（USDT 兑付）
   const isPoolOwner = poolOwner.toLowerCase() === userAddress.toLowerCase();
   DOM.adminPoolBlock.style.display = isPoolOwner ? '' : 'none';
   if (isPoolOwner) {
     const s = await poolC.getPoolStats();
-    DOM.adminPoolBalance.innerText = fmtTokens(s[0]) + ' ' + tokenSymbol;
+    DOM.adminPoolBalance.innerText = fmtAmt(s[0], usdtDecimals) + ' ' + usdtSymbol;
     DOM.adminPoolLiability.innerText = fmtCents(s[2]);
+    let pendingTtt = '0';
+    try {
+      const pt = await poolC.pendingSwapTokens();
+      pendingTtt = fmtAmt(pt, tokenDecimals);
+    } catch (e) { /* ignore */ }
+    DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol;
     const excess = await poolC.excessTokens();
-    DOM.adminPoolExcess.innerText = fmtTokens(excess) + ' ' + tokenSymbol;
+    DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' ' + usdtSymbol;
     const poolPaused = await poolC.paused();
     DOM.adminPoolPaused.innerText = poolPaused ? '⏸ 已暂停（禁止领取）' : '▶ 运行中';
     DOM.adminPoolPauseBtn.disabled = poolPaused;
@@ -768,6 +799,29 @@ async function adminSweep() {
   finally { hideLoading(); }
 }
 
+async function adminSwap() {
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).swapFeesToUsdt();
+    await tx.wait();
+    showToast('手续费已兑换为 USDT 并分发', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminWithdrawTtt() {
+  if (!confirm('确认提取滞留 TTT？（仅超出待兑换积压的部分，不影响卡牌分红）')) return;
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).withdrawStrandedTokens(userAddress);
+    await tx.wait();
+    showToast('滞留 TTT 已提取', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
 async function adminWithdrawExcess() {
   if (!confirm('确认提取超额资金？（不影响卡牌待领取分红负债）')) return;
   showLoading();
@@ -875,6 +929,8 @@ DOM.adminPoolLockCoreBtn.addEventListener('click', throttle(() => adminLockCore(
 DOM.adminForceExitBtn.addEventListener('click', throttle(adminForceExit, 2000));
 DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
 DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
+DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
+DOM.adminWithdrawTttBtn.addEventListener('click', throttle(adminWithdrawTtt, 2000));
 DOM.adminWithdrawExcessBtn.addEventListener('click', throttle(adminWithdrawExcess, 2000));
 DOM.adminSetPoolBtn.addEventListener('click', throttle(adminSetPool, 1500));
 DOM.adminSetOracleBtn.addEventListener('click', throttle(adminSetOracle, 1500));
