@@ -226,11 +226,12 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="data-row"><span class="data-label">当前 TWAP 价格</span><span class="data-value hi" id="adminOraclePrice"></span></div>
           <div class="data-row"><span class="data-label">价格观测点</span><span class="data-value" id="adminOracleObs"></span></div>
           <div class="data-row"><span class="data-label">最低流动性门槛</span><span class="data-value" id="adminOracleMinLiq"></span></div>
+          <div class="data-row"><span class="data-label">税修正</span><span class="data-value" id="adminOracleTax"></span></div>
           <div class="data-row"><span class="data-label">配置锁定</span><span class="data-value" id="adminOracleLocked"></span></div>
           <div class="mt12"><button id="adminPokeBtn" class="btn btn-primary btn-sm">记录价格观测点</button></div>
           <div class="mt12"><input type="number" step="any" id="adminMinLiqInput" class="input" placeholder="最低流动性门槛（USDT，如 3000；0=关闭）"><button id="adminSetMinLiqBtn" class="btn btn-primary btn-sm mt8">设置门槛</button></div>
           <div class="mt12"><button id="adminLockOracleBtn" class="btn btn-danger btn-sm">永久锁定配置</button></div>
-          <div class="data-tip mt8">价格 = 交易对过去 5 分钟的时间加权均价（TWAP）：闪电贷拉价无法撼动，市场大涨大跌自动跟随，零手动。任何人可点「记录价格观测点」（每 5 分钟一次）；池子低于门槛时拒读价格；3% 卖出税已修正，买卡=精确 100U。</div>
+          <div class="data-tip mt8">价格 = 交易对过去 5 分钟的时间加权均价（TWAP）：闪电贷拉价无法撼动，市场大涨大跌自动跟随，零手动。任何人可点「记录价格观测点」（每 2.5 分钟一次）；池子低于门槛时拒读价格；3% 卖出税已修正，买卡=精确 100U。</div>
         </div>
 
         <div class="admin-grid-item" id="adminNftBlock" style="display:none">
@@ -359,6 +360,7 @@ const ABIS = {
     'function quoteToken() view returns (address)',
     'function router() view returns (address)',
     'function minLiquidityWei() view returns (uint256)',
+    'function sellTaxBps() view returns (uint256)',
     'function configLocked() view returns (bool)',
     'function observationCount() view returns (uint256)',
     'function lastPokeTime() view returns (uint256)',
@@ -389,7 +391,8 @@ const DOM = {
   adminUpdateCoreNft: $('adminUpdateCoreNft'), adminUpdateCorePool: $('adminUpdateCorePool'),
   adminUpdateCoreOracle: $('adminUpdateCoreOracle'), adminUpdateCoreBtn: $('adminUpdateCoreBtn'),
   adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'),
-  adminOracleObs: $('adminOracleObs'), adminOracleMinLiq: $('adminOracleMinLiq'), adminOracleLocked: $('adminOracleLocked'),
+  adminOracleObs: $('adminOracleObs'), adminOracleMinLiq: $('adminOracleMinLiq'), adminOracleTax: $('adminOracleTax'),
+  adminOracleLocked: $('adminOracleLocked'),
   adminPokeBtn: $('adminPokeBtn'),
   adminMinLiqInput: $('adminMinLiqInput'), adminSetMinLiqBtn: $('adminSetMinLiqBtn'),
   adminLockOracleBtn: $('adminLockOracleBtn'),
@@ -474,9 +477,9 @@ const parseError = (e) => {
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
   if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/未建立/观测点未就绪';
-  if (m.includes('poke too soon')) return '观测点间隔需 ≥5 分钟';
+  if (m.includes('poke too soon')) return '观测点间隔需 ≥2.5 分钟';
   if (m.includes('no observations')) return '尚未记录价格观测点（请点「记录价格观测点」初始化）';
-  if (m.includes('observations too young')) return '价格观测引导期未满：首次记录后需等待 5 分钟';
+  if (m.includes('observations too young')) return '观测历史不足 5 分钟，请再多点几次「记录价格观测点」（间隔 ≥2.5 分钟）';
   if (m.includes('no time elapsed')) return '交易对尚无新交易，价格暂不可用';
   if (m.includes('pair not created')) return '交易对尚未创建（需先完成一笔预售购买）';
   if (m.includes('zero price')) return '实时价异常为 0，请稍后再试';
@@ -685,6 +688,8 @@ async function loadAdminData() {
         : `${oc.toString()} 个 · 最近 ${fmtTime(lt)}`;
       const ml = await oracleC.minLiquidityWei();
       DOM.adminOracleMinLiq.innerText = ml.isZero() ? '已关闭' : fmtAmt(ml, 18) + ' USDT';
+      const tax = await oracleC.sellTaxBps();
+      DOM.adminOracleTax.innerText = (Number(tax) / 10).toFixed(1) + '%（默认 3%）';
       const locked = await oracleC.configLocked();
       DOM.adminOracleLocked.innerText = locked ? '🔒 已锁定' : '🔓 未锁定';
     } catch (e) { DOM.adminOracleObs.innerText = '--'; DOM.adminOracleMinLiq.innerText = '--'; DOM.adminOracleLocked.innerText = '--'; }

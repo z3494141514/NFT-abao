@@ -645,10 +645,10 @@ const CONFIG = {
   ],
   rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
-    token:  '0x1662685e086b3bd1f257e3a547ac7f68ce75f3a1', // OfficialToken 主网
-    nft:    '0x8C597CcECFCD796E4D8C8D8239cAa74ed05d2700', // OfficialNFT 主网
-    sale:   '0xBF6A8B548f5402a929fb2501edAe2dE75983996B', // OfficialNFTSale 主网
-    pool:   '0xcEb6aD1CA982Cf170E3D037d8FfFEe32D5fA28d3', // CardDividendPool 主网
+    token:  '0x1662685e086b3bd1f257e3a547ac7f68ce75f3a1', // OfficialToken 主网（⚠️ 重部署后更新）
+    nft:    '0x8C597CcECFCD796E4D8C8D8239cAa74ed05d2700', // OfficialNFT 主网（⚠️ 重部署后更新）
+    sale:   '0xBF6A8B548f5402a929fb2501edAe2dE75983996B', // OfficialNFTSale 主网（⚠️ 重部署后更新）
+    pool:   '0xcEb6aD1CA982Cf170E3D037d8FfFEe32D5fA28d3', // CardDividendPool 主网（⚠️ 重部署后更新）
     oracle: '0xD80444b98d0528c5403163d7bF5191Ff306570BA'  // PriceOracle 主网（⚠️ 已改版为 TWAP 适配器，重部署后必须更新）
   },
   refreshInterval: 10000  // 分红实时刷新间隔（毫秒）
@@ -882,6 +882,7 @@ const parseError = (e) => {
   if (m.includes('bind referrer first') || m.includes('请先绑定')) return '请先绑定上级';
   if (m.includes('referrer already bound') || m.includes('已绑定')) return '已绑定过上级，不可更换';
   if (m.includes('cannot bind self')) return '不能绑定自己';
+  if (m.includes('zero referrer')) return '请输入合法的上级地址';
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('nothing to claim')) return '暂无待领取分红';
   if (m.includes('not card owner')) return '您不是该卡牌的持有者';
@@ -904,7 +905,6 @@ const parseError = (e) => {
   if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
   if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
   if (m.includes('only token contract')) return '该操作仅限代币合约调用';
-  if (m.includes('insufficient funds') && m.includes('pool')) return '分红池资金不足';
   return (e && (e.reason || e.message)) || '交易执行失败，请重试';
 };
 const showLoading = () => DOM.globalLoader.classList.add('active');
