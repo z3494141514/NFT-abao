@@ -922,13 +922,13 @@ async function loadStats() {
   DOM.activeCardsDisplay.innerText = `${activeCards.toString()} / 520`;
   remainingSlots = Math.max(0, 520 - Number(activeCards.toString()));
 
-  // 池内 USDT 的 U 估值（1:1）+ 待兑换 TTT
+  // 池内 USDT 即 U（1:1），副行只展示待兑换的 TTT 手续费
   let pendingTtt = '0';
   try {
     const pt = await poolC.pendingSwapTokens();
     pendingTtt = fmtAmt(pt, tokenDecimals);
   } catch (e) { /* ignore */ }
-  DOM.poolBalanceU.innerText = '≈ ' + (toNum(balBN) / Math.pow(10, usdtDecimals)).toFixed(2) + ' U · 待兑换 ' + pendingTtt;
+  DOM.poolBalanceU.innerText = '待兑换 ' + pendingTtt + ' ' + tokenSymbol;
   DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
 
   // 开盘状态
