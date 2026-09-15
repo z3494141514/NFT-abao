@@ -69,7 +69,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero::before{content:'';position:absolute;inset:-40%;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.16),transparent 55%);pointer-events:none;animation:pulse 5s ease-in-out infinite}
 .hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);padding:5px 14px;border-radius:99px;margin-bottom:16px}
 .hero-title{font-size:44px;font-weight:900;letter-spacing:1px;line-height:1.1;margin-bottom:10px}
-.hero-title span{background:linear-gradient(90deg,#22d3ee,#8b5cf6,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldFlow 5s linear infinite}
+.hero-title span{background:linear-gradient(90deg,#22d3ee,#8b5cf6,#f5c14c,#22d3ee);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldFlow 8s linear .6s infinite}
 .hero-sub{font-size:14px;color:var(--muted);letter-spacing:3px;margin-bottom:22px}
 .hero-chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:8px 16px}
@@ -178,22 +178,22 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .pager-info{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
 /* ---------- 推荐奖励金色大奖卡 ---------- */
 .reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12));border:1px solid rgba(245,193,76,.5);border-radius:22px;padding:26px 28px;margin-bottom:16px;display:flex;align-items:center;gap:20px;backdrop-filter:blur(16px);box-shadow:0 10px 40px rgba(245,193,76,.12)}
-.reward-hero::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
-@keyframes shine{0%{left:-60%}60%,100%{left:130%}}
+.reward-hero::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:shine 3.6s ease-in-out 1.2s infinite;pointer-events:none}
+@keyframes shine{0%{left:-60%}55%,100%{left:130%}}
 .reward-hero-ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,193,76,.45);flex-shrink:0}
 .reward-hero-ic .ic{width:32px;height:32px;stroke:#fff;stroke-width:1.6}
 .reward-hero-body{display:flex;flex-direction:column;gap:6px;min-width:0}
 .reward-hero-violet{background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(245,193,76,.05) 55%,rgba(59,130,246,.12));border:1px solid rgba(139,92,246,.45);box-shadow:0 10px 40px rgba(139,92,246,.14)}
 .reward-hero-violet .reward-hero-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 8px 30px rgba(139,92,246,.45)}
-.reward-mini{margin-top:4px;font-size:13px;color:var(--t3)}
+.reward-mini{margin-top:4px;font-size:13px;color:var(--muted)}
 .reward-mini b{color:var(--gold);font-weight:700}
 .reward-label{font-size:12px;letter-spacing:2.5px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
-.reward-value{font-size:36px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all;animation:goldFlow 4s linear infinite}
+.reward-value{font-size:36px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all;animation:goldFlow 5s linear 1.2s infinite}
 @keyframes goldFlow{to{background-position:200% center}}
 .reward-sub{font-size:12.5px;color:var(--muted)}
-/* ---------- 主按钮流光 ---------- */
+/* ---------- 主按钮流光（入场延迟，避免切页瞬间闪光） ---------- */
 .btn-primary{position:relative;overflow:hidden}
-.btn-primary::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.25),transparent);animation:shine 3s ease-in-out infinite;pointer-events:none}
+.btn-primary::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);animation:shine 3.4s ease-in-out 1.6s infinite;pointer-events:none}
 /* ---------- 页脚 ---------- */
 .footer{position:relative;z-index:1;text-align:center;padding:18px 16px 104px;font-size:11.5px;color:var(--muted);letter-spacing:1.2px}
 /* ---------- 卡牌 ---------- */
@@ -1545,7 +1545,8 @@ async function buyCardPreLaunch() {
   const usdtAddr = await saleC.usdt();
   if (!usdtAddr || usdtAddr === ZERO_ADDR) { showToast('预售收款币种未配置', 'error'); return; }
   const usdt = new ethers.Contract(usdtAddr, USDT_ABI, signer);
-  const total = ethers.BigNumber.from(qty).mul(ethers.BigNumber.from(100)).mul(USDT_CENT_WEI);
+  // 100U/张 = 10000 分 × 1e16 wei = 1e20 wei（与合约 PRE_LAUNCH_PRICE_CENTS 一致）
+  const total = ethers.BigNumber.from(qty).mul(ethers.BigNumber.from(10000)).mul(USDT_CENT_WEI);
 
   const bal = await usdt.balanceOf(userAddress);
   if (bal.lt(total)) { showToast('USDT 余额不足', 'error'); return; }
@@ -1583,8 +1584,8 @@ async function buyCardToken() {
   const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
   if (allowance.lt(total)) {
     showToast('请先在钱包中确认授权…', '');
-    // 授权额加 5% 缓冲：防止授权与成交之间预言机价格波动导致 allowance 不足
-    const approveAmt = total.mul(105).div(100);
+    // 授权额加 15% 缓冲：覆盖授权与成交之间预言机 ±10% 波动 + 滑点，避免 allowance 不足
+    const approveAmt = total.mul(115).div(100);
     const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
     await tx.wait();
     showToast('授权成功，继续购买…', 'success');
@@ -1756,8 +1757,8 @@ window.addEventListener('load', async () => {
       }
     });
     window.ethereum.on('chainChanged', () => {
-      checkChain();
-      if (userAddress) loadAll();
+      // 切换网络后 signer/provider 全部作废：直接整页重载，重新建立干净的连接状态
+      window.location.reload();
     });
   }
 
