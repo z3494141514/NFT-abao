@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>管理后台 · 卡牌分红</title>
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
 <style>
 :root{
   --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
@@ -67,7 +69,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .empty-tip{text-align:center;color:var(--muted);padding:56px 0;font-size:13.5px;letter-spacing:.5px}
 .cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px}
 .cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
-.toast{position:fixed;top:20px;right:16px;background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:10001;box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:80vw;backdrop-filter:blur(16px);animation:toastIn .25s cubic-bezier(.22,.8,.36,1)}
+.toast{background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:76vw;text-align:left;backdrop-filter:blur(16px);animation:toastIn .25s cubic-bezier(.22,.8,.36,1)}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 .toast.error{border-color:rgba(251,113,133,.55);color:#ffd7dd}
 .toast.success{border-color:rgba(52,211,153,.55);color:#d1fae5}
@@ -89,7 +91,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .data-row{padding:9px 0}
 .btn{padding:10px 15px;font-size:12.5px}
 .btn-sm{padding:8px 13px;font-size:12px}
-.toast{font-size:12.5px;padding:11px 18px;top:14px;right:12px;max-width:78vw}
+.toast{font-size:12.5px;padding:11px 18px;border-radius:12px}
 }
 </style>
 </head>
@@ -219,6 +221,16 @@ const CONFIG = {
   chainId: 56,
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
+  rpcUrls: [
+    'https://bsc-dataseed.binance.org/',
+    'https://bsc-dataseed1.binance.org/',
+    'https://bsc-dataseed2.binance.org/',
+    'https://bsc-dataseed3.binance.org/',
+    'https://bsc-dataseed4.binance.org/',
+    'https://bsc-dataseed1.defibit.io/',
+    'https://bsc-dataseed2.defibit.io/',
+    'https://bsc-dataseed1.ninicoin.io/'
+  ],
   rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
     token:  '0x1662685e086b3bd1f257e3a547ac7f68ce75f3a1', // OfficialToken 主网
@@ -398,15 +410,25 @@ const parseError = (e) => {
   if (m.includes('no pending oracle')) return '没有待应用的预言机变更';
   if (m.includes('oracle timelock')) return '预言机变更时间锁未到期（24 小时）';
   if (m.includes('price change too large')) return '价格单次推送波动超过 ±10%，已拒绝';
+  if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
+  if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
+  if (m.includes('only token contract')) return '该操作仅限代币合约调用';
   return (e && (e.reason || e.message)) || '交易执行失败，请重试';
 };
 const showLoading = () => DOM.globalLoader.classList.add('active');
 const hideLoading = () => DOM.globalLoader.classList.remove('active');
 const showToast = (msg, type = '') => {
+  let wrap = document.getElementById('toastWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'toastWrap';
+    wrap.style.cssText = 'position:fixed;top:20px;right:16px;z-index:10001;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:80vw';
+    document.body.appendChild(wrap);
+  }
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.innerText = msg;
-  document.body.appendChild(t);
+  wrap.appendChild(t);
   setTimeout(() => t.remove(), 2600);
 };
 const throttle = (fn, delay = 1000) => {
@@ -430,7 +452,7 @@ async function switchChain() {
           params: [{
             chainId: CONFIG.chainIdHex,
             chainName: CONFIG.chainName,
-            rpcUrls: [CONFIG.rpcUrl],
+            rpcUrls: CONFIG.rpcUrls,
             nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }
           }]
         });
@@ -488,7 +510,16 @@ async function setupProvider(address) {
   } catch (e) { console.warn('读取 USDT 信息失败', e); }
 
   loadAll();
-  if (!refreshTimer) refreshTimer = setInterval(loadAll, CONFIG.refreshInterval);
+  startRefresh();
+}
+
+/* 轮询管理：仅页面可见时刷新，切后台自动暂停 */
+function startRefresh() {
+  if (refreshTimer) return;
+  refreshTimer = setInterval(() => { if (userAddress) loadAll(); }, CONFIG.refreshInterval);
+}
+function stopRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
 }
 
 function disconnectWallet() {
@@ -497,7 +528,8 @@ function disconnectWallet() {
   DOM.walletInfo.style.display = 'none';
   DOM.adminPanels.style.display = 'none';
   DOM.adminEmpty.style.display = '';
-  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  stopRefresh();
+  showToast('已断开钱包', 'success');
 }
 
 async function loadAll() {
@@ -954,6 +986,15 @@ window.addEventListener('load', async () => {
       if (userAddress) loadAll();
     });
   }
+
+  // 页面可见性：切到后台暂停轮询，回到前台立即刷新并恢复
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (userAddress) { loadAll(); startRefresh(); }
+    } else {
+      stopRefresh();
+    }
+  });
 
   // 预言机 30 秒冷却进度条
   cooldownTimer = setInterval(() => {

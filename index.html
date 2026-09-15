@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>卡牌分红 · NFT Dividend</title>
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
 <style>
 :root{
   --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
@@ -217,7 +219,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
 /* ---------- Toast / Loader ---------- */
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
-.toast{position:fixed;top:20px;right:16px;background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;z-index:10001;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:toastIn .25s cubic-bezier(.22,.8,.36,1);max-width:80vw;text-align:left;backdrop-filter:blur(16px)}
+.toast{background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:toastIn .25s cubic-bezier(.22,.8,.36,1);max-width:76vw;text-align:left;backdrop-filter:blur(16px)}
 .toast.error{border-color:rgba(251,113,133,.55);color:#ffd7dd}
 .toast.success{border-color:rgba(52,211,153,.55);color:#d1fae5}
 .global-loader{position:fixed;inset:0;background:rgba(5,7,13,.7);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:center;justify-content:center}
@@ -279,7 +281,7 @@ body{-webkit-tap-highlight-color:transparent}
 .admin-grid-item .data-row,.admin-block .data-row{padding:9px 0}
 .admin-grid-item .flex,.admin-block .flex{gap:7px}
 .admin-grid-item .btn,.admin-block .btn{padding:9px 13px;font-size:12px}
-.toast{font-size:12.5px;padding:11px 18px;top:14px;right:12px;border-radius:12px;max-width:78vw}
+.toast{font-size:12.5px;padding:11px 18px;border-radius:12px}
 .invite-wrap{max-width:100%}
 .mini-kpis{gap:8px;margin-bottom:12px}
 .mini-kpi{padding:11px 12px;border-radius:13px}
@@ -546,6 +548,16 @@ const CONFIG = {
   chainId: 56,                                  // BSC 主网
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
+  rpcUrls: [                                    // RPC 列表（加网络时全部写入钱包，供其自动切换；可换成付费 RPC）
+    'https://bsc-dataseed.binance.org/',
+    'https://bsc-dataseed1.binance.org/',
+    'https://bsc-dataseed2.binance.org/',
+    'https://bsc-dataseed3.binance.org/',
+    'https://bsc-dataseed4.binance.org/',
+    'https://bsc-dataseed1.defibit.io/',
+    'https://bsc-dataseed2.defibit.io/',
+    'https://bsc-dataseed1.ninicoin.io/'
+  ],
   rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
     token:  '0x1662685e086b3bd1f257e3a547ac7f68ce75f3a1', // OfficialToken 主网
@@ -629,6 +641,7 @@ const ABIS = {
   pool: [
     'function getCardInfo(uint256) view returns (address, uint256, uint256, uint256, uint256, bool)',
     'function claim(uint256)',
+    'function claimBatch(uint256[])',
     'function sweepExited(uint256)',
     'function adminForceExit(uint256)',
     'function excessTokens() view returns (uint256)',
@@ -702,6 +715,7 @@ let remainingSlots = 520;         // 剩余可购买名额
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页
 let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
+let slowTick = 5;                 // 慢数据刷新计数（首次即刷新，之后每 6 轮 ≈ 60 秒一次）
 
 /* ============================================================
  * 工具函数
@@ -769,6 +783,8 @@ const parseError = (e) => {
   if (m.includes('card already exists')) return '卡牌已存在';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
   if (m.includes('buy batch too large')) return '单笔最多购买 10 张卡牌';
+  if (m.includes('claim batch too large')) return '单笔最多领取 100 张卡牌';
+  if (m.includes('empty batch')) return '没有可领取的卡牌';
   if (m.includes('launch buy limit')) return '开盘 3 分钟内每个地址最多买入 50U 代币';
   if (m.includes('launch price not ready')) return '开盘窗口内价格未就绪，暂时无法买入';
   if (m.includes('not updater')) return '当前钱包不是预言机推送者';
@@ -783,16 +799,26 @@ const parseError = (e) => {
   if (m.includes('oracle timelock')) return '预言机变更时间锁未到期（24 小时）';
   if (m.includes('dividend pool locked')) return '分红池地址已锁定（开盘后不可更换）';
   if (m.includes('price change too large')) return '价格单次推送波动超过 ±10%，已拒绝';
+  if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
+  if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
+  if (m.includes('only token contract')) return '该操作仅限代币合约调用';
   if (m.includes('insufficient funds') && m.includes('pool')) return '分红池资金不足';
   return (e && (e.reason || e.message)) || '交易执行失败，请重试';
 };
 const showLoading = () => DOM.globalLoader.classList.add('active');
 const hideLoading = () => DOM.globalLoader.classList.remove('active');
 const showToast = (msg, type = '') => {
+  let wrap = document.getElementById('toastWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'toastWrap';
+    wrap.style.cssText = 'position:fixed;top:20px;right:16px;z-index:10001;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:80vw';
+    document.body.appendChild(wrap);
+  }
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.innerText = msg;
-  document.body.appendChild(t);
+  wrap.appendChild(t);
   setTimeout(() => t.remove(), 2600);
 };
 const throttle = (fn, delay = 1000) => {
@@ -843,7 +869,7 @@ async function switchChain() {
           params: [{
             chainId: CONFIG.chainIdHex,
             chainName: CONFIG.chainName,
-            rpcUrls: [CONFIG.rpcUrl],
+            rpcUrls: CONFIG.rpcUrls,
             nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 }
           }]
         });
@@ -890,21 +916,23 @@ async function setupProvider(address) {
   DOM.walletInfo.style.display = 'flex';
   DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
 
+  // 代币与 USDT 元信息：并行拉取（一次连接只做一次）
   try {
-    tokenDecimals = await tokenC.decimals();
-    tokenSymbol = await tokenC.symbol();
-  } catch (e) { console.warn('读取代币信息失败，请检查合约地址配置', e); }
-
-  // 分红池兑付资产（USDT）信息
-  try {
-    const uAddr = await poolC.usdt();
-    const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
-    usdtSymbol = await uc.symbol();
-    usdtDecimals = await uc.decimals();
-  } catch (e) { console.warn('读取 USDT 信息失败', e); }
+    const uAddr = await poolC.usdt().catch(() => null);
+    const [td, ts] = await Promise.all([tokenC.decimals(), tokenC.symbol()]);
+    tokenDecimals = td;
+    tokenSymbol = ts;
+    if (uAddr) {
+      const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
+      const [us, ud] = await Promise.all([uc.symbol(), uc.decimals()]);
+      usdtSymbol = us;
+      usdtDecimals = ud;
+    }
+  } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
 
   loadAll();
-  if (!refreshTimer) refreshTimer = setInterval(loadAll, CONFIG.refreshInterval);
+  startRefresh();
+  checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
 }
 
 function disconnectWallet() {
@@ -953,8 +981,17 @@ function disconnectWallet() {
   unitPriceTokens = null;
   remainingSlots = 520;
   updateBuyDisplay();
-  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  stopRefresh();
   showToast('已断开钱包', 'success');
+}
+
+/* 轮询管理：仅页面可见时刷新，切后台自动暂停（省 RPC 配额） */
+function startRefresh() {
+  if (refreshTimer) return;
+  refreshTimer = setInterval(() => { if (userAddress) loadAll(); }, CONFIG.refreshInterval);
+}
+function stopRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
 }
 
 async function checkChain() {
@@ -990,27 +1027,65 @@ async function loadAll() {
 }
 
 async function loadStats() {
-  // 分红池（USDT 兑付池）
-  const stats = await poolC.getPoolStats();
-  const [balBN, accU, liability, activeCards] = stats;
-  DOM.poolTokenBalance.innerText = fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol;
-  DOM.activeCardsDisplay.innerText = `${activeCards.toString()} / 520`;
-  remainingSlots = Math.max(0, 520 - Number(activeCards.toString()));
+  // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
+  const [poolStats, pendingSwap, lp, winActive, myBal, unitPrice] = await Promise.all([
+    poolC.getPoolStats().catch(() => null),
+    poolC.pendingSwapTokens().catch(() => null),
+    Promise.all([saleC.launched().catch(() => false), saleC.paused().catch(() => false)]),
+    tokenC.launchWindowActive().catch(() => false),
+    userAddress ? tokenC.balanceOf(userAddress).catch(() => null) : Promise.resolve(null),
+    saleC.requiredTokensForCard().catch(() => null)
+  ]);
 
-  // 池内 USDT 即 U（1:1），副行只展示待兑换的 TTT 手续费
-  let pendingTtt = '0';
-  try {
-    const pt = await poolC.pendingSwapTokens();
-    pendingTtt = fmtAmt(pt, tokenDecimals);
-  } catch (e) { /* ignore */ }
-  DOM.poolBalanceU.innerText = '待兑换 ' + pendingTtt + ' ' + tokenSymbol;
+  // 分红池（USDT 兑付池）——独立容错
+  const poolOk = poolStats !== null;
+  const balBN = poolOk ? poolStats[0] : BN.from(0);
+  const activeCards = poolOk ? poolStats[3] : BN.from(0);
+  DOM.poolTokenBalance.innerText = poolOk ? fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol : '--';
+  DOM.activeCardsDisplay.innerText = poolOk ? `${activeCards.toString()} / 520` : '-- / 520';
+  remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
+  DOM.poolBalanceU.innerText = '待兑换 ' + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol;
   DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
+  DOM.heroActiveCards.innerText = poolOk ? `${activeCards.toString()} / 520` : '--';
+  DOM.heroPoolUsdt.innerText = poolOk ? fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol : '--';
 
-  // Hero 数据带
-  DOM.heroActiveCards.innerText = `${activeCards.toString()} / 520`;
-  DOM.heroPoolUsdt.innerText = fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol;
+  // 开盘状态
+  const [launched, paused] = lp;
+  if (launched === true) {
+    DOM.launchStatus.innerHTML = paused === true
+      ? '<span class="chip chip-off">已暂停</span>'
+      : '<span class="chip chip-ok">分红进行中</span>';
+  } else if (launched === false) {
+    DOM.launchStatus.innerHTML = '<span class="chip chip-warn">未开盘</span>';
+  } else {
+    DOM.launchStatus.innerHTML = '--';
+  }
 
-  // 已销毁与流通量（销毁地址 0x…dEaD 的余额即销毁量）
+  // 开盘防机器人窗口状态条
+  if (winActive === true) {
+    try {
+      const remaining = (await tokenC.launchWindowRemaining()).toNumber();
+      DOM.launchWindowBanner.style.display = '';
+      DOM.launchWindowRemaining.innerText = remaining;
+    } catch (e) { DOM.launchWindowBanner.style.display = 'none'; }
+  } else {
+    DOM.launchWindowBanner.style.display = 'none';
+  }
+
+  // 我的代币余额（购买模块内展示）
+  DOM.buyBalanceHint.innerText = myBal !== null ? fmtTokens(myBal) + ' ' + tokenSymbol : '--';
+
+  // 购买所需代币（单价 × 数量实时联动）
+  unitPriceTokens = unitPrice !== null ? unitPrice : null;
+  updateBuyDisplay();
+
+  // 慢数据（销毁量/流通量）：约每 60 秒刷新一次，不阻塞本轮
+  slowTick = (slowTick + 1) % 6;
+  if (slowTick === 0) loadSlowData();
+}
+
+/* 慢数据：已销毁/流通量（变化缓慢，低频刷新） */
+async function loadSlowData() {
   try {
     const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
     const totalSup = await tokenC.totalSupply();
@@ -1022,43 +1097,6 @@ async function loadStats() {
       : (toNum(dead) / toNum(totalSup) * 100).toFixed(2) + '%';
     DOM.heroBurned.innerText = fmtAmt(dead, tokenDecimals) + ' ' + tokenSymbol;
   } catch (e) { /* ignore */ }
-
-  // 开盘状态
-  try {
-    const launched = await saleC.launched();
-    const paused = await saleC.paused();
-    if (launched) {
-      DOM.launchStatus.innerHTML = paused
-        ? '<span class="chip chip-off">已暂停</span>'
-        : '<span class="chip chip-ok">分红进行中</span>';
-    } else {
-      DOM.launchStatus.innerHTML = '<span class="chip chip-warn">未开盘</span>';
-    }
-  } catch (e) { /* ignore */ }
-
-  // 开盘防机器人窗口状态条
-  try {
-    const winActive = await tokenC.launchWindowActive();
-    if (winActive) {
-      const remaining = (await tokenC.launchWindowRemaining()).toNumber();
-      DOM.launchWindowBanner.style.display = '';
-      DOM.launchWindowRemaining.innerText = remaining;
-    } else {
-      DOM.launchWindowBanner.style.display = 'none';
-    }
-  } catch (e) { DOM.launchWindowBanner.style.display = 'none'; }
-
-  // 我的代币余额（购买模块内展示）
-  if (userAddress) {
-    const bal = await tokenC.balanceOf(userAddress);
-    DOM.buyBalanceHint.innerText = fmtTokens(bal) + ' ' + tokenSymbol;
-  }
-
-  // 购买所需代币（单价 × 数量实时联动）
-  try {
-    unitPriceTokens = await saleC.requiredTokensForCard();
-  } catch (e) { unitPriceTokens = null; }
-  updateBuyDisplay();
 }
 
 async function loadUser() {
@@ -1174,15 +1212,23 @@ async function loadCards() {
     return;
   }
 
+  // 并行拉取所有卡牌 ID 与卡牌信息（总耗时 = 最慢的一个请求，而非逐张累加）
+  const idxs = Array.from({ length: count }, (_, i) => i);
+  const tokenIds = await Promise.all(
+    idxs.map(i => nftC.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
+  );
+  const infos = await Promise.all(
+    tokenIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
+  );
+
   const rows = [];
   for (let i = 0; i < count; i++) {
-    const tokenId = await nftC.tokenOfOwnerByIndex(userAddress, i);
-    try {
-      const info = await poolC.getCardInfo(tokenId);
-      const [owner, entryTime, accrued, claimed, pending, active] = info;
-      rows.push({ tokenId, entryTime, accrued, claimed, pending, active });
-    } catch (e) {
-      rows.push({ tokenId, entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false });
+    const tokenId = tokenIds[i];
+    const info = infos[i];
+    if (tokenId === null || info === null) {
+      rows.push({ tokenId: tokenId === null ? BN.from(0) : tokenId, entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false });
+    } else {
+      rows.push({ tokenId, entryTime: info[1], accrued: info[2], claimed: info[3], pending: info[4], active: info[5] });
     }
   }
   rows.sort((a, b) => a.tokenId.lt(b.tokenId) ? -1 : 1);
@@ -1296,8 +1342,9 @@ async function buyCard() {
     const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
     if (allowance.lt(total)) {
       showToast('请先在钱包中确认授权…', '');
-      // 精确授权本次购买所需数量（不使用无限授权，降低风险敞口）
-      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, total);
+      // 授权额加 5% 缓冲：防止授权与成交之间预言机价格波动导致 allowance 不足
+      const approveAmt = total.mul(105).div(100);
+      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
       await tx.wait();
       showToast('授权成功，继续购买…', 'success');
     }
@@ -1338,23 +1385,31 @@ async function claimAll() {
       count = bal.toNumber();
       if (!Number.isFinite(count) || count < 0 || count > 10000) count = 0;
     } catch (e) { count = 0; }
-    let claimed = 0;
+
+    // 收集所有有待领取的卡牌
+    const ids = [];
     for (let i = 0; i < count; i++) {
       const tokenId = await nftC.tokenOfOwnerByIndex(userAddress, i);
       try {
         const info = await poolC.getCardInfo(tokenId);
-        if (info[4].gt(0)) {
-          const tx = await poolC.connect(signer).claim(tokenId);
-          await tx.wait();
-          claimed++;
-        }
-      } catch (e) { /* 单卡失败跳过 */ }
+        if (info[4].gt(0)) ids.push(tokenId);
+      } catch (e) { /* 单卡读取失败跳过 */ }
     }
-    if (claimed > 0) {
-      showToast(`已领取 ${claimed} 张卡牌的分红`, 'success');
-    } else {
+
+    if (ids.length === 0) {
       showToast('没有待领取的分红', '');
+      return;
     }
+
+    // 批量领取：每 100 张一笔交易（多数情况一笔搞定，只需一次签名）
+    let done = 0;
+    for (let i = 0; i < ids.length; i += 100) {
+      const chunk = ids.slice(i, i + 100);
+      const tx = await poolC.connect(signer).claimBatch(chunk);
+      await tx.wait();
+      done += chunk.length;
+    }
+    showToast(`已领取 ${done} 张卡牌的分红 🎉`, 'success');
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
@@ -1467,6 +1522,15 @@ window.addEventListener('load', async () => {
       if (userAddress) loadAll();
     });
   }
+
+  // 页面可见性：切到后台暂停轮询，回到前台立即刷新并恢复
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (userAddress) { loadAll(); startRefresh(); }
+    } else {
+      stopRefresh();
+    }
+  });
 });
 })();
 </script>
