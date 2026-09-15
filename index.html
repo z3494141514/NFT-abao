@@ -202,11 +202,12 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 @media (hover:hover){
 .nft-card:hover{transform:translateY(-3px);border-color:var(--border-hi);background:var(--panel-hi)}
 }
-.nft-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.nft-id{font-size:19px;font-weight:800;letter-spacing:.5px;font-variant-numeric:tabular-nums}
-.nft-id small{color:var(--muted);font-weight:600}
-.nft-entry{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;line-height:1.5}
-.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:99px}
+.nft-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.nft-id-wrap{display:flex;flex-direction:column;gap:8px}
+.nft-id-no{font-size:17px;font-weight:900;letter-spacing:2.5px;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.nft-entry{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;line-height:1.6}
+.entry-label{font-size:9px;letter-spacing:1.5px;color:rgba(139,147,167,.7);text-transform:uppercase}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:99px;width:fit-content}
 .badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4)}
 .badge-exited{color:var(--red);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35)}
 .nft-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -218,8 +219,9 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .exit-track{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
 .exit-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);box-shadow:0 0 12px rgba(139,92,246,.6);transition:width .8s cubic-bezier(.22,.8,.36,1)}
 .exit-fill.done{background:linear-gradient(90deg,#f5c14c,#fb7185)}
-.exit-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.exit-meta .pct{color:var(--cyan);font-weight:700}
+.exit-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.exit-meta .pct{color:var(--cyan);font-weight:800;font-size:13px}
+.progress-txt{font-size:11px;color:var(--muted)}
 /* ---------- 邀请 ---------- */
 .invite-wrap{max-width:560px;margin:0 auto}
 /* ---------- 管理 ---------- */
@@ -393,7 +395,7 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="kpi">
         <div class="kpi-top"><span class="kpi-label">流通量</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></span></div>
         <div class="kpi-value" id="circulatingSupply">--</div>
-        <div class="kpi-sub">总量 1000 万 · 永不增发</div>
+        <div class="kpi-sub">上限 1000 万 · 永不增发</div>
       </div>
       <div class="kpi">
         <div class="kpi-top"><span class="kpi-label">待领取分红</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg></span></div>
@@ -1124,13 +1126,16 @@ async function loadSlowData() {
   try {
     const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
     const totalSup = await tokenC.totalSupply();
-    const circ = totalSup.sub(dead);
-    DOM.burnedSupply.innerText = fmtAmt(dead, tokenDecimals) + ' ' + tokenSymbol;
+    const circ = totalSup.sub(dead); // 流通量 = 当前总量 − 销毁地址余额
+    // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
+    const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
+    const burned = MAXSUP.sub(circ);
+    DOM.burnedSupply.innerText = fmtAmt(burned, tokenDecimals) + ' ' + tokenSymbol;
     DOM.circulatingSupply.innerText = fmtAmt(circ, tokenDecimals) + ' ' + tokenSymbol;
-    DOM.burnedPercent.innerText = totalSup.isZero() || dead.isZero()
+    DOM.burnedPercent.innerText = MAXSUP.isZero() || burned.isZero()
       ? '0%'
-      : (toNum(dead) / toNum(totalSup) * 100).toFixed(2) + '%';
-    DOM.heroBurned.innerText = fmtAmt(dead, tokenDecimals) + ' ' + tokenSymbol;
+      : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%';
+    DOM.heroBurned.innerText = fmtAmt(burned, tokenDecimals) + ' ' + tokenSymbol;
   } catch (e) { /* ignore */ }
 }
 
@@ -1291,14 +1296,19 @@ async function loadCards() {
     const pndC = clampCents(r.pending);
     const fmtU = (c) => (c / 100).toFixed(2) + ' U';
     const pct = Math.min(100, accC / 300);
+    const remain = Math.max(0, 300 - accC);
+    const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
+    const progressTxt = r.active
+      ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
+      : '已完成 · 待领取可随时提取';
     return `
     <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
       <div class="nft-top">
-        <div class="flex">
-          <span class="nft-id">#${r.tokenId.toString()}</span>
-          ${r.active ? '<span class="badge badge-active">有效</span>' : '<span class="badge badge-exited">已出局</span>'}
+        <div class="nft-id-wrap">
+          <span class="nft-id-no">${cardNo}</span>
+          ${r.active ? '<span class="badge badge-active">● 计息中</span>' : '<span class="badge badge-exited">✓ 已出局</span>'}
         </div>
-        <div class="nft-entry">入场<br>${fmtTime(r.entryTime)}</div>
+        <div class="nft-entry"><span class="entry-label">入场时间</span><br>${fmtTime(r.entryTime)}</div>
       </div>
       <div class="nft-metrics">
         <div class="metric">
@@ -1316,7 +1326,10 @@ async function loadCards() {
       </div>
       <div class="exit-progress">
         <div class="exit-track"><div class="exit-fill${pct >= 100 ? ' done' : ''}" style="width:${pct.toFixed(2)}%"></div></div>
-        <div class="exit-meta"><span class="pct">${pct.toFixed(2)}%</span></div>
+        <div class="exit-meta">
+          <span class="pct">${pct.toFixed(2)}%</span>
+          <span class="progress-txt">${progressTxt}</span>
+        </div>
       </div>
       <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero ? 'disabled' : ''}>
         ${pendingZero ? '无待领取' : '领取分红'}
