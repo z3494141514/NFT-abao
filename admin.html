@@ -165,8 +165,11 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="admin-title">分红池（USDT 兑付）</div>
           <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
           <div class="data-row"><span class="data-label">待兑换 TTT</span><span class="data-value" id="adminPoolPending"></span></div>
+          <div class="data-row"><span class="data-label">自动兑换阈值</span><span class="data-value" id="adminSwapThreshold"></span></div>
           <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
           <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
+          <div class="data-row"><span class="data-label">利润钱包（10% 抽成）</span><span class="data-value hi" id="adminProfitWallet"></span></div>
+          <div class="data-row"><span class="data-label">累计已抽利润</span><span class="data-value" id="adminTotalProfit"></span></div>
           <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
           <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminPoolCoreLocked"></span></div>
           <div class="flex mt12">
@@ -180,6 +183,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
+          <div class="mt12"><input type="text" id="adminProfitWalletInput" class="input" placeholder="利润钱包地址（10% 抽成，锁核心前可改）"><button id="adminSetProfitWalletBtn" class="btn btn-primary btn-sm mt8">设置利润钱包</button></div>
+          <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
           <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
         </div>
 
@@ -304,7 +309,12 @@ const ABIS = {
     'function usdt() view returns (address)',
     'function pendingSwapTokens() view returns (uint256)',
     'function swapFeesToUsdt()',
-    'function withdrawStrandedTokens(address)'
+    'function withdrawStrandedTokens(address)',
+    'function profitWallet() view returns (address)',
+    'function totalProfitUsdt() view returns (uint256)',
+    'function setProfitWallet(address)',
+    'function swapThreshold() view returns (uint256)',
+    'function setSwapThreshold(uint256)'
   ],
   oracle: [
     'function getPriceData() view returns (uint256, uint256, uint256, uint256)',
@@ -334,6 +344,9 @@ const DOM = {
   adminUpdaterManageBlock: $('adminUpdaterManageBlock'), adminAddUpdaterInput: $('adminAddUpdaterInput'), adminAddUpdaterBtn: $('adminAddUpdaterBtn'),
   adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
   adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
+  adminProfitWallet: $('adminProfitWallet'), adminTotalProfit: $('adminTotalProfit'),
+  adminProfitWalletInput: $('adminProfitWalletInput'), adminSetProfitWalletBtn: $('adminSetProfitWalletBtn'),
+  adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
   adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
   adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
   adminForceExitInput: $('adminForceExitInput'), adminForceExitBtn: $('adminForceExitBtn'),
@@ -611,6 +624,14 @@ async function loadAdminData() {
     DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol;
     const excess = await poolC.excessTokens();
     DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' ' + usdtSymbol;
+    try {
+      const pw = await poolC.profitWallet();
+      DOM.adminProfitWallet.innerText = (pw && pw !== ZERO_ADDR) ? shortAddr(pw) : '-- 未设置（不抽成）';
+      const tp = await poolC.totalProfitUsdt();
+      DOM.adminTotalProfit.innerText = fmtAmt(tp, usdtDecimals) + ' ' + usdtSymbol;
+      const st = await poolC.swapThreshold();
+      DOM.adminSwapThreshold.innerText = fmtAmt(st, tokenDecimals) + ' ' + tokenSymbol;
+    } catch (e) { /* ignore */ }
     const poolPaused = await poolC.paused();
     DOM.adminPoolPaused.innerText = poolPaused ? '⏸ 已暂停（禁止领取）' : '▶ 运行中';
     DOM.adminPoolPauseBtn.disabled = poolPaused;
@@ -854,6 +875,35 @@ async function adminWithdrawTtt() {
   finally { hideLoading(); }
 }
 
+async function adminSetProfitWallet() {
+  const a = DOM.adminProfitWalletInput.value.trim();
+  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的利润钱包地址', 'error'); return; }
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).setProfitWallet(a);
+    await tx.wait();
+    showToast('利润钱包设置成功（10% 抽成生效）', 'success');
+    DOM.adminProfitWalletInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSetSwapThreshold() {
+  const v = DOM.adminSwapThresholdInput.value.trim();
+  if (!v || isNaN(Number(v)) || Number(v) <= 0) { showToast('请输入大于 0 的阈值（TTT 枚数）', 'error'); return; }
+  const threshold = ethers.utils.parseUnits(v, tokenDecimals);
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).setSwapThreshold(threshold);
+    await tx.wait();
+    showToast('兑换阈值已更新', 'success');
+    DOM.adminSwapThresholdInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
 async function adminWithdrawExcess() {
   if (!confirm('确认提取超额资金？（不影响卡牌待领取分红负债）')) return;
   showLoading();
@@ -963,6 +1013,8 @@ DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
 DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
 DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
 DOM.adminWithdrawTttBtn.addEventListener('click', throttle(adminWithdrawTtt, 2000));
+DOM.adminSetProfitWalletBtn.addEventListener('click', throttle(adminSetProfitWallet, 1500));
+DOM.adminSetSwapThresholdBtn.addEventListener('click', throttle(adminSetSwapThreshold, 1500));
 DOM.adminWithdrawExcessBtn.addEventListener('click', throttle(adminWithdrawExcess, 2000));
 DOM.adminSetPoolBtn.addEventListener('click', throttle(adminSetPool, 1500));
 DOM.adminSetOracleBtn.addEventListener('click', throttle(adminSetOracle, 1500));
