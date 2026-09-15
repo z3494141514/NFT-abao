@@ -48,6 +48,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .admin-grid-item{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:16px;backdrop-filter:blur(14px)}
 .admin-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:1px;color:var(--gold);margin-bottom:14px;text-transform:uppercase}
 .data-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px dashed rgba(148,163,184,.12);flex-wrap:wrap}
+.data-tip{font-size:12px;color:var(--t3,#7d8aa5);line-height:1.6;background:rgba(139,92,246,.07);border:1px dashed rgba(139,92,246,.35);border-radius:10px;padding:8px 10px}
 .data-row:last-child{border-bottom:none}
 .data-label{font-size:12.5px;color:var(--muted)}
 .data-value{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;word-break:break-all}
@@ -140,6 +141,16 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <textarea id="adminMintList" class="input" placeholder="预分发卡牌（每行一个钱包地址，仅开盘前）"></textarea>
             <button id="adminMintBtn" class="btn btn-primary btn-sm mt12">预分发</button>
           </div>
+          <div class="admin-title mt16">预售配置（仅开盘前）</div>
+          <div class="data-row"><span class="data-label">收款 USDT</span><span class="data-value hi" id="adminPreUsdt"></span></div>
+          <div class="data-row"><span class="data-label">利润钱包</span><span class="data-value hi" id="adminPreProfit"></span></div>
+          <div class="data-row"><span class="data-label">DEX 路由</span><span class="data-value hi" id="adminPreRouter"></span></div>
+          <div class="data-row"><span class="data-label">TTT 储备</span><span class="data-value" id="adminPreReserve"></span></div>
+          <div class="data-row"><span class="data-label">预分发 / 预售 / 奖励卡 / 剩余</span><span class="data-value" id="adminPreCounters"></span></div>
+          <div class="mt12"><input type="text" id="adminPreUsdtInput" class="input" placeholder="USDT 地址（BSC: 0x55d3…7955）"></div>
+          <div class="mt12"><input type="text" id="adminPreProfitInput" class="input" placeholder="利润钱包地址（每张卡 30U）"></div>
+          <button id="adminPreConfigSaveBtn" class="btn btn-primary btn-sm mt12">保存预售配置</button>
+          <button id="adminWithdrawPreUsdtBtn" class="btn btn-ghost btn-sm mt8">提取滞留 USDT（滑点粉尘）</button>
         </div>
 
         <div class="admin-grid-item" id="adminTokenBlock" style="display:none">
@@ -149,7 +160,15 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="data-row"><span class="data-label">预言机</span><span class="data-value hi" id="adminOracleAddr"></span></div>
           <div class="data-row"><span class="data-label">待生效预言机</span><span class="data-value" id="adminPendingOracle"></span></div>
           <div class="data-row"><span class="data-label">开盘保护</span><span class="data-value" id="adminLaunchWindow"></span></div>
+          <div class="data-row"><span class="data-label">预售伙伴</span><span class="data-value hi" id="adminLaunchPartner"></span></div>
+          <div class="data-row"><span class="data-label">USDT 交易对</span><span class="data-value hi" id="adminPairAddr"></span></div>
+          <div class="flex mt12">
+            <button id="adminComputePairBtn" class="btn btn-ghost btn-sm">计算交易对地址</button>
+            <button id="adminCopyPairBtn" class="btn btn-ghost btn-sm">复制</button>
+          </div>
+          <div class="data-tip mt8">第一笔预售前，请先把上面算出的交易对地址用「登记 LP」或「设置主 LP」加入白名单，防止开盘前被抢购。</div>
           <div class="mt12"><input type="text" id="adminSetPoolInput" class="input" placeholder="分红池地址"><button id="adminSetPoolBtn" class="btn btn-primary btn-sm mt8">设置分红池</button></div>
+          <div class="mt12"><input type="text" id="adminSetLaunchPartnerInput" class="input" placeholder="销售合约地址（自动加池放行，仅开盘前）"><button id="adminSetLaunchPartnerBtn" class="btn btn-primary btn-sm mt8">设置预售伙伴</button></div>
           <div class="mt12"><input type="text" id="adminSetOracleInput" class="input" placeholder="预言机地址（仅首次）"><button id="adminSetOracleBtn" class="btn btn-primary btn-sm mt8">设置预言机</button></div>
           <div class="mt12"><input type="text" id="adminProposeOracleInput" class="input" placeholder="新预言机地址（24h 时间锁）">
             <div class="flex mt8"><button id="adminProposeOracleBtn" class="btn btn-ghost btn-sm">提议更换</button><button id="adminApplyOracleBtn" class="btn btn-ghost btn-sm">应用变更</button></div>
@@ -168,8 +187,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="data-row"><span class="data-label">自动兑换阈值</span><span class="data-value" id="adminSwapThreshold"></span></div>
           <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
           <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
-          <div class="data-row"><span class="data-label">利润钱包（10% 抽成）</span><span class="data-value hi" id="adminProfitWallet"></span></div>
-          <div class="data-row"><span class="data-label">累计已抽利润</span><span class="data-value" id="adminTotalProfit"></span></div>
           <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
           <div class="data-row"><span class="data-label">核心配置</span><span class="data-value" id="adminPoolCoreLocked"></span></div>
           <div class="flex mt12">
@@ -183,7 +200,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
-          <div class="mt12"><input type="text" id="adminProfitWalletInput" class="input" placeholder="利润钱包地址（10% 抽成，锁核心前可改）"><button id="adminSetProfitWalletBtn" class="btn btn-primary btn-sm mt8">设置利润钱包</button></div>
           <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
           <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
         </div>
@@ -272,7 +288,9 @@ const ABIS = {
     'function pendingOracle() view returns (address)',
     'function oracleChangeTime() view returns (uint256)',
     'function addLpPair(address)',
-    'function lpPairs(address) view returns (bool)'
+    'function lpPairs(address) view returns (bool)',
+    'function launchPartner() view returns (address)',
+    'function setLaunchPartner(address)'
   ],
   nft: [
     'function MINTER_ROLE() view returns (bytes32)',
@@ -291,7 +309,16 @@ const ABIS = {
     'function owner() view returns (address)',
     'function coreLocked() view returns (bool)',
     'function lockCore()',
-    'function updateCore(address, address, address, address)'
+    'function updateCore(address, address, address, address, address)',
+    'function usdt() view returns (address)',
+    'function profitWallet() view returns (address)',
+    'function router() view returns (address)',
+    'function adminMintedCount() view returns (uint256)',
+    'function preLaunchPurchaseCount() view returns (uint256)',
+    'function totalBonusCardsMinted() view returns (uint256)',
+    'function preLaunchRemaining() view returns (uint256)',
+    'function setPreLaunchConfig(address, address)',
+    'function withdrawStrandedUsdt(address)'
   ],
   pool: [
     'function activeCardCount() view returns (uint256)',
@@ -310,9 +337,6 @@ const ABIS = {
     'function pendingSwapTokens() view returns (uint256)',
     'function swapFeesToUsdt()',
     'function withdrawStrandedTokens(address)',
-    'function profitWallet() view returns (address)',
-    'function totalProfitUsdt() view returns (uint256)',
-    'function setProfitWallet(address)',
     'function swapThreshold() view returns (uint256)',
     'function setSwapThreshold(uint256)'
   ],
@@ -337,6 +361,10 @@ const DOM = {
   adminSaleCoreLocked: $('adminSaleCoreLocked'), adminSaleLockCoreBtn: $('adminSaleLockCoreBtn'),
   adminLaunchBtn: $('adminLaunchBtn'), adminPauseBtn: $('adminPauseBtn'), adminUnpauseBtn: $('adminUnpauseBtn'),
   adminMintList: $('adminMintList'), adminMintBtn: $('adminMintBtn'),
+  adminPreUsdt: $('adminPreUsdt'), adminPreProfit: $('adminPreProfit'), adminPreRouter: $('adminPreRouter'),
+  adminPreReserve: $('adminPreReserve'), adminPreCounters: $('adminPreCounters'), adminPreUsdtInput: $('adminPreUsdtInput'),
+  adminPreProfitInput: $('adminPreProfitInput'),
+  adminPreConfigSaveBtn: $('adminPreConfigSaveBtn'), adminWithdrawPreUsdtBtn: $('adminWithdrawPreUsdtBtn'),
   adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'), adminOracleBase: $('adminOracleBase'),
   adminOracleLast: $('adminOracleLast'), adminOracleDeviation: $('adminOracleDeviation'),
   adminUpdaterBlock: $('adminUpdaterBlock'), adminPriceInput: $('adminPriceInput'), adminSetPriceBtn: $('adminSetPriceBtn'), cooldownFill: $('cooldownFill'),
@@ -344,8 +372,6 @@ const DOM = {
   adminUpdaterManageBlock: $('adminUpdaterManageBlock'), adminAddUpdaterInput: $('adminAddUpdaterInput'), adminAddUpdaterBtn: $('adminAddUpdaterBtn'),
   adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
   adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
-  adminProfitWallet: $('adminProfitWallet'), adminTotalProfit: $('adminTotalProfit'),
-  adminProfitWalletInput: $('adminProfitWalletInput'), adminSetProfitWalletBtn: $('adminSetProfitWalletBtn'),
   adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
   adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
   adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
@@ -354,6 +380,9 @@ const DOM = {
   adminNftBlock: $('adminNftBlock'), adminBurnInput: $('adminBurnInput'), adminBurnBtn: $('adminBurnBtn'),
   adminTokenBlock: $('adminTokenBlock'), adminTradingEnabled: $('adminTradingEnabled'), adminDividendPool: $('adminDividendPool'),
   adminOracleAddr: $('adminOracleAddr'), adminLaunchWindow: $('adminLaunchWindow'),
+  adminLaunchPartner: $('adminLaunchPartner'),
+  adminPairAddr: $('adminPairAddr'), adminComputePairBtn: $('adminComputePairBtn'), adminCopyPairBtn: $('adminCopyPairBtn'),
+  adminSetLaunchPartnerInput: $('adminSetLaunchPartnerInput'), adminSetLaunchPartnerBtn: $('adminSetLaunchPartnerBtn'),
   adminSetPoolInput: $('adminSetPoolInput'), adminSetPoolBtn: $('adminSetPoolBtn'),
   adminSetOracleInput: $('adminSetOracleInput'), adminSetOracleBtn: $('adminSetOracleBtn'),
   adminPendingOracle: $('adminPendingOracle'),
@@ -411,6 +440,10 @@ const parseError = (e) => {
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
   if (m.includes('already launched')) return '已开盘';
   if (m.includes('not launched')) return '尚未开盘';
+  if (m.includes('zero usdt') || m.includes('usdt not configured')) return 'USDT 地址未配置';
+  if (m.includes('zero profit wallet') || m.includes('profit wallet not configured')) return '利润钱包地址未配置';
+  if (m.includes('token reserve insufficient')) return 'TTT 储备不足，请先向销售合约转入代币';
+  if (m.includes('pool not configured')) return '分红池地址未配置（需先 updateCore）';
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
   if (m.includes('update too fast')) return '推送过快，需等待 30 秒';
@@ -593,6 +626,23 @@ async function loadAdminData() {
     DOM.adminSaleCoreLocked.innerText = saleCoreLocked ? '🔒 已锁定' : '🔓 未锁定';
     DOM.adminLaunchBtn.disabled = launched;
     DOM.adminSaleLockCoreBtn.disabled = saleCoreLocked;
+    // 预售配置（开盘前）
+    try {
+      const [pu, pp, prt, amc, ppc, tbc, pr] = await Promise.all([
+        saleC.usdt(), saleC.profitWallet(), saleC.router(),
+        saleC.adminMintedCount(), saleC.preLaunchPurchaseCount(), saleC.totalBonusCardsMinted(), saleC.preLaunchRemaining()
+      ]);
+      DOM.adminPreUsdt.innerText = (pu && pu !== ZERO_ADDR) ? shortAddr(pu) : '-- 未配置';
+      DOM.adminPreProfit.innerText = (pp && pp !== ZERO_ADDR) ? shortAddr(pp) : '-- 未配置';
+      DOM.adminPreRouter.innerText = (prt && prt !== ZERO_ADDR) ? shortAddr(prt) : '-- 未配置';
+      DOM.adminPreCounters.innerText = `${amc.toString()} / ${ppc.toString()} / ${tbc.toString()} / 剩 ${pr.toString()}（220 上限）`;
+      DOM.adminPreConfigSaveBtn.disabled = launched;
+      // TTT 储备（销售合约余额：加池币端 + 购买者 2000 枚/张 奖励的共用储备）
+      try {
+        const reserve = await tokenC.balanceOf(saleC.address);
+        DOM.adminPreReserve.innerText = fmtAmt(reserve, tokenDecimals) + ' ' + tokenSymbol;
+      } catch (e) { DOM.adminPreReserve.innerText = '--'; }
+    } catch (e) { /* ignore */ }
   }
 
   // 预言机
@@ -625,10 +675,6 @@ async function loadAdminData() {
     const excess = await poolC.excessTokens();
     DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' ' + usdtSymbol;
     try {
-      const pw = await poolC.profitWallet();
-      DOM.adminProfitWallet.innerText = (pw && pw !== ZERO_ADDR) ? shortAddr(pw) : '-- 未设置（不抽成）';
-      const tp = await poolC.totalProfitUsdt();
-      DOM.adminTotalProfit.innerText = fmtAmt(tp, usdtDecimals) + ' ' + usdtSymbol;
       const st = await poolC.swapThreshold();
       DOM.adminSwapThreshold.innerText = fmtAmt(st, tokenDecimals) + ' ' + tokenSymbol;
     } catch (e) { /* ignore */ }
@@ -653,6 +699,10 @@ async function loadAdminData() {
     DOM.adminTradingEnabled.innerText = trading ? '✅ 已开启' : '❌ 未开启';
     DOM.adminDividendPool.innerText = shortAddr(dp);
     DOM.adminOracleAddr.innerText = shortAddr(oc);
+    try {
+      const lp = await tokenC.launchPartner();
+      DOM.adminLaunchPartner.innerText = (lp && lp !== ZERO_ADDR) ? shortAddr(lp) : '-- 未设置';
+    } catch (e) { DOM.adminLaunchPartner.innerText = '--'; }
     const pendingOc = await tokenC.pendingOracle();
     if (pendingOc && pendingOc !== ZERO_ADDR) {
       const changeTime = (await tokenC.oracleChangeTime()).toNumber();
@@ -718,6 +768,76 @@ async function adminMint() {
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
+}
+
+async function adminSavePreLaunchConfig() {
+  const usdt = DOM.adminPreUsdtInput.value.trim();
+  const profit = DOM.adminPreProfitInput.value.trim();
+  if (!ethers.utils.isAddress(usdt)) { showToast('请输入合法的 USDT 地址', 'error'); return; }
+  if (!ethers.utils.isAddress(profit)) { showToast('请输入合法的利润钱包地址', 'error'); return; }
+  if (!confirm('确认保存预售配置？\n收款 USDT、利润钱包（30U/张）将一并更新。\n50U/张 由合约自动加入流动性，无需配置钱包。')) return;
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).setPreLaunchConfig(usdt, profit);
+    await tx.wait();
+    showToast('预售配置已保存', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSetLaunchPartner() {
+  const partner = DOM.adminSetLaunchPartnerInput.value.trim();
+  if (!ethers.utils.isAddress(partner)) { showToast('请输入合法的销售合约地址', 'error'); return; }
+  if (!confirm(`确认设置预售伙伴为 ${partner}？\n仅开盘前有效：允许该合约与交易对交互（自动加流动性）。`)) return;
+  showLoading();
+  try {
+    const tx = await tokenC.connect(signer).setLaunchPartner(partner);
+    await tx.wait();
+    showToast('预售伙伴已设置', 'success');
+    DOM.adminSetLaunchPartnerInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminWithdrawPreUsdt() {
+  if (!confirm('提取销售合约内滞留的 USDT（加池滑点粉尘）到当前钱包？')) return;
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).withdrawStrandedUsdt(userAddress);
+    await tx.wait();
+    showToast('滞留 USDT 已提取', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+// PancakeSwap V2 工厂（BSC 主网）：交易对地址可提前确定性算出
+const PANCAKE_FACTORY = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+async function adminComputePair() {
+  try {
+    const usdt = await saleC.usdt();
+    if (!usdt || usdt === ZERO_ADDR) { showToast('请先在销售合约配置 USDT 地址', 'error'); return; }
+    const fac = new ethers.Contract(PANCAKE_FACTORY, ['function getPair(address,address) view returns (address)'], provider);
+    const pair = await fac.getPair(usdt, CONFIG.contracts.token);
+    DOM.adminPairAddr.innerText = pair;
+    if (pair === ZERO_ADDR) {
+      showToast('交易对尚未创建（首笔预售购买时会自动创建）', '');
+    } else {
+      showToast('交易对已存在', 'success');
+    }
+  } catch (e) { showToast(parseError(e), 'error'); }
+}
+async function adminCopyPair() {
+  const addr = DOM.adminPairAddr.innerText.trim();
+  if (!ethers.utils.isAddress(addr)) { showToast('请先计算交易对地址', 'error'); return; }
+  try {
+    await navigator.clipboard.writeText(addr);
+    showToast('交易对地址已复制', 'success');
+  } catch (e) {
+    showToast('复制失败，请手动选择复制', 'error');
+  }
 }
 
 async function adminSetPrice() {
@@ -875,20 +995,6 @@ async function adminWithdrawTtt() {
   finally { hideLoading(); }
 }
 
-async function adminSetProfitWallet() {
-  const a = DOM.adminProfitWalletInput.value.trim();
-  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的利润钱包地址', 'error'); return; }
-  showLoading();
-  try {
-    const tx = await poolC.connect(signer).setProfitWallet(a);
-    await tx.wait();
-    showToast('利润钱包设置成功（10% 抽成生效）', 'success');
-    DOM.adminProfitWalletInput.value = '';
-    loadAll();
-  } catch (e) { showToast(parseError(e), 'error'); }
-  finally { hideLoading(); }
-}
-
 async function adminSetSwapThreshold() {
   const v = DOM.adminSwapThresholdInput.value.trim();
   if (!v || isNaN(Number(v)) || Number(v) <= 0) { showToast('请输入大于 0 的阈值（TTT 枚数）', 'error'); return; }
@@ -1000,6 +1106,11 @@ DOM.adminLaunchBtn.addEventListener('click', throttle(adminLaunch, 1500));
 DOM.adminPauseBtn.addEventListener('click', throttle(() => adminPauseToggle(true), 1500));
 DOM.adminUnpauseBtn.addEventListener('click', throttle(() => adminPauseToggle(false), 1500));
 DOM.adminMintBtn.addEventListener('click', throttle(adminMint, 2000));
+DOM.adminPreConfigSaveBtn.addEventListener('click', throttle(adminSavePreLaunchConfig, 2000));
+DOM.adminWithdrawPreUsdtBtn.addEventListener('click', throttle(adminWithdrawPreUsdt, 2000));
+DOM.adminSetLaunchPartnerBtn.addEventListener('click', throttle(adminSetLaunchPartner, 2000));
+DOM.adminComputePairBtn.addEventListener('click', throttle(adminComputePair, 2000));
+DOM.adminCopyPairBtn.addEventListener('click', throttle(adminCopyPair, 2000));
 DOM.adminSetPriceBtn.addEventListener('click', throttle(adminSetPrice, 1500));
 DOM.adminSetBasePriceBtn.addEventListener('click', throttle(adminSetBasePrice, 1500));
 DOM.adminAddUpdaterBtn.addEventListener('click', throttle(adminAddUpdater, 1500));
@@ -1013,7 +1124,6 @@ DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
 DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
 DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
 DOM.adminWithdrawTttBtn.addEventListener('click', throttle(adminWithdrawTtt, 2000));
-DOM.adminSetProfitWalletBtn.addEventListener('click', throttle(adminSetProfitWallet, 1500));
 DOM.adminSetSwapThresholdBtn.addEventListener('click', throttle(adminSetSwapThreshold, 1500));
 DOM.adminWithdrawExcessBtn.addEventListener('click', throttle(adminWithdrawExcess, 2000));
 DOM.adminSetPoolBtn.addEventListener('click', throttle(adminSetPool, 1500));

@@ -183,6 +183,10 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .reward-hero-ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,193,76,.45);flex-shrink:0}
 .reward-hero-ic .ic{width:32px;height:32px;stroke:#fff;stroke-width:1.6}
 .reward-hero-body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.reward-hero-violet{background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(245,193,76,.05) 55%,rgba(59,130,246,.12));border:1px solid rgba(139,92,246,.45);box-shadow:0 10px 40px rgba(139,92,246,.14)}
+.reward-hero-violet .reward-hero-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 8px 30px rgba(139,92,246,.45)}
+.reward-mini{margin-top:4px;font-size:13px;color:var(--t3)}
+.reward-mini b{color:var(--gold);font-weight:700}
 .reward-label{font-size:12px;letter-spacing:2.5px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
 .reward-value{font-size:36px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all;animation:goldFlow 4s linear infinite}
 @keyframes goldFlow{to{background-position:200% center}}
@@ -431,7 +435,7 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="module">
         <div class="module-head">
           <span class="module-title">购买卡牌</span>
-          <span class="module-badge">100 U / 张</span>
+          <span class="module-badge" id="buyModeBadge">100 U / 张</span>
         </div>
         <div class="data-row">
           <span class="data-label">购买数量</span>
@@ -441,19 +445,52 @@ body{-webkit-tap-highlight-color:transparent}
             <button class="qty-btn" id="plusBtn" aria-label="增加">+</button>
           </div>
         </div>
-        <div class="data-row">
-          <span class="data-label">需支付（<span id="buyQtyHint">1</span> 张）</span>
-          <span class="data-value hi" id="buyTokensNeeded">--</span>
+
+        <!-- 开盘前：USDT 预售 -->
+        <div id="preLaunchBuyArea" style="display:none">
+          <div class="data-row">
+            <span class="data-label">预售价格</span>
+            <span class="data-value gold">100 USDT / 张</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">需支付（<span id="buyQtyHintPre">1</span> 张）</span>
+            <span class="data-value hi" id="preLaunchPay">100 USDT</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">我的 USDT 余额</span>
+            <span class="data-value" id="usdtBalanceHint">--</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">剩余预售额度</span>
+            <span class="data-value" id="preLaunchRemainingDisplay">-- / 220</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">购买奖励</span>
+            <span class="data-value gold">每张送 2000 TTT（20U 等值）</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">直推奖励</span>
+            <span class="data-value">上级实时获 20U，满 1000U 再送上级 1 张卡</span>
+          </div>
+          <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt16">USDT 预售购买</button>
         </div>
-        <div class="data-row">
-          <span class="data-label">我的代币余额</span>
-          <span class="data-value" id="buyBalanceHint">--</span>
+
+        <!-- 开盘后：代币购买 -->
+        <div id="tokenBuyArea" style="display:none">
+          <div class="data-row">
+            <span class="data-label">需支付（<span id="buyQtyHint">1</span> 张）</span>
+            <span class="data-value hi" id="buyTokensNeeded">--</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">我的代币余额</span>
+            <span class="data-value" id="buyBalanceHint">--</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">剩余名额</span>
+            <span class="data-value" id="buyRemainingSlots">-- / 520</span>
+          </div>
+          <button id="buyBtn" class="btn btn-primary btn-block mt16">购买卡牌</button>
         </div>
-        <div class="data-row">
-          <span class="data-label">剩余名额</span>
-          <span class="data-value" id="buyRemainingSlots">-- / 520</span>
-        </div>
-        <button id="buyBtn" class="btn btn-primary btn-block mt16">购买卡牌</button>
       </div>
     </div>
   </div>
@@ -523,10 +560,21 @@ body{-webkit-tap-highlight-color:transparent}
 
   <!-- ================= 团队 ================= -->
   <div id="teamPage" class="page">
+    <!-- 块一：预售直推奖励（开盘前 USDT 购买） -->
     <div class="reward-hero">
       <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
       <div class="reward-hero-body">
-        <span class="reward-label">已获得推荐奖励</span>
+        <span class="reward-label">预售直推奖励</span>
+        <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
+        <span class="reward-sub">下级预售每买 1 张卡，您实时到账 20U · 满 1000U 再送 1 张卡</span>
+        <span class="reward-mini">直推购买 <b id="teamPreReferralCount">0</b> 张 · 已获奖励卡 <b id="teamBonusCards">0</b> 张</span>
+      </div>
+    </div>
+    <!-- 块二：开盘后推荐奖励（代币购买，30%） -->
+    <div class="reward-hero reward-hero-violet">
+      <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></div>
+      <div class="reward-hero-body">
+        <span class="reward-label">开盘后推荐奖励</span>
         <span class="reward-value" id="teamRewardEarned">0.00 TTT</span>
         <span class="reward-sub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
       </div>
@@ -610,6 +658,15 @@ const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
 const U_CENT = 100;      // U 分精度
 const PRICE_SCALE = 1e8; // 价格精度
+const USDT_CENT_WEI = ethers.BigNumber.from('10000000000000000'); // 1 U分 = 1e16 wei
+
+/* USDT BEP-20 最小 ABI */
+const USDT_ABI = [
+  'function balanceOf(address) view returns (uint256)',
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function decimals() view returns (uint8)'
+];
 
 /* ============================================================
  * ABI（human-readable）
@@ -673,7 +730,18 @@ const ABIS = {
     'function lockCore()',
     'function referralCountOf(address) view returns (uint256)',
     'function referralAt(address, uint256) view returns (address)',
-    'function referralRewardsEarned(address) view returns (uint256)'
+    'function referralRewardsEarned(address) view returns (uint256)',
+    'function mintCardPreLaunch()',
+    'function mintCardPreLaunchBatch(uint256 quantity)',
+    'function preLaunchRemaining() view returns (uint256)',
+    'function preLaunchPurchaseCount() view returns (uint256)',
+    'function adminMintedCount() view returns (uint256)',
+    'function PRE_LAUNCH_MAX_CARDS() view returns (uint256)',
+    'function directAmountOf(address) view returns (uint256)',
+    'function bonusCardsGranted(address) view returns (uint256)',
+    'function usdt() view returns (address)',
+    'function profitWallet() view returns (address)',
+    'function router() view returns (address)'
   ],
   pool: [
     'function getCardInfo(uint256) view returns (address, uint256, uint256, uint256, uint256, bool)',
@@ -730,10 +798,14 @@ const DOM = {
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
   buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
   minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
+  buyModeBadge: $('buyModeBadge'), preLaunchBuyArea: $('preLaunchBuyArea'), tokenBuyArea: $('tokenBuyArea'),
+  buyQtyHintPre: $('buyQtyHintPre'), preLaunchPay: $('preLaunchPay'), usdtBalanceHint: $('usdtBalanceHint'),
+  preLaunchRemainingDisplay: $('preLaunchRemainingDisplay'), preLaunchBuyBtn: $('preLaunchBuyBtn'),
   cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
   teamCount: $('teamCount'), teamCount2: $('teamCount2'), teamMyReferrer: $('teamMyReferrer'), teamList: $('teamList'), teamRewardEarned: $('teamRewardEarned'),
+  teamPreReferralUsdt: $('teamPreReferralUsdt'), teamPreReferralCount: $('teamPreReferralCount'), teamBonusCards: $('teamBonusCards'),
   bindModal: $('bindModal'), bindModalAddr: $('bindModalAddr'),
   bindModalConfirm: $('bindModalConfirm'), bindModalCancel: $('bindModalCancel')
 };
@@ -749,6 +821,9 @@ let refreshTimer = null;
 let buyQuantity = 1;              // 购买数量
 let unitPriceTokens = null;       // 单卡所需代币（BigNumber）
 let remainingSlots = 520;         // 剩余可购买名额
+let isPreLaunch = false;          // 是否开盘前（USDT 预售模式）
+let usdtContract = null;          // USDT 合约实例
+let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页
 let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
@@ -807,6 +882,12 @@ const parseError = (e) => {
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
   if (m.includes('not launched')) return '尚未开盘';
+  if (m.includes('pre-launch limit reached')) return '开盘前名额已满（220 张）';
+  if (m.includes('usdt not configured')) return '预售收款币种未配置';
+  if (m.includes('base pool wallet not configured')) return '底池钱包未配置';
+  if (m.includes('profit wallet not configured')) return '利润钱包未配置';
+  if (m.includes('token reserve insufficient')) return '代币储备不足，请联系管理员充值';
+  if (m.includes('pool not configured')) return '分红池地址未配置（需先 updateCore）';
   if (m.includes('bind referrer first') || m.includes('请先绑定')) return '请先绑定上级';
   if (m.includes('referrer already bound') || m.includes('已绑定')) return '已绑定过上级，不可更换';
   if (m.includes('cannot bind self')) return '不能绑定自己';
@@ -878,17 +959,25 @@ const requireWallet = () => {
   return true;
 };
 
-/* 购买数量联动展示 */
+/* 购买数量联动展示（开盘前 USDT / 开盘后代币 双模式） */
 function updateBuyDisplay() {
   DOM.quantity.innerText = buyQuantity;
-  DOM.buyQtyHint.innerText = buyQuantity;
-  DOM.minusBtn.disabled = buyQuantity <= 1;
-  DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
-  DOM.buyBtn.innerText = `购买 ${buyQuantity} 张卡牌`;
-  if (unitPriceTokens && !unitPriceTokens.isZero()) {
-    DOM.buyTokensNeeded.innerText = fmtTokensFull(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
+  if (isPreLaunch) {
+    DOM.buyQtyHintPre.innerText = buyQuantity;
+    DOM.minusBtn.disabled = buyQuantity <= 1;
+    DOM.plusBtn.disabled = buyQuantity >= Math.min(10, preLaunchRemain);
+    DOM.preLaunchPay.innerText = (buyQuantity * 100) + ' USDT';
+    DOM.preLaunchBuyBtn.innerText = `预售购买 ${buyQuantity} 张`;
   } else {
-    DOM.buyTokensNeeded.innerText = '--（价格未就绪）';
+    DOM.buyQtyHint.innerText = buyQuantity;
+    DOM.minusBtn.disabled = buyQuantity <= 1;
+    DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
+    DOM.buyBtn.innerText = `购买 ${buyQuantity} 张卡牌`;
+    if (unitPriceTokens && !unitPriceTokens.isZero()) {
+      DOM.buyTokensNeeded.innerText = fmtTokensFull(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
+    } else {
+      DOM.buyTokensNeeded.innerText = '--（价格未就绪）';
+    }
   }
 }
 
@@ -967,6 +1056,18 @@ async function setupProvider(address) {
     }
   } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
 
+  // 预售支付资产（USDT）合约实例
+  try {
+    const preUsdt = await saleC.usdt().catch(() => null);
+    if (preUsdt) {
+      usdtContract = new ethers.Contract(preUsdt, [
+        'function balanceOf(address) view returns (uint256)',
+        'function approve(address, uint256) returns (bool)',
+        'function allowance(address, address) view returns (uint256)'
+      ], provider);
+    }
+  } catch (e) { usdtContract = null; }
+
   loadAll();
   startRefresh();
   checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
@@ -993,6 +1094,8 @@ function disconnectWallet() {
   // 购买模块
   DOM.buyBalanceHint.innerText = '--';
   DOM.buyRemainingSlots.innerText = '-- / 520';
+  DOM.usdtBalanceHint.innerText = '--';
+  DOM.preLaunchRemainingDisplay.innerText = '-- / 220';
   // 我的卡牌
   DOM.cardList.innerHTML = '<div class="empty-tip">连接钱包后查看</div>';
   DOM.myCardCount.innerText = '0';
@@ -1009,6 +1112,9 @@ function disconnectWallet() {
   DOM.teamCount2.innerText = '0';
   DOM.teamMyReferrer.innerText = '--';
   DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
+  DOM.teamPreReferralUsdt.innerText = '0.00 U';
+  DOM.teamPreReferralCount.innerText = '0';
+  DOM.teamBonusCards.innerText = '0';
   DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
   teamPageNo = 1;
   teamCache = { count: -1, addrs: [] };
@@ -1017,6 +1123,10 @@ function disconnectWallet() {
   buyQuantity = 1;
   unitPriceTokens = null;
   remainingSlots = 520;
+  isPreLaunch = false;
+  preLaunchRemain = 220;
+  DOM.preLaunchBuyArea.style.display = 'none';
+  DOM.tokenBuyArea.style.display = '';
   updateBuyDisplay();
   stopRefresh();
   showToast('已断开钱包', 'success');
@@ -1098,6 +1208,26 @@ async function loadStats() {
     DOM.launchStatus.innerHTML = '--';
   }
 
+  // 购买模式切换：开盘前 USDT 预售 / 开盘后代币购买
+  isPreLaunch = (launched === false);
+  DOM.buyModeBadge.innerText = isPreLaunch ? '100 USDT / 张' : '100 U / 张';
+  DOM.preLaunchBuyArea.style.display = isPreLaunch ? '' : 'none';
+  DOM.tokenBuyArea.style.display = isPreLaunch ? 'none' : '';
+  if (isPreLaunch) {
+    try {
+      const pr = await saleC.preLaunchRemaining();
+      preLaunchRemain = toNum(pr);
+      if (!Number.isFinite(preLaunchRemain) || preLaunchRemain < 0) preLaunchRemain = 0;
+    } catch (e) { preLaunchRemain = 220; }
+    DOM.preLaunchRemainingDisplay.innerText = preLaunchRemain + ' / 220';
+    if (usdtContract) {
+      try {
+        const ub = await usdtContract.balanceOf(userAddress);
+        DOM.usdtBalanceHint.innerText = fmtAmt(ub, 18) + ' USDT';
+      } catch (e) { DOM.usdtBalanceHint.innerText = '--'; }
+    }
+  }
+
   // 开盘防机器人窗口状态条
   if (winActive === true) {
     try {
@@ -1156,9 +1286,9 @@ async function loadUser() {
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
 
-/* 团队：一级下级人数、地址列表与推荐奖励 */
+/* 团队：一级下级人数、地址列表与两块推荐奖励 */
 async function loadTeam() {
-  // 已获得推荐奖励（金色大数字）
+  // 块二：开盘后推荐奖励（30% 代币）
   try {
     const earned = await saleC.referralRewardsEarned(userAddress);
     DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
@@ -1166,6 +1296,23 @@ async function loadTeam() {
   } catch (e) {
     DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
     DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
+  }
+
+  // 块一：预售直推奖励（20U 现金实时到账 + 每满 1000U 送 1 张卡）
+  try {
+    const [directCents, bonusCards] = await Promise.all([
+      saleC.directAmountOf(userAddress),
+      saleC.bonusCardsGranted(userAddress)
+    ]);
+    const directCards = directCents.div(10000); // 100U/张 → 张数
+    const usdtEarned = directCents.div(5);      // 每张 20U 现金 → U分 = 张数×2000分
+    DOM.teamPreReferralUsdt.innerText = (usdtEarned.toNumber() / 100).toFixed(2) + ' U';
+    DOM.teamPreReferralCount.innerText = directCards.toString();
+    DOM.teamBonusCards.innerText = bonusCards.toString();
+  } catch (e) {
+    DOM.teamPreReferralUsdt.innerText = '0.00 U';
+    DOM.teamPreReferralCount.innerText = '0';
+    DOM.teamBonusCards.innerText = '0';
   }
 
   let cnt = 0;
@@ -1376,37 +1523,77 @@ async function buyCard() {
   if (!requireWallet()) return;
   showLoading();
   try {
-    const launched = await saleC.launched();
-    if (!launched) { showToast('尚未开盘，暂不能购买', 'error'); return; }
-    const ref = await saleC.referrerOf(userAddress);
-    if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
-
-    const need = await saleC.requiredTokensForCard();
-    if (need.isZero()) { showToast('预言机价格未就绪', 'error'); return; }
-
-    const total = need.mul(buyQuantity);
-    const bal = await tokenC.balanceOf(userAddress);
-    if (bal.lt(total)) { showToast('代币余额不足', 'error'); return; }
-
-    const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
-    if (allowance.lt(total)) {
-      showToast('请先在钱包中确认授权…', '');
-      // 授权额加 5% 缓冲：防止授权与成交之间预言机价格波动导致 allowance 不足
-      const approveAmt = total.mul(105).div(100);
-      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
-      await tx.wait();
-      showToast('授权成功，继续购买…', 'success');
+    if (isPreLaunch) {
+      await buyCardPreLaunch();
+    } else {
+      await buyCardToken();
     }
-
-    const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
-    await tx.wait();
-    showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
-    loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
   } finally {
     hideLoading();
   }
+}
+
+/* 开盘前：USDT 购买（100U/张，自动拆分 20U 直推 + 50U 底池 + 30U 利润） */
+async function buyCardPreLaunch() {
+  if (preLaunchRemain <= 0) { showToast('预售名额已满', 'error'); return; }
+  const qty = Math.min(buyQuantity, preLaunchRemain);
+  const ref = await saleC.referrerOf(userAddress);
+  if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
+
+  const usdtAddr = await saleC.usdt();
+  if (!usdtAddr || usdtAddr === ZERO_ADDR) { showToast('预售收款币种未配置', 'error'); return; }
+  const usdt = new ethers.Contract(usdtAddr, USDT_ABI, signer);
+  const total = ethers.BigNumber.from(qty).mul(ethers.BigNumber.from(100)).mul(USDT_CENT_WEI);
+
+  const bal = await usdt.balanceOf(userAddress);
+  if (bal.lt(total)) { showToast('USDT 余额不足', 'error'); return; }
+
+  const allowance = await usdt.allowance(userAddress, CONFIG.contracts.sale);
+  if (allowance.lt(total)) {
+    showToast('请先在钱包中确认 USDT 授权…', '');
+    const approveAmt = total.mul(105).div(100);
+    const tx = await usdt.approve(CONFIG.contracts.sale, approveAmt);
+    await tx.wait();
+    showToast('授权成功，继续购买…', 'success');
+  }
+
+  // 单笔批量铸造（一次签名），直推金额累加并自动发放奖励卡
+  const tx = await saleC.connect(signer).mintCardPreLaunchBatch(qty);
+  await tx.wait();
+  showToast(`预售成功！${qty} 张卡牌已激活并开始累积分红 🎉`, 'success');
+  loadAll();
+}
+
+/* 开盘后：代币购买（100U 等值代币） */
+async function buyCardToken() {
+  const launched = await saleC.launched();
+  if (!launched) { showToast('尚未开盘，暂不能购买', 'error'); return; }
+  const ref = await saleC.referrerOf(userAddress);
+  if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
+
+  const need = await saleC.requiredTokensForCard();
+  if (need.isZero()) { showToast('预言机价格未就绪', 'error'); return; }
+
+  const total = need.mul(buyQuantity);
+  const bal = await tokenC.balanceOf(userAddress);
+  if (bal.lt(total)) { showToast('代币余额不足', 'error'); return; }
+
+  const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
+  if (allowance.lt(total)) {
+    showToast('请先在钱包中确认授权…', '');
+    // 授权额加 5% 缓冲：防止授权与成交之间预言机价格波动导致 allowance 不足
+    const approveAmt = total.mul(105).div(100);
+    const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
+    await tx.wait();
+    showToast('授权成功，继续购买…', 'success');
+  }
+
+  const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
+  await tx.wait();
+  showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
+  loadAll();
 }
 
 async function claimCard(tokenId) {
@@ -1496,11 +1683,13 @@ DOM.connectBtn.addEventListener('click', connectWallet);
 DOM.disconnectBtn.addEventListener('click', disconnectWallet);
 DOM.bindBtn.addEventListener('click', throttle(bindReferrer, 1500));
 DOM.buyBtn.addEventListener('click', throttle(buyCard, 2000));
+DOM.preLaunchBuyBtn.addEventListener('click', throttle(buyCard, 2000));
 DOM.minusBtn.addEventListener('click', () => {
   if (buyQuantity > 1) { buyQuantity--; updateBuyDisplay(); }
 });
 DOM.plusBtn.addEventListener('click', () => {
-  if (buyQuantity < Math.min(10, remainingSlots)) { buyQuantity++; updateBuyDisplay(); }
+  const maxQty = isPreLaunch ? Math.min(10, preLaunchRemain) : Math.min(10, remainingSlots);
+  if (buyQuantity < maxQty) { buyQuantity++; updateBuyDisplay(); }
 });
 DOM.claimAllBtn.addEventListener('click', throttle(claimAll, 2000));
 DOM.copyBtn.addEventListener('click', async () => {
