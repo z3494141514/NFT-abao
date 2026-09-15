@@ -62,8 +62,18 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .page{display:none;padding:30px 28px 140px;max-width:1240px;margin:0 auto;width:100%;flex:1;animation:rise .45s cubic-bezier(.22,.8,.36,1)}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 .page.active{display:block}
+/* ---------- 品牌主视觉 Hero ---------- */
+.hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06));border:1px solid var(--border-hi);border-radius:24px;padding:42px 28px 34px;margin-bottom:18px;backdrop-filter:blur(16px)}
+.hero::before{content:'';position:absolute;inset:-40%;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.16),transparent 55%);pointer-events:none;animation:pulse 5s ease-in-out infinite}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);padding:5px 14px;border-radius:99px;margin-bottom:16px}
+.hero-title{font-size:44px;font-weight:900;letter-spacing:1px;line-height:1.1;margin-bottom:10px}
+.hero-title span{background:linear-gradient(90deg,#22d3ee,#8b5cf6,#f5c14c);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldFlow 5s linear infinite}
+.hero-sub{font-size:14px;color:var(--muted);letter-spacing:3px;margin-bottom:22px}
+.hero-chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:8px 16px}
+.hero-chip b{color:var(--text);font-weight:800;font-variant-numeric:tabular-nums}
 /* ---------- KPI 模块 ---------- */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
 .kpi{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(16px);overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),transparent);opacity:0}
 @media (hover:hover){
@@ -280,6 +290,10 @@ body{-webkit-tap-highlight-color:transparent}
 .reward-value{font-size:26px}
 .reward-label{font-size:10.5px;letter-spacing:1.8px}
 .reward-sub{font-size:11px}
+.hero{padding:28px 16px 24px;border-radius:18px;margin-bottom:12px}
+.hero-title{font-size:30px}
+.hero-sub{font-size:11.5px;letter-spacing:2px;margin-bottom:16px}
+.hero-chip{font-size:11px;padding:6px 12px}
 .footer{padding:12px 16px 96px;font-size:10.5px}
 }
 </style>
@@ -314,12 +328,23 @@ body{-webkit-tap-highlight-color:transparent}
 
   <!-- ================= 首页 ================= -->
   <div id="homePage" class="page active">
+    <!-- 品牌主视觉 -->
+    <div class="hero">
+      <div class="hero-badge"><span class="live-dot"></span>LIVE · 数据实时上链</div>
+      <h1 class="hero-title">卡牌分红 <span>PROTOCOL</span></h1>
+      <p class="hero-sub">每张卡牌 · 金本位分红 · 三倍出局</p>
+      <div class="hero-chips">
+        <span class="hero-chip">有效卡牌 <b id="heroActiveCards">--</b></span>
+        <span class="hero-chip">分红池 <b id="heroPoolUsdt">--</b></span>
+        <span class="hero-chip">已销毁 <b id="heroBurned">--</b></span>
+      </div>
+    </div>
     <!-- KPI 数据模块 -->
     <div class="kpi-grid">
       <div class="kpi">
         <div class="kpi-top"><span class="kpi-label">分红池</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg></span></div>
         <div class="kpi-value" id="poolTokenBalance">--</div>
-        <div class="kpi-sub">≈ <span class="u" id="poolBalanceU">-- U</span></div>
+        <div class="kpi-sub"><span class="u" id="poolBalanceU">--</span></div>
       </div>
       <div class="kpi">
         <div class="kpi-top"><span class="kpi-label">有效卡牌</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span></div>
@@ -330,6 +355,16 @@ body{-webkit-tap-highlight-color:transparent}
         <div class="kpi-top"><span class="kpi-label">我的卡牌</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></span></div>
         <div class="kpi-value" id="dashCardCount">0</div>
         <div class="kpi-sub">灵魂绑定 · 独立计息</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">已销毁代币</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span></div>
+        <div class="kpi-value" id="burnedSupply">--</div>
+        <div class="kpi-sub">占总量 <span id="burnedPercent">--</span> · 永久出流通</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="kpi-label">流通量</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></span></div>
+        <div class="kpi-value" id="circulatingSupply">--</div>
+        <div class="kpi-sub">总量 1000 万 · 永不增发</div>
       </div>
       <div class="kpi">
         <div class="kpi-top"><span class="kpi-label">待领取分红</span><span class="kpi-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg></span></div>
@@ -429,10 +464,15 @@ body{-webkit-tap-highlight-color:transparent}
         <span class="data-label">我的上级</span>
         <span class="data-value hi" id="inviteMyReferrer">--</span>
       </div>
+      <div class="data-row">
+        <span class="data-label">已获得推荐奖励</span>
+        <span class="data-value" id="inviteRewardEarned" style="color:var(--gold);font-size:17px;font-weight:800">0.00 TTT</span>
+      </div>
       <div class="mt16">
         <input type="text" id="inviteLink" class="input" readonly style="margin-bottom:14px">
         <button id="copyBtn" class="btn btn-ghost btn-block">复制邀请链接</button>
       </div>
+      <button id="gotoTeamBtn" class="btn btn-primary btn-block mt12">查看团队收益 →</button>
     </div>
   </div>
 
@@ -627,6 +667,9 @@ const DOM = {
   activeCardsDisplay: $('activeCardsDisplay'), launchStatus: $('launchStatus'),
   launchWindowBanner: $('launchWindowBanner'), launchWindowRemaining: $('launchWindowRemaining'),
   dashCardCount: $('dashCardCount'), myTotalPending: $('myTotalPending'),
+  burnedSupply: $('burnedSupply'), burnedPercent: $('burnedPercent'), circulatingSupply: $('circulatingSupply'),
+  heroActiveCards: $('heroActiveCards'), heroPoolUsdt: $('heroPoolUsdt'), heroBurned: $('heroBurned'),
+  inviteRewardEarned: $('inviteRewardEarned'), gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
   buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
@@ -873,6 +916,7 @@ function disconnectWallet() {
   DOM.teamCount2.innerText = '0';
   DOM.teamMyReferrer.innerText = '--';
   DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
+  DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
   DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
   DOM.bindModal.style.display = 'none';
   buyQuantity = 1;
@@ -930,6 +974,23 @@ async function loadStats() {
   } catch (e) { /* ignore */ }
   DOM.poolBalanceU.innerText = '待兑换 ' + pendingTtt + ' ' + tokenSymbol;
   DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
+
+  // Hero 数据带
+  DOM.heroActiveCards.innerText = `${activeCards.toString()} / 520`;
+  DOM.heroPoolUsdt.innerText = fmtAmt(balBN, usdtDecimals) + ' ' + usdtSymbol;
+
+  // 已销毁与流通量（销毁地址 0x…dEaD 的余额即销毁量）
+  try {
+    const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
+    const totalSup = await tokenC.totalSupply();
+    const circ = totalSup.sub(dead);
+    DOM.burnedSupply.innerText = fmtAmt(dead, tokenDecimals) + ' ' + tokenSymbol;
+    DOM.circulatingSupply.innerText = fmtAmt(circ, tokenDecimals) + ' ' + tokenSymbol;
+    DOM.burnedPercent.innerText = totalSup.isZero() || dead.isZero()
+      ? '0%'
+      : (toNum(dead) / toNum(totalSup) * 100).toFixed(2) + '%';
+    DOM.heroBurned.innerText = fmtAmt(dead, tokenDecimals) + ' ' + tokenSymbol;
+  } catch (e) { /* ignore */ }
 
   // 开盘状态
   try {
@@ -992,7 +1053,11 @@ async function loadTeam() {
   try {
     const earned = await saleC.referralRewardsEarned(userAddress);
     DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
-  } catch (e) { DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol; }
+    DOM.inviteRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
+  } catch (e) {
+    DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
+    DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
+  }
 
   let cnt = 0;
   try {
@@ -1291,6 +1356,10 @@ DOM.copyBtn.addEventListener('click', async () => {
     document.execCommand('copy');
     showToast('邀请链接已复制', 'success');
   }
+});
+DOM.gotoTeamBtn.addEventListener('click', () => {
+  const teamNav = document.querySelector('.nav-item[data-page="teamPage"]');
+  if (teamNav) teamNav.click();
 });
 /* 绑定弹窗 */
 DOM.bindModalConfirm.addEventListener('click', throttle(() => doBindReferrer(pendingRef), 1500));
