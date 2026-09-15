@@ -466,11 +466,11 @@ body{-webkit-tap-highlight-color:transparent}
           </div>
           <div class="data-row">
             <span class="data-label">购买奖励</span>
-            <span class="data-value gold">每张送 2000 TTT（20U 等值）</span>
+            <span class="data-value gold">🎁 购卡立得 2000 枚 TTT 空投（价值 20U）</span>
           </div>
           <div class="data-row">
             <span class="data-label">直推奖励</span>
-            <span class="data-value">上级实时获 20U，满 1000U 再送上级 1 张卡</span>
+            <span class="data-value">上级每张实时得 20U · 上级每满 10 张直推再得 1 张卡</span>
           </div>
           <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt16">USDT 预售购买</button>
         </div>
@@ -566,7 +566,7 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="reward-hero-body">
         <span class="reward-label">预售直推奖励</span>
         <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
-        <span class="reward-sub">下级预售每买 1 张卡，您实时到账 20U · 满 1000U 再送 1 张卡</span>
+        <span class="reward-sub">下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡</span>
         <span class="reward-mini">直推购买 <b id="teamPreReferralCount">0</b> 张 · 已获奖励卡 <b id="teamBonusCards">0</b> 张</span>
       </div>
     </div>
@@ -1298,14 +1298,14 @@ async function loadTeam() {
     DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
   }
 
-  // 块一：预售直推奖励（20U 现金实时到账 + 每满 1000U 送 1 张卡）
+  // 块一：预售直推奖励（20U 实时到账 + 直推金额每满 1000U 送 1 张卡）
   try {
     const [directCents, bonusCards] = await Promise.all([
       saleC.directAmountOf(userAddress),
       saleC.bonusCardsGranted(userAddress)
     ]);
     const directCards = directCents.div(10000); // 100U/张 → 张数
-    const usdtEarned = directCents.div(5);      // 每张 20U 现金 → U分 = 张数×2000分
+    const usdtEarned = directCents.div(5);      // 每张 20U → U分 = 张数×2000分
     DOM.teamPreReferralUsdt.innerText = (usdtEarned.toNumber() / 100).toFixed(2) + ' U';
     DOM.teamPreReferralCount.innerText = directCards.toString();
     DOM.teamBonusCards.innerText = bonusCards.toString();

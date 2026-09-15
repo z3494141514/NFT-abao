@@ -150,6 +150,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="mt12"><input type="text" id="adminPreUsdtInput" class="input" placeholder="USDT 地址（BSC: 0x55d3…7955）"></div>
           <div class="mt12"><input type="text" id="adminPreProfitInput" class="input" placeholder="利润钱包地址（每张卡 30U）"></div>
           <button id="adminPreConfigSaveBtn" class="btn btn-primary btn-sm mt12">保存预售配置</button>
+          <button id="adminWithdrawReserveBtn" class="btn btn-primary btn-sm mt8">提取 TTT 储备（未用完部分）</button>
           <button id="adminWithdrawPreUsdtBtn" class="btn btn-ghost btn-sm mt8">提取滞留 USDT（滑点粉尘）</button>
         </div>
 
@@ -318,7 +319,8 @@ const ABIS = {
     'function totalBonusCardsMinted() view returns (uint256)',
     'function preLaunchRemaining() view returns (uint256)',
     'function setPreLaunchConfig(address, address)',
-    'function withdrawStrandedUsdt(address)'
+    'function withdrawStrandedUsdt(address)',
+    'function withdrawTokenReserve(address)'
   ],
   pool: [
     'function activeCardCount() view returns (uint256)',
@@ -365,6 +367,7 @@ const DOM = {
   adminPreReserve: $('adminPreReserve'), adminPreCounters: $('adminPreCounters'), adminPreUsdtInput: $('adminPreUsdtInput'),
   adminPreProfitInput: $('adminPreProfitInput'),
   adminPreConfigSaveBtn: $('adminPreConfigSaveBtn'), adminWithdrawPreUsdtBtn: $('adminWithdrawPreUsdtBtn'),
+  adminWithdrawReserveBtn: $('adminWithdrawReserveBtn'),
   adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'), adminOracleBase: $('adminOracleBase'),
   adminOracleLast: $('adminOracleLast'), adminOracleDeviation: $('adminOracleDeviation'),
   adminUpdaterBlock: $('adminUpdaterBlock'), adminPriceInput: $('adminPriceInput'), adminSetPriceBtn: $('adminSetPriceBtn'), cooldownFill: $('cooldownFill'),
@@ -813,6 +816,18 @@ async function adminWithdrawPreUsdt() {
   finally { hideLoading(); }
 }
 
+async function adminWithdrawReserve() {
+  if (!confirm('提取销售合约内未用完的 TTT 储备到当前钱包？\n（提取后若储备不足，新的预售购买会被回滚提示，不影响已成交卡牌）')) return;
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).withdrawTokenReserve(userAddress);
+    await tx.wait();
+    showToast('TTT 储备已提取', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
 // PancakeSwap V2 工厂（BSC 主网）：交易对地址可提前确定性算出
 const PANCAKE_FACTORY = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
 async function adminComputePair() {
@@ -1108,6 +1123,7 @@ DOM.adminUnpauseBtn.addEventListener('click', throttle(() => adminPauseToggle(fa
 DOM.adminMintBtn.addEventListener('click', throttle(adminMint, 2000));
 DOM.adminPreConfigSaveBtn.addEventListener('click', throttle(adminSavePreLaunchConfig, 2000));
 DOM.adminWithdrawPreUsdtBtn.addEventListener('click', throttle(adminWithdrawPreUsdt, 2000));
+DOM.adminWithdrawReserveBtn.addEventListener('click', throttle(adminWithdrawReserve, 2000));
 DOM.adminSetLaunchPartnerBtn.addEventListener('click', throttle(adminSetLaunchPartner, 2000));
 DOM.adminComputePairBtn.addEventListener('click', throttle(adminComputePair, 2000));
 DOM.adminCopyPairBtn.addEventListener('click', throttle(adminCopyPair, 2000));
