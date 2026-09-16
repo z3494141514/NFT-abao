@@ -163,18 +163,17 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .bind-addr{display:block;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--cyan);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bind-inline{display:flex;align-items:center;gap:10px;flex:1;min-width:280px;justify-content:flex-end}
 .bind-inline .input{flex:1;max-width:340px;padding:10px 15px;font-size:13px}
-.bound-ok{position:absolute;top:-9px;right:16px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(9,14,30,.95);padding:3px 11px;border-radius:99px;box-shadow:0 2px 10px rgba(52,211,153,.25);white-space:nowrap}
+.bound-ok{position:absolute;top:10px;right:16px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(9,14,30,.95);padding:3px 11px;border-radius:99px;box-shadow:0 2px 10px rgba(52,211,153,.25);white-space:nowrap}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
 .buy-stage{padding:0;margin-bottom:8px;position:relative}
-.buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:20px;border:1.5px solid transparent;padding:12px 18px 14px;background:linear-gradient(180deg,rgba(15,20,38,.68),rgba(9,13,26,.5)) padding-box,linear-gradient(125deg,rgba(245,193,76,.5),rgba(34,211,238,.34) 28%,rgba(139,92,246,.45) 58%,rgba(245,193,76,.26)) border-box;backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),0 0 36px rgba(34,211,238,.1),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;transition:transform .35s cubic-bezier(.22,.8,.36,1),box-shadow .35s}
-.buy-card::after{content:'◆';position:absolute;right:4px;bottom:-50px;font-size:150px;line-height:1;color:rgba(245,193,76,.07);pointer-events:none}
+.buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:20px;border:1px solid rgba(148,163,184,.14);padding:12px 18px 14px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:0 22px 55px -30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden;transition:transform .35s cubic-bezier(.22,.8,.36,1),box-shadow .35s,border-color .35s}
 @media (hover:hover){
-.buy-stage:hover .buy-card{transform:translateY(-5px);box-shadow:0 34px 74px -32px rgba(0,0,0,.7),0 0 50px rgba(139,92,246,.2),inset 0 1px 0 rgba(255,255,255,.12)}
+.buy-stage:hover .buy-card{transform:translateY(-5px);border-color:rgba(34,211,238,.35);box-shadow:0 30px 66px -32px rgba(0,0,0,.65),0 0 36px rgba(34,211,238,.14),inset 0 1px 0 rgba(255,255,255,.1)}
 }
 .buy-card-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
-.buy-card-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5c14c,#fb7185);border:1px solid rgba(245,193,76,.5);font-size:16px;box-shadow:0 5px 14px rgba(245,193,76,.32);flex-shrink:0}
+.buy-card-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(139,92,246,.18));border:1px solid rgba(34,211,238,.3);font-size:16px;box-shadow:0 3px 12px rgba(34,211,238,.2);flex-shrink:0}
 .buy-card-title{font-size:15px;font-weight:900;letter-spacing:1px;flex:1;min-width:80px}
-.buy-card-badge{font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--gold);border:1px solid rgba(245,193,76,.4);padding:3px 11px;border-radius:99px;background:rgba(245,193,76,.1);box-shadow:0 0 14px rgba(245,193,76,.18);white-space:nowrap}
+.buy-card-badge{font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--cyan);border:1px solid rgba(34,211,238,.35);padding:3px 11px;border-radius:99px;background:rgba(34,211,238,.08);white-space:nowrap}
 .qty-wrap{display:flex;align-items:center;gap:8px}
 .qty-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
 .buy-card .qty-btn{width:30px;height:30px;font-size:15px}
@@ -2288,7 +2287,13 @@ function setHeroTravel() {
   scene.style.setProperty('--travel', Math.max(hero.offsetHeight + 360, 1100) + 'px');
 }
 setHeroTravel();
-window.addEventListener('resize', throttle(setHeroTravel, 600));
+let heroResizeTimer = null, heroLastWidth = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === heroLastWidth) return; // 软键盘弹出等纯高度变化不触发
+  heroLastWidth = window.innerWidth;
+  if (heroResizeTimer) return;
+  heroResizeTimer = setTimeout(() => { heroResizeTimer = null; setHeroTravel(); }, 300);
+});
 window.addEventListener('load', setHeroTravel);
 
 /* 主视觉背景视频：CONFIG.heroVideoUrl 填了才启用；加载失败自动回退到代码卡牌动画 */
