@@ -432,6 +432,8 @@ const DOM = {
 
 let provider = null, signer = null, userAddress = '';
 let readProvider = null; // 只读 RPC 层（公共节点自动切换）
+let connEpoch = 0;       // 连接代次：断开/重连时递增，用于作废过期的异步连接收尾
+let lastSetup = { addr: '', ts: 0 }; // 并发去重：同一地址 800ms 内的重复 setup 只执行一次
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
@@ -531,6 +533,11 @@ const throttle = (fn, delay = 1000) => {
 };
 
 async function switchChain() {
+  // 已在目标链则直接放行：避免每次重连都弹一次「切换网络」确认（部分钱包每次都弹，误关就连接失败）
+  try {
+    const cid = await window.ethereum.request({ method: 'eth_chainId' });
+    if (cid === CONFIG.chainIdHex) return;
+  } catch (e) { /* 读不到链 ID 就继续走切换流程 */ }
   try {
     await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: CONFIG.chainIdHex }] });
   } catch (err) {
@@ -565,7 +572,12 @@ async function connectWallet() {
     await setupProvider(accounts[0]);
     showToast('钱包连接成功', 'success');
   } catch (e) {
-    if (String(e.message || '').includes('User rejected')) showToast('您取消了连接', 'error');
+    if (String(e.message || '').includes('User rejected') || (e && e.code === 4001)) {
+      showToast('您取消了连接', 'error');
+    } else {
+      console.warn('连接钱包失败', e);
+      showToast('连接失败，请重试', 'error');
+    }
   } finally {
     hideLoading();
   }
@@ -620,6 +632,14 @@ function createReadProvider(providers) {
 }
 
 async function setupProvider(address) {
+  // 并发去重：钱包 accountsChanged 与手动「连接钱包」可能同时为同一地址触发 setup，
+  // 800ms 内的重复调用直接跳过，避免两套只读层交错覆盖
+  const key = (address || '').toLowerCase();
+  const nowTs = Date.now();
+  if (lastSetup.addr === key && nowTs - lastSetup.ts < 800) return;
+  lastSetup = { addr: key, ts: nowTs };
+
+  const epoch = ++connEpoch; // 本代次：若期间用户断开，本次收尾全部作废
   provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
   userAddress = address;
@@ -655,6 +675,9 @@ async function setupProvider(address) {
     usdtDecimals = await uc.decimals();
   } catch (e) { console.warn('读取 USDT 信息失败', e); }
 
+  // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
+  if (epoch !== connEpoch || userAddress !== address) return;
+
   loadAll();
   startRefresh();
 }
@@ -669,6 +692,8 @@ function stopRefresh() {
 }
 
 function disconnectWallet() {
+  connEpoch++;                      // 作废所有在途的连接收尾（含未完成的 setupProvider）
+  lastSetup = { addr: '', ts: 0 };  // 允许断开后立即重连同一地址
   userAddress = '';
   DOM.connectBtn.style.display = '';
   DOM.walletInfo.style.display = 'none';
