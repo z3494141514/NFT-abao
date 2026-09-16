@@ -168,7 +168,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 /* ---------- 团队列表 ---------- */
 .team-row{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(23,27,46,.97),rgba(13,16,30,.98));border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;flex-wrap:wrap}
 .team-idx{font-size:11px;font-weight:800;color:var(--gold);background:rgba(245,193,76,.1);border:1px solid rgba(245,193,76,.25);border-radius:8px;padding:3px 9px;flex-shrink:0}
-.team-addr{font-family:ui-monospace,monospace;font-size:13px;color:var(--text);word-break:break-all;overflow-wrap:anywhere;flex:1;min-width:0}
+.team-addr{font-family:ui-monospace,monospace;font-size:13px;color:#9db4d6;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.14);border-radius:9px;padding:7px 12px;word-break:break-all;overflow-wrap:anywhere;flex:1;min-width:0}
 .team-copy{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:5px 12px;font-size:11.5px;transition:all .2s}
 .team-copy:hover{color:var(--cyan);border-color:var(--border-hi)}
 /* ---------- 分页器 ---------- */
@@ -1364,7 +1364,7 @@ async function loadTeam() {
 
   DOM.teamList.innerHTML = pageAddrs.map((a, i) => `
     <div class="team-row">
-      <span class="team-idx">#${start + i + 1}</span>
+      <span class="team-idx">${start + i + 1}</span>
       <span class="team-addr">${a}</span>
       <button class="team-copy" data-addr="${a}">复制</button>
     </div>`).join('')
