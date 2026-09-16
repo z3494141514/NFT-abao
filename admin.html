@@ -850,12 +850,34 @@ function parseAddressList(text) {
   return text.split(/[\s,;，；]+/).map(s => s.trim()).filter(s => s.length > 0);
 }
 
+/* 交易确认竞速：广播后按「钱包节点 → 公共节点轮换」轮询回执（2.5 秒一次）。
+   钱包节点卡住/报错时 readProvider 会自动换公共节点，哪个节点先确认用哪个 */
+async function waitForTx(tx, timeoutMs = 180000) {
+  if (!readProvider) return tx.wait(); // 极端兜底
+  const hash = tx.hash;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const r = await readProvider.getTransactionReceipt(hash);
+      if (r) {
+        if (r.status === 0) throw new Error('交易在链上执行失败（已回滚），请稍后重试');
+        return r;
+      }
+    } catch (e) {
+      if (String(e.message || '').includes('已回滚')) throw e;
+      /* 节点暂不可用/超时：readProvider 轮换到下一个节点，继续等待 */
+    }
+    await new Promise(res => setTimeout(res, 2500));
+  }
+  throw new Error('交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果');
+}
+
 async function adminLaunch() {
   if (!confirm('确认开盘？开盘后公开购买开启，且不可撤销。')) return;
   showLoading();
   try {
     const tx = await saleC.connect(signer).launch();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('已开盘', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -866,7 +888,7 @@ async function adminPauseToggle(pause) {
   showLoading();
   try {
     const tx = pause ? await saleC.connect(signer).pause() : await saleC.connect(signer).unpause();
-    await tx.wait();
+    await waitForTx(tx);
     showToast(pause ? '合约已暂停' : '合约已恢复', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -886,7 +908,7 @@ async function adminMint() {
     for (let i = 0; i < addrs.length; i += 50) {
       const chunk = addrs.slice(i, i + 50);
       const tx = await saleC.connect(signer).adminMintCards(chunk);
-      await tx.wait();
+      await waitForTx(tx);
       done += chunk.length;
     }
     showToast(`已预分发 ${done} 张卡牌`, 'success');
@@ -905,7 +927,7 @@ async function adminSavePreLaunchConfig() {
   showLoading();
   try {
     const tx = await saleC.connect(signer).setPreLaunchConfig(usdt, profit);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('预售配置已保存', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -919,7 +941,7 @@ async function adminSetLaunchPartner() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setLaunchPartner(partner);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('预售伙伴已设置', 'success');
     DOM.adminSetLaunchPartnerInput.value = '';
     loadAll();
@@ -932,7 +954,7 @@ async function adminWithdrawPreUsdt() {
   showLoading();
   try {
     const tx = await saleC.connect(signer).withdrawStrandedUsdt(userAddress);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('滞留 USDT 已提取', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -944,7 +966,7 @@ async function adminWithdrawReserve() {
   showLoading();
   try {
     const tx = await saleC.connect(signer).withdrawTokenReserve(userAddress);
-    await tx.wait();
+    await waitForTx(tx);
     showToast(`${tokenSymbol} 储备已提取`, 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -965,7 +987,7 @@ async function adminUpdateCore() {
   showLoading();
   try {
     const tx = await saleC.connect(signer).updateCore(token, router, nft, pool, oracle);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('核心配置已更新', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -980,7 +1002,7 @@ async function adminRevokeMinter() {
   showLoading();
   try {
     const tx = await nftC.connect(signer).revokeRole(MINTER_ROLE, a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('铸币权已撤销', 'success');
     DOM.adminRevokeMinterInput.value = '';
     loadAll();
@@ -1034,7 +1056,7 @@ async function adminSetMinLiq() {
   showLoading();
   try {
     const tx = await oracleC.connect(signer).setMinLiquidity(ethers.utils.parseUnits(String(v), 18));
-    await tx.wait();
+    await waitForTx(tx);
     showToast('流动性门槛已设置', 'success');
     DOM.adminMinLiqInput.value = '';
     loadAll();
@@ -1046,7 +1068,7 @@ async function adminPokeOracle() {
   showLoading();
   try {
     const tx = await oracleC.connect(signer).poke();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('价格观测点已记录', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1058,7 +1080,7 @@ async function adminLockOracle() {
   showLoading();
   try {
     const tx = await oracleC.connect(signer).lockConfig();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('价格适配器配置已锁定', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1078,7 +1100,7 @@ async function adminPoolUpdateCore() {  const token = DOM.adminPoolCoreToken.val
   showLoading();
   try {
     const tx = await poolC.connect(signer).updateCore(token, usdt, router, nft, sale);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('分红池核心配置已更新', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1089,7 +1111,7 @@ async function adminPoolPauseToggle(pause) {
   showLoading();
   try {
     const tx = pause ? await poolC.connect(signer).pause() : await poolC.connect(signer).unpause();
-    await tx.wait();
+    await waitForTx(tx);
     showToast(pause ? '分红池已暂停（禁止领取）' : '分红池已恢复', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1102,7 +1124,7 @@ async function adminAddLp() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).addLpPair(a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('LP 交易对已登记', 'success');
     DOM.adminAddLpInput.value = '';
     loadAll();
@@ -1117,7 +1139,7 @@ async function adminSetLpPair() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setLpPair(a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('主 LP 已设置（1 小时时间锁启动）', 'success');
     DOM.adminSetLpPairInput.value = '';
     loadAll();
@@ -1132,7 +1154,7 @@ async function adminLockCore(which) {
     const tx = which === 'sale'
       ? await saleC.connect(signer).lockCore()
       : await poolC.connect(signer).lockCore();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('核心配置已锁定', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1146,7 +1168,7 @@ async function adminForceExit() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).adminForceExit(id);
-    await tx.wait();
+    await waitForTx(tx);
     showToast(`卡牌 #${id} 已强制出局`, 'success');
     DOM.adminForceExitInput.value = '';
     loadAll();
@@ -1161,7 +1183,7 @@ async function adminReleaseBurned() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).adminReleaseBurnedCard(id);
-    await tx.wait();
+    await waitForTx(tx);
     showToast(`卡牌 #${id} 负债已释放`, 'success');
     DOM.adminReleaseBurnedInput.value = '';
     loadAll();
@@ -1196,7 +1218,7 @@ async function adminSweep() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).sweepExited(100);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('出局卡牌清理完成', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1207,7 +1229,7 @@ async function adminSwap() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).swapFeesToUsdt();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('手续费已兑换为 USDT 并分发', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1219,7 +1241,7 @@ async function adminWithdrawTtt() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).withdrawStrandedTokens(userAddress);
-    await tx.wait();
+    await waitForTx(tx);
     showToast(`滞留 ${tokenSymbol} 已提取`, 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1233,7 +1255,7 @@ async function adminSetSwapThreshold() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).setSwapThreshold(threshold);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('兑换阈值已更新', 'success');
     DOM.adminSwapThresholdInput.value = '';
     loadAll();
@@ -1246,7 +1268,7 @@ async function adminWithdrawExcess() {
   showLoading();
   try {
     const tx = await poolC.connect(signer).withdrawExcess(userAddress);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('超额资金已提取', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1259,7 +1281,7 @@ async function adminSetPool() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setDividendPool(a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('分红池地址设置成功', 'success');
     DOM.adminSetPoolInput.value = '';
     loadAll();
@@ -1273,7 +1295,7 @@ async function adminSetOracle() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setOracle(a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('预言机地址设置成功', 'success');
     DOM.adminSetOracleInput.value = '';
     loadAll();
@@ -1287,7 +1309,7 @@ async function adminProposeOracle() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).proposeOracle(a);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('已提议更换预言机（24 小时后可应用）', 'success');
     DOM.adminProposeOracleInput.value = '';
     loadAll();
@@ -1299,7 +1321,7 @@ async function adminApplyOracle() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).applyOracle();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('预言机变更已应用', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1311,7 +1333,7 @@ async function adminEnableTrading() {
   showLoading();
   try {
     const tx = await tokenC.connect(signer).enableTrading();
-    await tx.wait();
+    await waitForTx(tx);
     showToast('交易已开启', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1325,7 +1347,7 @@ async function adminGrantMinter() {
     const has = await nftC.hasRole(role, CONFIG.contracts.sale);
     if (has) { showToast('销售合约已拥有铸币权', ''); return; }
     const tx = await nftC.connect(signer).grantRole(role, CONFIG.contracts.sale);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('已授予销售合约铸币权', 'success');
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }

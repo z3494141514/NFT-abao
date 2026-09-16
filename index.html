@@ -1644,6 +1644,29 @@ async function loadCards() {
 /* ============================================================
  * 业务操作
  * ============================================================ */
+/* 交易确认竞速：广播后按「钱包节点 → 公共节点轮换」轮询回执（2.5 秒一次）。
+   钱包节点卡住/报错时 readProvider 会自动换公共节点，哪个节点先确认用哪个，
+   国内网络下不依赖钱包单节点的回执速度，UI 反馈更快更稳 */
+async function waitForTx(tx, timeoutMs = 180000) {
+  if (!readProvider) return tx.wait(); // 极端兜底
+  const hash = tx.hash;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const r = await readProvider.getTransactionReceipt(hash);
+      if (r) {
+        if (r.status === 0) throw new Error('交易在链上执行失败（已回滚），请稍后重试');
+        return r;
+      }
+    } catch (e) {
+      if (String(e.message || '').includes('已回滚')) throw e;
+      /* 节点暂不可用/超时：readProvider 轮换到下一个节点，继续等待 */
+    }
+    await new Promise(res => setTimeout(res, 2500));
+  }
+  throw new Error('交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果');
+}
+
 async function doBindReferrer(ref) {
   if (!requireWallet()) return;
   if (!ethers.utils.isAddress(ref)) { showToast('请输入合法的钱包地址', 'error'); return; }
@@ -1651,7 +1674,7 @@ async function doBindReferrer(ref) {
   showLoading();
   try {
     const tx = await saleC.connect(signer).bindReferrer(ref);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('🎉 绑定上级成功！', 'success');
     DOM.bindModal.style.display = 'none';
     pendingRef = '';
@@ -1716,13 +1739,13 @@ async function buyCardPreLaunch() {
     showToast('请先在钱包中确认 USDT 授权…', '');
     const approveAmt = total.mul(105).div(100);
     const tx = await usdt.approve(CONFIG.contracts.sale, approveAmt);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('授权成功，继续购买…', 'success');
   }
 
   // 单笔批量铸造（一次签名），直推金额累加并自动发放奖励卡
   const tx = await saleC.connect(signer).mintCardPreLaunchBatch(qty);
-  await tx.wait();
+  await waitForTx(tx);
   showToast(`预售成功！${qty} 张卡牌已激活并开始累积分红 🎉`, 'success');
   loadAll();
 }
@@ -1747,12 +1770,12 @@ async function buyCardToken() {
     // 授权额加 15% 缓冲：覆盖授权与成交之间预言机 ±10% 波动 + 滑点，避免 allowance 不足
     const approveAmt = total.mul(115).div(100);
     const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
-    await tx.wait();
+    await waitForTx(tx);
     showToast('授权成功，继续购买…', 'success');
   }
 
   const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
-  await tx.wait();
+  await waitForTx(tx);
   showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
   loadAll();
 }
@@ -1762,7 +1785,7 @@ async function claimCard(tokenId) {
   showLoading();
   try {
     const tx = await poolC.connect(signer).claim(tokenId);
-    await tx.wait();
+    await waitForTx(tx);
     showToast(`#${tokenId} 分红领取成功`, 'success');
     loadAll();
   } catch (e) {
@@ -1803,7 +1826,7 @@ async function claimAll() {
     for (let i = 0; i < ids.length; i += 100) {
       const chunk = ids.slice(i, i + 100);
       const tx = await poolC.connect(signer).claimBatch(chunk);
-      await tx.wait();
+      await waitForTx(tx);
       done += chunk.length;
     }
     showToast(`已领取 ${done} 张卡牌的分红 🎉`, 'success');
