@@ -82,8 +82,6 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .float-card{position:absolute;bottom:-160px;width:112px;height:152px;border-radius:15px;background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(139,92,246,.26)),linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.28);box-shadow:0 0 38px rgba(34,211,238,.28),inset 0 0 26px rgba(139,92,246,.18);animation:cardFloat linear infinite;--o:.8;will-change:transform,opacity}
 .float-card::before{content:'';position:absolute;inset:9px;border:1px solid rgba(245,193,76,.3);border-radius:10px;background:radial-gradient(circle at 50% 38%,rgba(245,193,76,.32),transparent 62%)}
-.float-card::after{content:'';position:absolute;top:0;left:-70%;width:46%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-14deg);animation:cardSheen 4.5s ease-in-out infinite}
-@keyframes cardSheen{0%{left:-70%}55%,100%{left:130%}}
 .fc1{left:4%;animation-duration:17s}
 .fc2{left:17%;width:86px;height:118px;animation-duration:23s;animation-delay:-7s;--o:.6}
 .fc3{left:34%;width:96px;height:132px;animation-duration:20s;animation-delay:-12s;--o:.7}
@@ -122,13 +120,17 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .console{position:relative;z-index:3;margin-top:30px;text-align:left;border:1px solid rgba(34,211,238,.22);border-radius:24px;background:linear-gradient(170deg,rgba(15,20,40,.55),rgba(8,11,22,.34));backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:0 26px 70px -30px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;animation:kpiIsland 9s ease-in-out infinite}
 @keyframes kpiIsland{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .console::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.7),rgba(139,92,246,.7),rgba(245,193,76,.55),transparent);z-index:1}
-.console::after{content:'';position:absolute;top:0;left:-60%;width:42%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.05),transparent);transform:skewX(-12deg);animation:consoleSheen 10s ease-in-out 4s infinite;pointer-events:none;z-index:1}
-@keyframes consoleSheen{0%{left:-60%}60%,100%{left:135%}}
 /* 六项核心数据：一条轻带，不发福不占高度 */
 .kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:rgba(148,163,184,.16);border-bottom:1px solid rgba(148,163,184,.16)}
-.kpi-cell{position:relative;background:rgba(9,12,24,.5);padding:13px 10px 12px;text-align:center;overflow:hidden;transition:background .3s}
+.kpi-cell{position:relative;background:linear-gradient(180deg,rgba(26,34,64,.34),rgba(10,14,28,.18));padding:13px 10px 12px;text-align:center;overflow:hidden;transition:background .3s;animation:kpiCellFloat 7s ease-in-out infinite}
+.kpi-cell:nth-child(2){animation-delay:-1.2s}
+.kpi-cell:nth-child(3){animation-delay:-2.4s}
+.kpi-cell:nth-child(4){animation-delay:-3.6s}
+.kpi-cell:nth-child(5){animation-delay:-4.8s}
+.kpi-cell:nth-child(6){animation-delay:-6s}
+@keyframes kpiCellFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @media (hover:hover){
-.kpi-cell:hover{background:rgba(34,211,238,.07)}
+.kpi-cell:hover{background:rgba(34,211,238,.12);box-shadow:inset 0 0 24px rgba(34,211,238,.14)}
 }
 .kc-label{font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
 .kc-label::before{content:'';width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#8b5cf6);box-shadow:0 0 8px rgba(34,211,238,.8);flex-shrink:0}
@@ -148,20 +150,25 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:5px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
 .bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;flex:1;min-width:0}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
-.buy-stage{padding:28px 28px 32px;perspective:1400px;position:relative}
-.buy-card{position:relative;max-width:720px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:22px 26px 24px;background:linear-gradient(180deg,rgba(13,17,32,.94),rgba(8,11,22,.9)) padding-box,linear-gradient(125deg,rgba(245,193,76,.6),rgba(34,211,238,.42) 28%,rgba(139,92,246,.55) 58%,rgba(245,193,76,.32)) border-box;box-shadow:0 30px 70px -28px rgba(0,0,0,.9),0 0 44px rgba(34,211,238,.12),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden;transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
-.buy-card::before{content:'';position:absolute;top:0;left:-70%;width:44%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-14deg);animation:buySheen 8s ease-in-out 2s infinite;pointer-events:none}
+.buy-stage{padding:18px 24px 20px;perspective:1400px;position:relative}
+.buy-card{position:relative;max-width:720px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:16px 22px 18px;background:linear-gradient(180deg,rgba(13,17,32,.94),rgba(8,11,22,.9)) padding-box,linear-gradient(125deg,rgba(245,193,76,.6),rgba(34,211,238,.42) 28%,rgba(139,92,246,.55) 58%,rgba(245,193,76,.32)) border-box;box-shadow:0 30px 70px -28px rgba(0,0,0,.9),0 0 44px rgba(34,211,238,.12),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden;transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
 .buy-card::after{content:'◆';position:absolute;right:4px;bottom:-50px;font-size:150px;line-height:1;color:rgba(245,193,76,.07);pointer-events:none}
-@keyframes buySheen{0%{left:-70%}55%,100%{left:135%}}
 @media (hover:hover){
 .buy-stage:hover .buy-card{transform:rotateX(1.6deg) rotateY(-2.2deg) translateY(-6px);box-shadow:0 42px 90px -30px rgba(0,0,0,.95),0 0 60px rgba(139,92,246,.22),inset 0 1px 0 rgba(255,255,255,.15)}
 }
-.buy-card-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.buy-card-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
 .buy-card-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5c14c,#fb7185);border:1px solid rgba(245,193,76,.5);font-size:19px;box-shadow:0 6px 18px rgba(245,193,76,.35);flex-shrink:0}
-.buy-card-titles{display:flex;flex-direction:column;gap:3px;min-width:0}
+.buy-card-titles{display:flex;flex-direction:column;gap:3px;min-width:140px;flex:1}
 .buy-card-title{font-size:16px;font-weight:900;letter-spacing:1px}
 .buy-card-sub{font-size:9.5px;letter-spacing:2px;color:rgba(139,147,167,.8);text-transform:uppercase;font-weight:700}
-.buy-card-badge{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--gold);border:1px solid rgba(245,193,76,.4);padding:3px 11px;border-radius:99px;background:rgba(245,193,76,.1);box-shadow:0 0 14px rgba(245,193,76,.18);white-space:nowrap}
+.buy-card-badge{font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--gold);border:1px solid rgba(245,193,76,.4);padding:3px 11px;border-radius:99px;background:rgba(245,193,76,.1);box-shadow:0 0 14px rgba(245,193,76,.18);white-space:nowrap}
+.qty-wrap{display:flex;align-items:center;gap:8px}
+.qty-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.buy-card .qty-btn{width:30px;height:30px;font-size:15px}
+.buy-card .qty-value{min-width:24px;font-size:15px}
+.buy-card .data-row{padding:8px 0}
+.buy-card .buy-split{margin-top:10px}
+.buy-mini-note{margin-top:4px;font-size:10.5px;color:rgba(139,147,167,.85);line-height:1.7}
 .buy-card>*{position:relative;z-index:1}
 /* ---------- 开盘后购买模块（资金拆分三格 + 说明条） ---------- */
 .buy-split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
@@ -430,9 +437,11 @@ body{-webkit-tap-highlight-color:transparent}
 .bind-inline{flex-direction:column;align-items:stretch;gap:8px;min-width:0;flex:1 1 100%}
 .bind-inline .input{max-width:none}
 .bind-once{display:none}
-.buy-stage{padding:18px 14px 22px}
-.buy-card{padding:16px 14px 18px;border-radius:18px}
+.buy-stage{padding:14px 12px 16px}
+.buy-card{padding:14px 13px 15px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
+.buy-card-titles{min-width:0;flex:1 1 100%}
+.qty-wrap{justify-content:space-between;flex:1 1 100%}
 .launch-bar{padding:11px 14px;border-radius:13px;gap:9px;margin-bottom:12px}
 .launch-bar .lb-txt{font-size:12px}
 .module{padding:17px 14px;border-radius:16px;margin-bottom:12px}
@@ -556,9 +565,8 @@ body{-webkit-tap-highlight-color:transparent}
       <h1 class="hero-title">卡牌分红 <span>PROTOCOL</span></h1>
       <p class="hero-sub">每张卡牌 · 金本位分红 · 三倍出局</p>
       <div class="hero-chips">
-        <span class="hero-chip">有效卡牌 <b id="heroActiveCards">--</b></span>
-        <span class="hero-chip">分红池 <b id="heroPoolUsdt">--</b></span>
-        <span class="hero-chip">已销毁 <b id="heroBurned">--</b></span>
+        <span class="hero-chip">预售卡牌 <b>200</b> 张</span>
+        <span class="hero-chip">预售空投 <b>40万</b> 枚</span>
       </div>
       <!-- 协议控制台：六项数据一条线 + 上级绑定 + 购买卡牌，整块浮岛与卡牌动画同场呼吸 -->
       <div class="console">
@@ -616,22 +624,18 @@ body{-webkit-tap-highlight-color:transparent}
                 <span class="buy-card-sub">GOLD CARD · 金本位分红 · 3 倍出局</span>
               </div>
               <span class="buy-card-badge" id="buyModeBadge">100 U / 张</span>
-            </div>
-            <div class="data-row">
-              <span class="data-label">购买数量</span>
-              <div class="qty-stepper">
-                <button class="qty-btn" id="minusBtn" aria-label="减少">−</button>
-                <span class="qty-value" id="quantity">1</span>
-                <button class="qty-btn" id="plusBtn" aria-label="增加">+</button>
+              <div class="qty-wrap">
+                <span class="qty-label">数量</span>
+                <div class="qty-stepper">
+                  <button class="qty-btn" id="minusBtn" aria-label="减少">−</button>
+                  <span class="qty-value" id="quantity">1</span>
+                  <button class="qty-btn" id="plusBtn" aria-label="增加">+</button>
+                </div>
               </div>
             </div>
 
             <!-- 开盘前：USDT 预售 -->
             <div id="preLaunchBuyArea" style="display:none">
-              <div class="data-row">
-                <span class="data-label">预售价格</span>
-                <span class="data-value gold">100 USDT / 张</span>
-              </div>
               <div class="data-row">
                 <span class="data-label">需支付（<span id="buyQtyHintPre">1</span> 张）</span>
                 <span class="data-value hi" id="preLaunchPay">100 USDT</span>
@@ -644,23 +648,12 @@ body{-webkit-tap-highlight-color:transparent}
                 <span class="data-label">剩余预售额度</span>
                 <span class="data-value" id="preLaunchRemainingDisplay">-- / 220</span>
               </div>
-              <div class="data-row">
-                <span class="data-label">购买奖励</span>
-                <span class="data-value gold" id="preLaunchRewardText">🎁 购卡立得 2000 枚空投（价值 20U）</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">直推奖励</span>
-                <span class="data-value">上级每张实时得 20U · 上级每满 10 张直推再得 1 张卡</span>
-              </div>
-              <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt16">USDT 预售购买</button>
+              <div class="buy-mini-note" id="preLaunchRewardText">🎁 购卡立得 2000 枚空投（价值 20U）· 上级每张实时得 20U · 每满 10 张直推再得 1 张卡</div>
+              <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt12">USDT 预售购买</button>
             </div>
 
             <!-- 开盘后：代币购买 -->
             <div id="tokenBuyArea" style="display:none">
-              <div class="data-row">
-                <span class="data-label">卡牌成本</span>
-                <span class="data-value gold">100 U / 张</span>
-              </div>
               <div class="data-row">
                 <span class="data-label">实时价格（5 分钟 TWAP）</span>
                 <span class="data-value gold" id="buyPriceHint">--</span>
@@ -692,7 +685,7 @@ body{-webkit-tap-highlight-color:transparent}
                 </div>
               </div>
               <div class="buy-note">价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 波动缓冲 · 实际扣款以成交时价格为准</div>
-              <button id="buyBtn" class="btn btn-primary btn-block mt16">购买卡牌</button>
+              <button id="buyBtn" class="btn btn-primary btn-block mt12">购买卡牌</button>
             </div>
           </div>
         </div>
@@ -1028,7 +1021,6 @@ const DOM = {
   launchWindowBanner: $('launchWindowBanner'), launchWindowRemaining: $('launchWindowRemaining'),
   dashCardCount: $('dashCardCount'), myTotalPending: $('myTotalPending'),
   burnedSupply: $('burnedSupply'), burnedPercent: $('burnedPercent'), circulatingSupply: $('circulatingSupply'),
-  heroActiveCards: $('heroActiveCards'), heroPoolUsdt: $('heroPoolUsdt'), heroBurned: $('heroBurned'),
   gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
@@ -1342,7 +1334,7 @@ function createReadProvider(providers) {
 
 /* 把静态文案中的代币符号替换为链上真实符号 */
 function applyTokenSymbols() {
-  DOM.preLaunchRewardText.innerText = `🎁 购卡立得 2000 枚 ${tokenSymbol} 空投（价值 20U）`;
+  DOM.preLaunchRewardText.innerText = `🎁 购卡立得 2000 枚 ${tokenSymbol} 空投（价值 20U） · 上级每张实时得 20U · 每满 10 张直推再得 1 张卡`;
 }
 
 async function setupProvider(address) {
@@ -1428,9 +1420,6 @@ function disconnectWallet() {
   DOM.burnedSupply.innerText = '--';
   DOM.burnedPercent.innerText = '--';
   DOM.circulatingSupply.innerText = '--';
-  DOM.heroActiveCards.innerText = '--';
-  DOM.heroPoolUsdt.innerText = '--';
-  DOM.heroBurned.innerText = '--';
   // 购买模块
   DOM.buyBalanceHint.innerText = '--';
   DOM.buyRemainingSlots.innerText = '-- / 520';
@@ -1549,8 +1538,6 @@ async function loadStats() {
   remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
   DOM.poolBalanceU.innerText = '待兑换 ' + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol;
   DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
-  DOM.heroActiveCards.innerText = poolOk ? `${activeCards.toString()} / 520` : '--';
-  DOM.heroPoolUsdt.innerText = poolOk ? fmtAmt(balBN, usdtDecimals) + ' U' : '--';
 
   // 开盘状态
   const [launched, paused] = lp;
@@ -1635,7 +1622,6 @@ async function loadSlowData() {
     DOM.burnedPercent.innerText = MAXSUP.isZero() || burned.isZero()
       ? '0%'
       : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%';
-    DOM.heroBurned.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">枚</span>';
   } catch (e) { /* ignore */ }
 }
 
