@@ -465,6 +465,8 @@ body{-webkit-tap-highlight-color:transparent}
 .bind-inline{flex:1 1 100%;justify-content:flex-end;gap:8px}
 .bind-inline .input{flex:1;max-width:none}
 .buy-stats{grid-template-columns:repeat(2,1fr)}
+.buy-split-item{flex-direction:column;gap:3px;padding:7px 4px}
+.buy-split-item .bs-txt{white-space:normal;font-size:9px;line-height:1.4}
 .buy-stage{padding:0;margin-bottom:4px}
 .buy-card{padding:12px 12px 13px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
@@ -541,6 +543,12 @@ body{-webkit-tap-highlight-color:transparent}
 .header{backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}
 .hero-title span{animation:none}
 .aurora::before,.aurora::after{filter:blur(80px);opacity:.16}
+}
+/* 超窄屏：隐藏链徽章、进一步收紧连接按钮，避免顶栏溢出 */
+@media (max-width:480px){
+.chain-chip{display:none}
+.wallet-btn{padding:9px 13px;font-size:12px}
+.brand-title{font-size:14px}
 }
 </style>
 </head>
@@ -836,28 +844,28 @@ body{-webkit-tap-highlight-color:transparent}
     <div class="reward-hero">
       <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
       <div class="reward-hero-body">
-        <span class="reward-label">预售直推奖励</span>
+        <span class="reward-label" data-i18n="teamPreLabel">预售直推奖励</span>
         <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
-        <span class="reward-sub">下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡</span>
-        <span class="reward-mini">直推购买 <b id="teamPreReferralCount">0</b> 张 · 已获奖励卡 <b id="teamBonusCards">0</b> 张</span>
+        <span class="reward-sub" data-i18n="teamPreSub">下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡</span>
+        <span class="reward-mini"><span data-i18n="teamPreMiniA">直推购买</span> <b id="teamPreReferralCount">0</b> <span data-i18n="teamPreMiniB">张 · 已获奖励卡</span> <b id="teamBonusCards">0</b> <span data-i18n="unitCard">张</span></span>
       </div>
     </div>
     <!-- 块二：开盘后推荐奖励（代币购买，30%） -->
     <div class="reward-hero reward-hero-violet">
       <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></div>
       <div class="reward-hero-body">
-        <span class="reward-label">开盘后推荐奖励</span>
+        <span class="reward-label" data-i18n="teamPostLabel">开盘后推荐奖励</span>
         <span class="reward-value" id="teamRewardEarned">0.00</span>
-        <span class="reward-sub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
+        <span class="reward-sub" data-i18n="teamPostSub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
       </div>
     </div>
     <div class="mini-kpis" style="grid-template-columns:1fr 1fr">
       <div class="mini-kpi">
-        <span class="mini-label">一级下级</span>
+        <span class="mini-label" data-i18n="miniL1">一级下级</span>
         <span class="mini-value" id="teamCount2">0</span>
       </div>
       <div class="mini-kpi gold">
-        <span class="mini-label">我的上级</span>
+        <span class="mini-label" data-i18n="miniMyRef">我的上级</span>
         <span class="mini-value" id="teamMyReferrer" style="font-size:15px">--</span>
       </div>
     </div>
@@ -866,18 +874,18 @@ body{-webkit-tap-highlight-color:transparent}
         <div>
           <div class="team-panel-title">
             <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5.5 20c.9-3.6 3.4-5.6 6.5-5.6s5.6 2 6.5 5.6"/><path d="M17 5.5h4M19 3.5v4"/></svg>
-            直属下级
+            <span data-i18n="teamPanelTitle">直属下级</span>
           </div>
-          <div class="team-panel-sub">Direct Referrals · 实时上链</div>
+          <div class="team-panel-sub"><span data-i18n="teamPanelSub">实时上链</span></div>
         </div>
-        <span class="team-total">共 <b id="teamCount">0</b> 位</span>
+        <span class="team-total"><span data-i18n="teamTotalA">共</span> <b id="teamCount">0</b> <span data-i18n="teamTotalB">位</span></span>
       </div>
       <div class="team-table-head">
-        <span>排名</span>
-        <span>钱包地址</span>
-        <span class="th-act">操作</span>
+        <span data-i18n="thRank">排名</span>
+        <span data-i18n="thAddr">钱包地址</span>
+        <span class="th-act" data-i18n="thAct">操作</span>
       </div>
-      <div id="teamList"><div class="empty-tip">连接钱包后查看团队</div></div>
+      <div id="teamList"><div class="empty-tip" data-i18n="emptyTeam">连接钱包后查看团队</div></div>
     </div>
   </div>
 
@@ -885,14 +893,14 @@ body{-webkit-tap-highlight-color:transparent}
   <div class="modal-overlay" id="bindModal" style="display:none">
     <div class="modal-box">
       <div class="modal-head">
-        <span class="module-title">绑定邀请人</span>
+        <span class="module-title" data-i18n="bindModalTitle">绑定邀请人</span>
         <span class="module-badge">INVITE</span>
       </div>
-      <p class="modal-tip">您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？</p>
+      <p class="modal-tip" data-i18n="bindModalTip">您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？</p>
       <div class="modal-addr" id="bindModalAddr"></div>
       <div class="flex mt16" style="justify-content:flex-end">
-        <button id="bindModalCancel" class="btn btn-ghost">暂不绑定</button>
-        <button id="bindModalConfirm" class="btn btn-primary">确认绑定</button>
+        <button id="bindModalCancel" class="btn btn-ghost" data-i18n="modalLater">暂不绑定</button>
+        <button id="bindModalConfirm" class="btn btn-primary" data-i18n="modalConfirmBind">确认绑定</button>
       </div>
     </div>
   </div>
@@ -1144,7 +1152,30 @@ const I18N = {
     inviteTitle:'邀请', inviteRef:'我的上级', copyLink:'复制邀请链接', gotoTeam:'查看团队收益 →',
     langTitle:'选择语言', langOk:'确定',
     footerKey:'卡牌分红协议 · NFT DIVIDEND PROTOCOL · 数据实时上链',
-    statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定'
+    statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定',
+    preGift1:'购卡立得 2000 枚', preGift2:'空投（价值 20U）· 每满 10 张直推再得 1 张卡',
+    teamPreLabel:'预售直推奖励', teamPreSub:'下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡',
+    teamPreMiniA:'直推购买', teamPreMiniB:'张 · 已获奖励卡', teamPostLabel:'开盘后推荐奖励',
+    teamPostSub:'直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励',
+    miniL1:'一级下级', miniMyRef:'我的上级', teamPanelTitle:'直属下级', teamPanelSub:'实时上链',
+    teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
+    bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
+    modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
+    cardActive:'计息中', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算',
+    cardDone:'已完成 · 待领取可随时提取', cardProgress:'分红进度', cardAccrued:'累计分红', cardClaimed:'已领取',
+    cardPending:'待领取', cardExitP:'出局进度', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
+    noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
+    toastBusy:'操作太频繁，请稍后再试', toastConnect:'请先连接钱包', toastDisconnected:'已断开钱包',
+    toastConnected:'钱包连接成功', toastCanceled:'您取消了连接', toastNoWallet:'未检测到钱包，请安装 MetaMask',
+    toastCopied:'地址已复制', toastCopyFail:'复制失败', toastInviteCopied:'邀请链接已复制',
+    toastBindOk:'🎉 绑定上级成功！', toastBadAddr:'请输入合法的钱包地址', toastNoSelf:'不能绑定自己',
+    toastPreState:'预售状态读取中，请稍后重试', toastPreFull:'预售名额已满', toastBindFirst:'请先绑定上级',
+    toastPreReserve:'预售代币储备不足，请稍后再试或联系管理员充值', toastNoUsdt:'预售收款币种未配置',
+    toastUsdtLow:'USDT 余额不足', toastApprove:'请先在钱包中确认 USDT 授权…', toastApprove2:'请先在钱包中确认授权…', toastApproved:'授权成功，继续购买…',
+    toastNotLaunched:'尚未开盘，暂不能购买', toastNoPrice:'预言机价格未就绪', toastTokLow:'代币余额不足',
+    toastPreOk:'预售成功！{n} 张卡牌已激活并开始累积分红 🎉', toastBuyOk:'购买成功！{n} 张卡牌已开始累积分红 🎉',
+    toastClaimOk:'分红领取成功', toastNothing:'没有待领取的分红', toastClaimAll:'已领取 {n} 张卡牌的分红 🎉',
+    toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试'
   },
   en: {
     connect:'Connect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
@@ -1164,7 +1195,30 @@ const I18N = {
     inviteTitle:'Invite', inviteRef:'My Referrer', copyLink:'Copy Invite Link', gotoTeam:'View Team Rewards →',
     langTitle:'Language', langOk:'OK',
     footerKey:'CARD DIVIDEND PROTOCOL · ON-CHAIN DATA',
-    statusDiv:'Dividends Active', statusPaused:'Paused', statusPre:'Not Launched', switching:'Launch Switching…', pendingSwap:'To convert ', notBound:'Not bound'
+    statusDiv:'Dividends Active', statusPaused:'Paused', statusPre:'Not Launched', switching:'Launch Switching…', pendingSwap:'To convert ', notBound:'Not bound',
+    preGift1:'Get 2,000', preGift2:'airdrop (worth 20U) · every 10 direct cards earns 1 more card',
+    teamPreLabel:'Pre-sale Direct Rewards', teamPreSub:'Earn 20U instantly per downline pre-sale card; every 1,000U (10 cards) of direct sales earns you 1 bonus card',
+    teamPreMiniA:'Direct buys', teamPreMiniB:'cards · bonus cards earned', teamPostLabel:'Post-launch Referral Rewards',
+    teamPostSub:'Earn 30% of tokens instantly whenever your direct downlines buy a card',
+    miniL1:'Direct Downlines', miniMyRef:'My Referrer', teamPanelTitle:'Direct Referrals', teamPanelSub:'REAL-TIME ON-CHAIN',
+    teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
+    bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
+    modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
+    cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit',
+    cardDone:'Completed · withdraw anytime', cardProgress:'Dividend Progress', cardAccrued:'Total Accrued', cardClaimed:'Claimed',
+    cardPending:'Pending', cardExitP:'Exit Progress', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
+    noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
+    toastBusy:'Too frequent — try again shortly', toastConnect:'Connect wallet first', toastDisconnected:'Wallet disconnected',
+    toastConnected:'Wallet connected', toastCanceled:'Connection cancelled', toastNoWallet:'No wallet detected — install MetaMask',
+    toastCopied:'Address copied', toastCopyFail:'Copy failed', toastInviteCopied:'Invite link copied',
+    toastBindOk:'🎉 Referrer bound!', toastBadAddr:'Enter a valid wallet address', toastNoSelf:'Cannot bind yourself',
+    toastPreState:'Reading pre-sale state — retry shortly', toastPreFull:'Pre-sale quota full', toastBindFirst:'Bind a referrer first',
+    toastPreReserve:'Token reserve low — retry later or contact admin', toastNoUsdt:'USDT not configured',
+    toastUsdtLow:'Insufficient USDT', toastApprove:'Approve USDT in your wallet…', toastApprove2:'Approve in your wallet…', toastApproved:'Approved, continuing…',
+    toastNotLaunched:'Not launched yet', toastNoPrice:'Oracle price not ready', toastTokLow:'Insufficient tokens',
+    toastPreOk:'Pre-sale success! {n} cards activated and earning 🎉', toastBuyOk:'Purchase success! {n} cards now earning 🎉',
+    toastClaimOk:'dividend claimed', toastNothing:'Nothing to claim', toastClaimAll:'Claimed {n} cards\u2019 dividends 🎉',
+    toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry'
   }
 };
 let LANG = (localStorage.getItem('lang') === 'en') ? 'en' : 'zh';
@@ -1332,8 +1386,8 @@ const showToast = (msg, type = '') => {
 const throttle = (fn, delay = 1000) => {
   let t = null;
   return function(...a) {
-    if (t) { showToast('操作太频繁，请稍后再试', 'error'); return; }
-    if (!userAddress) { showToast('请先连接钱包', 'error'); return; }
+    if (t) { showToast(t('toastBusy'), 'error'); return; }
+    if (!userAddress) { showToast(t('toastConnect'), 'error'); return; }
     t = setTimeout(() => { t = null; }, delay);
     return fn.apply(this, a);
   };
@@ -1342,7 +1396,7 @@ const throttle = (fn, delay = 1000) => {
 /* 未连接钱包的统一友好拦截 */
 const requireWallet = () => {
   if (!userAddress) {
-    showToast('请先连接钱包', 'error');
+    showToast(t('toastConnect'), 'error');
     return false;
   }
   return true;
@@ -1399,11 +1453,11 @@ async function switchChain() {
           }]
         });
       } catch (e2) {
-        showToast('请手动在钱包中添加 ' + CONFIG.chainName, 'error');
+        showToast(t('toastAddNet') + CONFIG.chainName, 'error');
         throw e2;
       }
     } else {
-      showToast('请切换到 ' + CONFIG.chainName, 'error');
+      showToast(t('toastSwitchNet') + CONFIG.chainName, 'error');
       throw err;
     }
   }
@@ -1411,7 +1465,7 @@ async function switchChain() {
 
 async function connectWallet() {
   if (!window.ethereum) {
-    showToast('未检测到钱包，请安装 MetaMask', 'error');
+    showToast(t('toastNoWallet'), 'error');
     return;
   }
   showLoading();
@@ -1419,13 +1473,13 @@ async function connectWallet() {
     await switchChain();
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     await setupProvider(accounts[0]);
-    showToast('钱包连接成功', 'success');
+    showToast(t('toastConnected'), 'success');
   } catch (e) {
     if (String(e.message || '').includes('User rejected') || (e && e.code === 4001)) {
-      showToast('您取消了连接', 'error');
+      showToast(t('toastCanceled'), 'error');
     } else {
       console.warn('连接钱包失败', e);
-      showToast('连接失败，请重试', 'error');
+      showToast(t('toastConnFail'), 'error');
     }
   } finally {
     hideLoading();
@@ -1472,7 +1526,7 @@ function createReadProvider(providers) {
 
 /* 把静态文案中的代币符号替换为链上真实符号 */
 function applyTokenSymbols() {
-  DOM.preLaunchRewardText.innerText = `🎁 购卡立得 2000 枚 ${tokenSymbol} 空投（价值 20U） · 每满 10 张直推再得 1 张卡`;
+  DOM.preLaunchRewardText.innerText = '🎁 ' + t('preGift1') + ' ' + tokenSymbol + ' ' + t('preGift2');
 }
 
 async function setupProvider(address) {
@@ -1565,7 +1619,7 @@ function disconnectWallet() {
   DOM.usdtBalanceHint.innerText = '--';
   DOM.preLaunchRemainingDisplay.innerText = '-- / 220';
   // 我的卡牌
-  DOM.cardList.innerHTML = '<div class="empty-tip">连接钱包后查看</div>';
+  DOM.cardList.innerHTML = '<div class="empty-tip">' + t('emptyTip') + '</div>';
   DOM.myCardCount.innerText = '0';
   DOM.dashCardCount.innerText = '0';
   DOM.myTotalPending.innerText = '-- U';
@@ -1582,7 +1636,7 @@ function disconnectWallet() {
   DOM.teamPreReferralUsdt.innerText = '0.00 U';
   DOM.teamPreReferralCount.innerText = '0';
   DOM.teamBonusCards.innerText = '0';
-  DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
+  DOM.teamList.innerHTML = '<div class="empty-tip">' + t('emptyTeam') + '</div>';
   teamPageNo = 1;
   teamRenderKey = '';
   cardPageNo = 1;
@@ -1604,7 +1658,7 @@ function disconnectWallet() {
   DOM.tokenBuyArea.style.display = '';
   updateBuyDisplay();
   stopRefresh();
-  showToast('已断开钱包', 'success');
+  showToast(t('toastDisconnected'), 'success');
 }
 
 /* 轮询管理：仅页面可见时刷新，切后台自动暂停（省 RPC 配额） */
@@ -1827,7 +1881,7 @@ async function loadTeam() {
   DOM.teamCount2.innerText = cnt;
 
   if (cnt === 0) {
-    DOM.teamList.innerHTML = '<div class="empty-tip">暂无下级，快去邀请好友吧</div>';
+    DOM.teamList.innerHTML = '<div class="empty-tip">' + t('noTeam') + '</div>';
     return;
   }
 
@@ -1872,18 +1926,18 @@ async function loadTeam() {
     }).join('')
       + `
     <div class="pager">
-      <button class="pager-btn" id="teamPrevBtn" ${teamPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
+      <button class="pager-btn" id="teamPrevBtn" ${teamPageNo <= 1 ? 'disabled' : ''}>${t('pagerPrev')}</button>
       <span class="pager-info">${teamPageNo} / ${totalPages}</span>
-      <button class="pager-btn" id="teamNextBtn" ${teamPageNo >= totalPages ? 'disabled' : ''}>下一页 ›</button>
+      <button class="pager-btn" id="teamNextBtn" ${teamPageNo >= totalPages ? 'disabled' : ''}>${t('pagerNext')}</button>
     </div>`;
 
     document.querySelectorAll('.team-copy').forEach(btn => {
       btn.onclick = async () => {
         try {
           await navigator.clipboard.writeText(btn.dataset.addr);
-          showToast('地址已复制', 'success');
+          showToast(t('toastCopied'), 'success');
         } catch (e) {
-          showToast('复制失败', 'error');
+          showToast(t('toastCopyFail'), 'error');
         }
       };
     });
@@ -1962,8 +2016,8 @@ function cardRowHtml(r) {
   const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
   const serial = String(r.tokenId.toString()).padStart(3, '0');
   const progressTxt = r.active
-    ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '已满 300U · 待出局结算')
-    : '已完成 · 待领取可随时提取';
+    ? (remain > 0 ? t('cardLeft') + ' ' + remain.toFixed(2) + ' U' : t('cardExitReady'))
+    : t('cardDone');
   return `
     <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
       <span class="nft-glow"></span>
@@ -1972,21 +2026,21 @@ function cardRowHtml(r) {
         <div class="nft-id-wrap">
           <span class="nft-id-no">${cardNo}</span>
           <span class="nft-id-label">Collector Card</span>
-          ${r.active ? '<span class="badge badge-active">计息中</span>' : '<span class="badge badge-exited">✓ 已出局</span>'}
+          ${r.active ? '<span class="badge badge-active">' + t('cardActive') + '</span>' : '<span class="badge badge-exited">' + t('cardExited') + '</span>'}
         </div>
-        <div class="nft-entry"><span class="entry-label">入场时间</span><span class="entry-time">${fmtTime(r.entryTime)}</span></div>
+        <div class="nft-entry"><span class="entry-label">${t('cardEntry')}</span><span class="entry-time">${fmtTime(r.entryTime)}</span></div>
       </div>
       <div class="nft-metrics">
         <div class="metric">
-          <span class="metric-label">获得分红</span>
+          <span class="metric-label">${t('cardAccrued')}</span>
           <span class="metric-value">${fmtU(accC)}</span>
         </div>
         <div class="metric">
-          <span class="metric-label">已领取</span>
+          <span class="metric-label">${t('cardClaimed')}</span>
           <span class="metric-value">${fmtU(clmC)}</span>
         </div>
         <div class="metric metric-gold">
-          <span class="metric-label">待领取</span>
+          <span class="metric-label">${t('cardPending')}</span>
           <span class="metric-value">${fmtU(pndC)}</span>
         </div>
       </div>
@@ -1998,7 +2052,7 @@ function cardRowHtml(r) {
         </div>
       </div>
       <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero ? 'disabled' : ''}>
-        ${pendingZero ? '无待领取' : '领取分红'}
+        ${pendingZero ? t('cardNone') : t('cardClaim')}
       </button>
     </div>`;
 }
@@ -2015,8 +2069,8 @@ function patchCardDom(r) {
   card.classList.toggle('exited', !r.active);
   const badge = card.querySelector('.badge');
   if (badge) {
-    if (r.active) { badge.className = 'badge badge-active'; badge.innerText = '计息中'; }
-    else { badge.className = 'badge badge-exited'; badge.innerText = '✓ 已出局'; }
+    if (r.active) { badge.className = 'badge badge-active'; badge.innerText = t('cardActive'); }
+    else { badge.className = 'badge badge-exited'; badge.innerText = t('cardExited'); }
   }
   const mvs = card.querySelectorAll('.metric-value');
   if (mvs.length === 3) {
@@ -2029,7 +2083,7 @@ function patchCardDom(r) {
   const pctEl = card.querySelector('.pct');
   if (pctEl) { pctEl.innerText = pct.toFixed(2) + '%'; pctEl.classList.toggle('done', pct >= 100); }
   const txt = card.querySelector('.progress-txt');
-  if (txt) txt.innerText = r.active ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '已满 300U · 待出局结算') : '已完成 · 待领取可随时提取';
+  if (txt) txt.innerText = r.active ? (remain > 0 ? t('cardLeft') + ' ' + remain.toFixed(2) + ' U' : t('cardExitReady')) : t('cardDone');
   const btn = card.querySelector('.claim-one-btn');
   if (btn) {
     const zero = r.pending.isZero();
@@ -2050,9 +2104,9 @@ function renderCardsView(rows, totalPages, count) {
 
   const pagerHtml = count > 1 ? `
     <div class="pager">
-      <button class="pager-btn" id="cardPrevBtn" ${cardPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
+      <button class="pager-btn" id="cardPrevBtn" ${cardPageNo <= 1 ? 'disabled' : ''}>${t('pagerPrev')}</button>
       <span class="pager-info">${cardPageNo} / ${totalPages}</span>
-      <button class="pager-btn" id="cardNextBtn" ${cardPageNo >= totalPages ? 'disabled' : ''}>下一页 ›</button>
+      <button class="pager-btn" id="cardNextBtn" ${cardPageNo >= totalPages ? 'disabled' : ''}>${t('pagerNext')}</button>
     </div>` : '';
 
   DOM.cardList.innerHTML = `<div class="nft-grid${flipClass}">${cardsHtml}</div>` + pagerHtml;
@@ -2089,7 +2143,7 @@ async function loadCards() {
   DOM.dashCardCount.innerText = count;
 
   if (count === 0) {
-    DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
+    DOM.cardList.innerHTML = '<div class="empty-tip">' + t('noCards') + '</div>';
     cardsAgg = { count: 0, accrued: 0, claimed: 0, pending: 0 };
     applyCardsAgg(cardsAgg);
     cardPageNo = 1;
@@ -2193,13 +2247,13 @@ async function waitForTx(tx, timeoutMs = 180000) {
 
 async function doBindReferrer(ref) {
   if (!requireWallet()) return;
-  if (!ethers.utils.isAddress(ref)) { showToast('请输入合法的钱包地址', 'error'); return; }
-  if (ref.toLowerCase() === userAddress.toLowerCase()) { showToast('不能绑定自己', 'error'); return; }
+  if (!ethers.utils.isAddress(ref)) { showToast(t('toastBadAddr'), 'error'); return; }
+  if (ref.toLowerCase() === userAddress.toLowerCase()) { showToast(t('toastNoSelf'), 'error'); return; }
   showLoading();
   try {
     const tx = await saleC.connect(signer).bindReferrer(ref);
     await waitForTx(tx);
-    showToast('🎉 绑定上级成功！', 'success');
+    showToast(t('toastBindOk'), 'success');
     DOM.bindModal.style.display = 'none';
     pendingRef = '';
     loadUser();
@@ -2233,11 +2287,11 @@ async function buyCard() {
 
 /* 开盘前：USDT 购买（100U/张，自动拆分 20U 直推 + 50U 底池 + 30U 利润） */
 async function buyCardPreLaunch() {
-  if (preLaunchRemain < 0) { showToast('预售状态读取中，请稍后重试', 'error'); return; }
-  if (preLaunchRemain <= 0) { showToast('预售名额已满', 'error'); return; }
+  if (preLaunchRemain < 0) { showToast(t('toastPreState'), 'error'); return; }
+  if (preLaunchRemain <= 0) { showToast(t('toastPreFull'), 'error'); return; }
   const qty = Math.min(buyQuantity, preLaunchRemain);
   const ref = await saleC.referrerOf(userAddress);
-  if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
+  if (!ref || ref === ZERO_ADDR) { showToast(t('toastBindFirst'), 'error'); return; }
 
   // 预售储备预检：每张卡合约需消耗 7000 TTT（5000 加池 + 2000 空投）。
   // 储备不足时合约会原子回滚（USDT 不会转出），这里提前拦截避免发出注定失败的交易。
@@ -2245,33 +2299,33 @@ async function buyCardPreLaunch() {
     const needReserve = ethers.BigNumber.from(qty).mul(ethers.utils.parseUnits('7000', 18));
     const reserve = await tokenC.balanceOf(CONFIG.contracts.sale);
     if (reserve.lt(needReserve)) {
-      showToast('预售代币储备不足，请稍后再试或联系管理员充值', 'error');
+      showToast(t('toastPreReserve'), 'error');
       return;
     }
   } catch (e) { /* 预检失败不阻断（合约仍会兜底回滚） */ }
 
   const usdtAddr = await saleC.usdt();
-  if (!usdtAddr || usdtAddr === ZERO_ADDR) { showToast('预售收款币种未配置', 'error'); return; }
+  if (!usdtAddr || usdtAddr === ZERO_ADDR) { showToast(t('toastNoUsdt'), 'error'); return; }
   const usdt = new ethers.Contract(usdtAddr, USDT_ABI, signer);
   // 100U/张 = 10000 分 × 1e16 wei = 1e20 wei（与合约 PRE_LAUNCH_PRICE_CENTS 一致）
   const total = ethers.BigNumber.from(qty).mul(ethers.BigNumber.from(10000)).mul(USDT_CENT_WEI);
 
   const bal = await usdt.balanceOf(userAddress);
-  if (bal.lt(total)) { showToast('USDT 余额不足', 'error'); return; }
+  if (bal.lt(total)) { showToast(t('toastUsdtLow'), 'error'); return; }
 
   const allowance = await usdt.allowance(userAddress, CONFIG.contracts.sale);
   if (allowance.lt(total)) {
-    showToast('请先在钱包中确认 USDT 授权…', '');
+    showToast(t('toastApprove'), '');
     const approveAmt = total.mul(105).div(100);
     const tx = await usdt.approve(CONFIG.contracts.sale, approveAmt);
     await waitForTx(tx);
-    showToast('授权成功，继续购买…', 'success');
+    showToast(t('toastApproved'), 'success');
   }
 
   // 单笔批量铸造（一次签名），直推金额累加并自动发放奖励卡
   const tx = await saleC.connect(signer).mintCardPreLaunchBatch(qty);
   await waitForTx(tx);
-  showToast(`预售成功！${qty} 张卡牌已激活并开始累积分红 🎉`, 'success');
+  showToast(t('toastPreOk').replace('{n}', qty), 'success');
   cardsAgg = null; cardsAllCache = null; // 新卡入账：强制刷新卡牌缓存与全量汇总
   loadAll();
 }
@@ -2279,20 +2333,20 @@ async function buyCardPreLaunch() {
 /* 开盘后：代币购买（100U 等值代币） */
 async function buyCardToken() {
   const launched = await saleC.launched();
-  if (!launched) { showToast('尚未开盘，暂不能购买', 'error'); return; }
+  if (!launched) { showToast(t('toastNotLaunched'), 'error'); return; }
   const ref = await saleC.referrerOf(userAddress);
-  if (!ref || ref === ZERO_ADDR) { showToast('请先绑定上级', 'error'); return; }
+  if (!ref || ref === ZERO_ADDR) { showToast(t('toastBindFirst'), 'error'); return; }
 
   const need = await saleC.requiredTokensForCard();
-  if (need.isZero()) { showToast('预言机价格未就绪', 'error'); return; }
+  if (need.isZero()) { showToast(t('toastNoPrice'), 'error'); return; }
 
   const total = need.mul(buyQuantity);
   const bal = await tokenC.balanceOf(userAddress);
-  if (bal.lt(total)) { showToast('代币余额不足', 'error'); return; }
+  if (bal.lt(total)) { showToast(t('toastTokLow'), 'error'); return; }
 
   const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
   if (allowance.lt(total)) {
-    showToast('请先在钱包中确认授权…', '');
+    showToast(t('toastApprove2'), '');
     // 增量授权：目标额度 = 本笔 130%（覆盖 ±10% 价格波动 + 授权与成交间的剧烈波动缓冲）；
     // 只补「目标 - 现有」的缺口——消除「覆盖式 approve 新旧额度叠加」的经典授权竞态
     const target = total.mul(130).div(100);
@@ -2306,12 +2360,12 @@ async function buyCardToken() {
       const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, target);
       await waitForTx(tx);
     }
-    showToast('授权成功，继续购买…', 'success');
+    showToast(t('toastApproved'), 'success');
   }
 
   const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
   await waitForTx(tx);
-  showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
+  showToast(t('toastBuyOk').replace('{n}', buyQuantity), 'success');
   cardsAgg = null; cardsAllCache = null; // 新卡入账：强制刷新卡牌缓存与全量汇总
   loadAll();
 }
@@ -2322,7 +2376,7 @@ async function claimCard(tokenId) {
   try {
     const tx = await poolC.connect(signer).claim(tokenId);
     await waitForTx(tx);
-    showToast(`#${tokenId} 分红领取成功`, 'success');
+    showToast('#' + tokenId + ' ' + t('toastClaimOk'), 'success');
     cardsAgg = null; cardsAllCache = null; // 强制下一轮立即重算汇总并刷新卡面缓存
     loadAll();
   } catch (e) {
@@ -2358,7 +2412,7 @@ async function claimAll() {
     }
 
     if (ids.length === 0) {
-      showToast('没有待领取的分红', '');
+      showToast(t('toastNothing'), '');
       return;
     }
 
@@ -2370,7 +2424,7 @@ async function claimAll() {
       await waitForTx(tx);
       done += chunk.length;
     }
-    showToast(`已领取 ${done} 张卡牌的分红 🎉`, 'success');
+    showToast(t('toastClaimAll').replace('{n}', done), 'success');
     cardsAgg = null; cardsAllCache = null; // 强制下一轮立即重算汇总并刷新卡面缓存
     loadAll();
   } catch (e) {
@@ -2404,12 +2458,11 @@ window.addEventListener('resize', () => {
 window.addEventListener('load', setHeroTravel);
 
 /* 主视觉背景视频：CONFIG.heroVideoUrl 填了才启用；加载失败自动回退到代码卡牌动画。
-   省电降载：手机端 / 省流量模式 / 系统减少动态效果 时不加载视频 */
+   省电降载：省流量模式 / 系统减少动态效果 时不加载视频（手机端正常播放，离开页面自动暂停） */
 (function initHeroVideo() {
   const v = document.getElementById('heroVideo');
   if (!v) return;
-  const skip = window.matchMedia('(max-width:768px)').matches
-    || (navigator.connection && navigator.connection.saveData)
+  const skip = (navigator.connection && navigator.connection.saveData)
     || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   if (!CONFIG.heroVideoUrl || skip) { v.remove(); return; }
   v.addEventListener('error', () => v.remove(), true);
@@ -2509,11 +2562,11 @@ DOM.copyBtn.addEventListener('click', async () => {
   if (!requireWallet()) return;
   try {
     await navigator.clipboard.writeText(DOM.inviteLink.value);
-    showToast('邀请链接已复制', 'success');
+    showToast(t('toastInviteCopied'), 'success');
   } catch (e) {
     DOM.inviteLink.select();
     document.execCommand('copy');
-    showToast('邀请链接已复制', 'success');
+    showToast(t('toastInviteCopied'), 'success');
   }
 });
 DOM.gotoTeamBtn.addEventListener('click', () => {
