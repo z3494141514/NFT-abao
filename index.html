@@ -94,6 +94,8 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .kpi-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.16));border:1px solid rgba(34,211,238,.22)}
 .kpi-ic .ic{width:19px;height:19px;color:var(--cyan)}
 .kpi-value{font-size:25px;font-weight:800;letter-spacing:.3px;font-variant-numeric:tabular-nums;line-height:1.2;word-break:break-all}
+/* 数值单位字（如「枚」）：小号 + 弱化 + 金色点缀，与主数值形成层次 */
+.unit-char{font-size:.5em;font-weight:600;color:var(--gold);opacity:.75;margin-left:5px;letter-spacing:.08em}
 .kpi-sub{font-size:12px;color:var(--muted);margin-top:7px;font-variant-numeric:tabular-nums}
 .kpi-sub .u{color:var(--gold);font-weight:600}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid}
@@ -975,14 +977,6 @@ const fmtTokens = (bn) => {
     return n.toLocaleString('zh-CN', {maximumFractionDigits: 4});
   } catch (e) { return '--'; }
 };
-const fmtTokensFull = (bn) => {
-  try {
-    const s = ethers.utils.formatUnits(bn, tokenDecimals);
-    const n = parseFloat(s);
-    if (!Number.isFinite(n) || n < 0 || n > 10_000_000) return '--';
-    return s;
-  } catch (e) { return '--'; }
-};
 const fmtPrice = (p) => {
   if (!p || p.isZero()) return '--';
   return (Number(p) / PRICE_SCALE).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U';
@@ -993,6 +987,14 @@ const fmtAmt = (bn, dec) => {
     const n = parseFloat(ethers.utils.formatUnits(bn, dec));
     if (!Number.isFinite(n) || n < 0) return '--';
     return n.toLocaleString('zh-CN', {maximumFractionDigits: 4});
+  } catch (e) { return '--'; }
+};
+/* 两位小数格式化（首页已销毁/流通量用，带千分位） */
+const fmtAmt2 = (bn, dec) => {
+  try {
+    const n = parseFloat(ethers.utils.formatUnits(bn, dec));
+    if (!Number.isFinite(n) || n < 0) return '--';
+    return n.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   } catch (e) { return '--'; }
 };
 const fmtTime = (ts) => {
@@ -1111,7 +1113,8 @@ function updateBuyDisplay() {
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
     DOM.buyBtn.innerText = `购买 ${buyQuantity} 张卡牌`;
     if (unitPriceTokens && !unitPriceTokens.isZero()) {
-      DOM.buyTokensNeeded.innerText = fmtTokensFull(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
+      // 「≈」表示约数：实际扣款以成交时价格为准（授权已留 130% 缓冲）
+      DOM.buyTokensNeeded.innerText = '≈ ' + fmtTokens(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
     } else {
       DOM.buyTokensNeeded.innerText = '--（价格未就绪）';
     }
@@ -1501,12 +1504,12 @@ async function loadSlowData() {
     // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
     const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
     const burned = MAXSUP.sub(circ);
-    DOM.burnedSupply.innerText = fmtAmt(burned, tokenDecimals) + ' ' + tokenSymbol;
-    DOM.circulatingSupply.innerText = fmtAmt(circ, tokenDecimals) + ' ' + tokenSymbol;
+    DOM.burnedSupply.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">枚</span>';
+    DOM.circulatingSupply.innerHTML = fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">枚</span>';
     DOM.burnedPercent.innerText = MAXSUP.isZero() || burned.isZero()
       ? '0%'
       : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%';
-    DOM.heroBurned.innerText = fmtAmt(burned, tokenDecimals) + ' ' + tokenSymbol;
+    DOM.heroBurned.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">枚</span>';
   } catch (e) { /* ignore */ }
 }
 
