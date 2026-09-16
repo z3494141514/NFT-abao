@@ -1196,6 +1196,7 @@ async function setupProvider(address) {
   if (epoch !== connEpoch || userAddress !== address) return;
 
   loadAll();
+  loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
   startRefresh();
   checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
 }
@@ -1247,6 +1248,7 @@ function disconnectWallet() {
   teamPageNo = 1;
   teamCache = { count: -1, addrs: [] };
   teamRenderKey = '';
+  slowTick = 5; // 重连后首轮立即刷新慢数据（已销毁/流通量），避免等待最长 90 秒的周期
   DOM.bindModal.style.display = 'none';
   pendingRef = '';
   buyQuantity = 1;
