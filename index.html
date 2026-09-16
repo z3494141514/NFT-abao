@@ -945,6 +945,7 @@ let teamRenderKey = '';           // 列表渲染签名（未变化则跳过重�
 let cardPageNo = 1;               // 卡牌明细当前页（每页 1 张）
 let lastRenderedPage = -1;        // 上次渲染页码（仅翻页时触发入场动画，自动刷新不播）
 let cardsAgg = null;              // 全量汇总缓存 {count, accrued, claimed, pending}
+let cardsAllCache = null;         // 全量卡牌数据缓存 {count, ids, infos}（翻页零延迟渲染）
 let cardsAggBusy = false;         // 汇总计算在途标记（防并发重复拉全量）
 let cardsAggTick = 0;             // 汇总慢刷新计数（每 4 轮 ≈ 60 秒重算）
 let cardsAggTargetCount = 0;      // 最新卡牌数量（汇总完成后若不一致则立即重算）
@@ -1313,6 +1314,7 @@ function disconnectWallet() {
   cardPageNo = 1;
   lastRenderedPage = -1;
   cardsAgg = null;
+  cardsAllCache = null;
   cardsAggBusy = false;
   cardsAggTick = 0;
   slowTick = 5; // 重连后首轮立即刷新慢数据（已销毁/流通量），避免等待最长 90 秒的周期
@@ -1634,6 +1636,8 @@ async function refreshCardsAgg(count) {
     }
     const agg = { count, accrued: totalAccrued, claimed: totalClaimed, pending: totalPending };
     cardsAgg = agg;
+    // 全量数据顺带缓存：翻页时直接渲染，无需等待链上请求（翻页零延迟的关键）
+    cardsAllCache = { count, ids: tokenIds, infos };
     if (userAddress) applyCardsAgg(agg); // 计算期间断开则丢弃
   } catch (e) { /* 单轮失败，下一轮自动重试 */ }
   finally {
@@ -1643,67 +1647,29 @@ async function refreshCardsAgg(count) {
   }
 }
 
-async function loadCards() {
-  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
-  const bal = await nftC.balanceOf(userAddress);
-  // 防御：合约地址未配置/配错时 balanceOf 可能返回任意存储槽数据（天文数字），
-  // toNumber() 对超大值会抛异常，统一归零处理
-  let count = 0;
-  try {
-    count = bal.toNumber();
-    if (!Number.isFinite(count) || count < 0 || count > 10000) count = 0;
-  } catch (e) { count = 0; }
-  cardsAggTargetCount = count;
-  DOM.myCardCount.innerText = count;
-  DOM.dashCardCount.innerText = count;
+/* 卡牌行数据组装（tokenId/info → 行对象；读取失败防御为全 0） */
+function makeCardRow(tokenId, info) {
+  return tokenId === null || info === null
+    ? { tokenId: BN.from(0), entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false }
+    : { tokenId, entryTime: info[1], accrued: info[2], claimed: info[3], pending: info[4], active: info[5] };
+}
 
-  if (count === 0) {
-    DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
-    cardsAgg = { count: 0, accrued: 0, claimed: 0, pending: 0 };
-    applyCardsAgg(cardsAgg);
-    cardPageNo = 1;
-    return;
-  }
-
-  // 分页：每页 1 张（tokenOfOwnerByIndex 枚举顺序即铸造顺序 = 卡号升序，无需全量排序）
-  const CARD_PAGE_SIZE = 1;
-  const totalPages = Math.max(1, Math.ceil(count / CARD_PAGE_SIZE));
-  if (cardPageNo > totalPages) cardPageNo = totalPages;
-  const start = (cardPageNo - 1) * CARD_PAGE_SIZE;
-
-  // ① 快路径：只拉当前页 3 张卡牌（6 个请求），列表秒出
-  const pageIds = await Promise.all(
-    Array.from({ length: Math.min(CARD_PAGE_SIZE, count - start) }, (_, i) =>
-      nftC.tokenOfOwnerByIndex(userAddress, start + i).catch(() => null))
-  );
-  const pageInfos = await Promise.all(
-    pageIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
-  );
-
-  const rows = [];
-  for (let i = 0; i < pageIds.length; i++) {
-    const tokenId = pageIds[i];
-    const info = pageInfos[i];
-    rows.push(tokenId === null || info === null
-      ? { tokenId: BN.from(0), entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false }
-      : { tokenId, entryTime: info[1], accrued: info[2], claimed: info[3], pending: info[4], active: info[5] });
-  }
-
-  const cardsHtml = rows.map(r => {
-    const pendingZero = r.pending.isZero();
-    const accC = clampCents(r.accrued);
-    const clmC = clampCents(r.claimed);
-    const pndC = clampCents(r.pending);
-    const fmtU = (c) => (c / 100).toFixed(2) + ' U';
-    const pct = Math.min(100, accC / 300);
-    // accC 单位是「分」，先换算成 U 再与 300U 相减
-    const remain = Math.max(0, 300 - accC / 100);
-    const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
-    const serial = String(r.tokenId.toString()).padStart(3, '0');
-    const progressTxt = r.active
-      ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
-      : '已完成 · 待领取可随时提取';
-    return `
+/* 单卡卡面 HTML 模板 */
+function cardRowHtml(r) {
+  const pendingZero = r.pending.isZero();
+  const accC = clampCents(r.accrued);
+  const clmC = clampCents(r.claimed);
+  const pndC = clampCents(r.pending);
+  const fmtU = (c) => (c / 100).toFixed(2) + ' U';
+  const pct = Math.min(100, accC / 300);
+  // accC 单位是「分」，先换算成 U 再与 300U 相减
+  const remain = Math.max(0, 300 - accC / 100);
+  const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
+  const serial = String(r.tokenId.toString()).padStart(3, '0');
+  const progressTxt = r.active
+    ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
+    : '已完成 · 待领取可随时提取';
+  return `
     <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
       <span class="nft-glow"></span>
       <span class="nft-watermark">${serial}</span>
@@ -1740,8 +1706,46 @@ async function loadCards() {
         ${pendingZero ? '无待领取' : '领取分红'}
       </button>
     </div>`;
-  }).join('');
+}
 
+/* 原地更新已渲染卡面的数值（不重渲染：避免翻页动画重播/闪动） */
+function patchCardDom(r) {
+  const card = document.querySelector('.nft-card');
+  if (!card) return;
+  const accC = clampCents(r.accrued);
+  const clmC = clampCents(r.claimed);
+  const pndC = clampCents(r.pending);
+  const pct = Math.min(100, accC / 300);
+  const remain = Math.max(0, 300 - accC / 100);
+  card.classList.toggle('exited', !r.active);
+  const badge = card.querySelector('.badge');
+  if (badge) {
+    if (r.active) { badge.className = 'badge badge-active'; badge.innerText = '计息中'; }
+    else { badge.className = 'badge badge-exited'; badge.innerText = '✓ 已出局'; }
+  }
+  const mvs = card.querySelectorAll('.metric-value');
+  if (mvs.length === 3) {
+    mvs[0].innerText = (accC / 100).toFixed(2) + ' U';
+    mvs[1].innerText = (clmC / 100).toFixed(2) + ' U';
+    mvs[2].innerText = (pndC / 100).toFixed(2) + ' U';
+  }
+  const fill = card.querySelector('.exit-fill');
+  if (fill) { fill.style.width = pct.toFixed(2) + '%'; fill.classList.toggle('done', pct >= 100); }
+  const pctEl = card.querySelector('.pct');
+  if (pctEl) { pctEl.innerText = pct.toFixed(2) + '%'; pctEl.classList.toggle('done', pct >= 100); }
+  const txt = card.querySelector('.progress-txt');
+  if (txt) txt.innerText = r.active ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成') : '已完成 · 待领取可随时提取';
+  const btn = card.querySelector('.claim-one-btn');
+  if (btn) {
+    const zero = r.pending.isZero();
+    btn.disabled = zero;
+    btn.innerText = zero ? '无待领取' : '领取分红';
+  }
+}
+
+/* 渲染卡牌视图 + 分页器 + 事件绑定（含翻页动效类） */
+function renderCardsView(rows, totalPages, count) {
+  const cardsHtml = rows.map(cardRowHtml).join('');
   // 翻页动效：仅页码变化时触发（15 秒自动刷新重渲染不播动画，避免闪动/视觉疲劳）
   let flipClass = '';
   if (lastRenderedPage !== -1 && cardPageNo !== lastRenderedPage) {
@@ -1749,7 +1753,7 @@ async function loadCards() {
   }
   lastRenderedPage = cardPageNo;
 
-  const pagerHtml = count > CARD_PAGE_SIZE ? `
+  const pagerHtml = count > 1 ? `
     <div class="pager">
       <button class="pager-btn" id="cardPrevBtn" ${cardPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
       <span class="pager-info">${cardPageNo} / ${totalPages}</span>
@@ -1765,8 +1769,86 @@ async function loadCards() {
   const nextBtn = document.getElementById('cardNextBtn');
   if (prevBtn) prevBtn.onclick = () => { if (cardPageNo > 1) { cardPageNo--; loadCards(); } };
   if (nextBtn) nextBtn.onclick = () => { if (cardPageNo < totalPages) { cardPageNo++; loadCards(); } };
+}
 
-  // ② 慢路径：全量汇总（缓存缺失/数量变化/每 4 轮重算），后台执行不阻塞列表
+async function loadCards() {
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+
+  // ① 渲染路径：有全量缓存直接同步渲染（翻页零等待），冷启动才直读本页 1 张
+  let count = 0, fromCache = false;
+  if (cardsAllCache && cardsAllCache.count > 0 && cardsAllCache.ids.length === cardsAllCache.count) {
+    count = cardsAllCache.count;
+    fromCache = true;
+  } else {
+    try {
+      const bal = await nftC.balanceOf(userAddress);
+      // 防御：合约地址未配置/配错时 balanceOf 可能返回任意存储槽数据（天文数字），统一归零
+      count = bal.toNumber();
+      if (!Number.isFinite(count) || count < 0 || count > 10000) count = 0;
+    } catch (e) { count = 0; }
+  }
+  cardsAggTargetCount = count;
+  DOM.myCardCount.innerText = count;
+  DOM.dashCardCount.innerText = count;
+
+  if (count === 0) {
+    DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
+    cardsAgg = { count: 0, accrued: 0, claimed: 0, pending: 0 };
+    applyCardsAgg(cardsAgg);
+    cardPageNo = 1;
+    lastRenderedPage = -1;
+    return;
+  }
+
+  // 分页：每页 1 张（tokenOfOwnerByIndex 枚举顺序即铸造顺序 = 卡号升序，无需全量排序）
+  const CARD_PAGE_SIZE = 1;
+  const totalPages = Math.max(1, Math.ceil(count / CARD_PAGE_SIZE));
+  if (cardPageNo > totalPages) cardPageNo = totalPages;
+  const start = (cardPageNo - 1) * CARD_PAGE_SIZE;
+
+  let rows;
+  if (fromCache) {
+    rows = [makeCardRow(cardsAllCache.ids[start], cardsAllCache.infos[start])];
+  } else {
+    const pageIds = await Promise.all(
+      Array.from({ length: Math.min(CARD_PAGE_SIZE, count - start) }, (_, i) =>
+        nftC.tokenOfOwnerByIndex(userAddress, start + i).catch(() => null))
+    );
+    const pageInfos = await Promise.all(
+      pageIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
+    );
+    rows = pageIds.map((id, i) => makeCardRow(id, pageInfos[i]));
+  }
+
+  renderCardsView(rows, totalPages, count);
+
+  // ② 后台异步：核对数量 → 刷新本页最新数值（原地更新）→ 触发全量汇总（不阻塞翻页）
+  refreshCardsAfterRender(count, start);
+}
+
+async function refreshCardsAfterRender(count, start) {
+  // 数量核对（购买/销毁后缓存可能过期）：变化则整体重走渲染
+  try {
+    const bal = await nftC.balanceOf(userAddress);
+    let fresh = 0;
+    try { fresh = bal.toNumber(); if (!Number.isFinite(fresh) || fresh < 0 || fresh > 10000) fresh = 0; } catch (e) {}
+    if (!userAddress) return;
+    if (fresh !== count) { cardsAllCache = null; loadCards(); return; }
+  } catch (e) { /* 读不到数量就跳过本轮 */ }
+
+  // 本页卡牌最新数值：原地更新，不重渲染
+  try {
+    const tokenId = await nftC.tokenOfOwnerByIndex(userAddress, start).catch(() => null);
+    if (tokenId !== null) {
+      const info = await poolC.getCardInfo(tokenId).catch(() => null);
+      if (userAddress && info !== null) {
+        const cur = document.querySelector('.nft-card');
+        if (cur && cur.dataset.token === tokenId.toString()) patchCardDom(makeCardRow(tokenId, info));
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  // 全量汇总触发（缓存缺失/数量变化/每 4 轮重算），后台执行
   cardsAggTick++;
   if (!cardsAgg || cardsAgg.count !== count) {
     DOM.cardsTotalAccrued.innerText = '计算中…';
@@ -1929,7 +2011,7 @@ async function claimCard(tokenId) {
     const tx = await poolC.connect(signer).claim(tokenId);
     await waitForTx(tx);
     showToast(`#${tokenId} 分红领取成功`, 'success');
-    cardsAgg = null; // 强制下一轮立即重算全量汇总（缓存已过时）
+    cardsAgg = null; cardsAllCache = null; // 强制下一轮立即重算汇总并刷新卡面缓存
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
@@ -1977,7 +2059,7 @@ async function claimAll() {
       done += chunk.length;
     }
     showToast(`已领取 ${done} 张卡牌的分红 🎉`, 'success');
-    cardsAgg = null; // 强制下一轮立即重算全量汇总（缓存已过时）
+    cardsAgg = null; cardsAllCache = null; // 强制下一轮立即重算汇总并刷新卡面缓存
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
