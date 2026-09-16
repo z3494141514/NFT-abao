@@ -76,7 +76,8 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .page.active{display:block}
 /* ---------- 品牌主视觉 Hero（AI 动画视频背景） ---------- */
 .hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 52px;margin-bottom:18px}
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.9;pointer-events:none}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
+.hero-video.video-ready{opacity:.9}
 .hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(5,7,13,.45),rgba(5,7,13,.15) 45%,rgba(5,7,13,.28))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
 .hero-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -119,23 +120,38 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 /* ---------- 协议控制台：六项数据一条线 + 绑定 + 购买，整块玻璃浮岛长在动画场景内 ---------- */
 .console{position:relative;z-index:3;margin-top:30px;text-align:left;border-radius:24px;border:1px solid transparent;background:linear-gradient(180deg,rgba(15,22,44,.32),rgba(8,12,24,.18)) padding-box,linear-gradient(135deg,rgba(34,211,238,.32),rgba(139,92,246,.26) 38%,rgba(245,193,76,.22) 72%,rgba(34,211,238,.3)) border-box;backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:0 20px 60px -35px rgba(0,0,0,.55),0 0 60px rgba(34,211,238,.07),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;animation:kpiIsland 9s ease-in-out infinite}
 @keyframes kpiIsland{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-/* 六项核心数据：透明轻带，只留细光线分隔与悬浮光晕，不叠盒子 */
-.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);padding:4px 10px 0}
-.kpi-cell{position:relative;background:transparent;padding:12px 10px 12px;text-align:center;overflow:hidden;animation:kpiCellFloat 7s ease-in-out infinite}
+/* 六项核心数据：微光磨砂小卡 + 彩色图标，悬浮错峰呼吸 */
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);padding:6px 10px 2px}
+.kpi-cell{position:relative;margin:2px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:11px 10px 10px;text-align:center;overflow:hidden;animation:kpiCellFloat 7s ease-in-out infinite}
 .kpi-cell>*{position:relative;z-index:1}
-.kpi-cell:not(:last-child)::after{content:'';position:absolute;right:0;top:24%;height:52%;width:1px;background:linear-gradient(180deg,transparent,rgba(148,163,184,.28),transparent)}
-.kpi-cell::before{content:'';position:absolute;inset:4px 14px;border-radius:14px;background:radial-gradient(circle at 50% 18%,rgba(34,211,238,.16),rgba(139,92,246,.07) 55%,transparent 75%);opacity:0;transition:opacity .35s}
+.kpi-cell::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.14),rgba(139,92,246,.06) 55%,transparent 75%);opacity:0;transition:opacity .35s}
 @media (hover:hover){
 .kpi-cell:hover::before{opacity:1}
 }
+.kc-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 7px;background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.16));border:1px solid rgba(34,211,238,.28);box-shadow:0 3px 12px rgba(34,211,238,.18)}
+.kc-ic .ic{width:15px;height:15px;color:var(--cyan)}
+.kpi-cell:nth-child(1) .kc-value{color:#67e8f9}
+.kpi-cell:nth-child(2) .kc-ic{background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(34,211,238,.14));border-color:rgba(52,211,153,.35);box-shadow:0 3px 12px rgba(52,211,153,.18)}
+.kpi-cell:nth-child(2) .kc-ic .ic{color:var(--green)}
+.kpi-cell:nth-child(2) .kc-value{color:#6ee7b7}
+.kpi-cell:nth-child(3) .kc-ic{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(34,211,238,.12));border-color:rgba(139,92,246,.4);box-shadow:0 3px 12px rgba(139,92,246,.2)}
+.kpi-cell:nth-child(3) .kc-ic .ic{color:#a78bfa}
+.kpi-cell:nth-child(3) .kc-value{color:#c4b5fd}
+.kpi-cell:nth-child(4) .kc-ic{background:linear-gradient(135deg,rgba(251,113,133,.16),rgba(245,193,76,.12));border-color:rgba(251,113,133,.35);box-shadow:0 3px 12px rgba(251,113,133,.18)}
+.kpi-cell:nth-child(4) .kc-ic .ic{color:var(--red)}
+.kpi-cell:nth-child(4) .kc-value{color:#fda4af}
+.kpi-cell:nth-child(5) .kc-ic{background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(59,130,246,.16));border-color:rgba(59,130,246,.35);box-shadow:0 3px 12px rgba(59,130,246,.18)}
+.kpi-cell:nth-child(5) .kc-ic .ic{color:#60a5fa}
+.kpi-cell:nth-child(5) .kc-value{color:#93c5fd}
+.kpi-cell:nth-child(6) .kc-ic{background:linear-gradient(135deg,rgba(245,193,76,.2),rgba(251,113,133,.14));border-color:rgba(245,193,76,.4);box-shadow:0 3px 12px rgba(245,193,76,.2)}
+.kpi-cell:nth-child(6) .kc-ic .ic{color:var(--gold)}
 .kpi-cell:nth-child(2){animation-delay:-1.2s}
 .kpi-cell:nth-child(3){animation-delay:-2.4s}
 .kpi-cell:nth-child(4){animation-delay:-3.6s}
 .kpi-cell:nth-child(5){animation-delay:-4.8s}
 .kpi-cell:nth-child(6){animation-delay:-6s}
 @keyframes kpiCellFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.kc-label{font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
-.kc-label::before{content:'';width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#8b5cf6);box-shadow:0 0 8px rgba(34,211,238,.8);flex-shrink:0}
+.kc-label{font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted)}
 .kc-value{font-size:17px;font-weight:800;letter-spacing:.2px;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:7px;word-break:break-all}
 /* 数值单位字（如「枚」）：接近主数值的大小 + 金色，层次自然 */
 .unit-char{font-size:.72em;font-weight:600;color:var(--gold);margin-left:5px;letter-spacing:.08em}
@@ -152,6 +168,8 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
 .buy-stage{padding:14px 20px 16px;perspective:1400px;position:relative}
 .buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:16px 22px 18px;background:linear-gradient(180deg,rgba(15,20,38,.68),rgba(9,13,26,.5)) padding-box,linear-gradient(125deg,rgba(245,193,76,.5),rgba(34,211,238,.34) 28%,rgba(139,92,246,.45) 58%,rgba(245,193,76,.26)) border-box;backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),0 0 36px rgba(34,211,238,.1),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;transform:rotate(-.7deg);transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
+.buy-card::before{content:'';position:absolute;inset:-55%;background:conic-gradient(from 0deg,transparent 0 62%,rgba(245,193,76,.32) 74%,rgba(34,211,238,.28) 82%,rgba(139,92,246,.3) 88%,transparent 96%);animation:cardEdgeSpin 10s linear infinite;pointer-events:none}
+@keyframes cardEdgeSpin{to{transform:rotate(360deg)}}
 .buy-card::after{content:'◆';position:absolute;right:4px;bottom:-50px;font-size:150px;line-height:1;color:rgba(245,193,76,.07);pointer-events:none}
 @media (hover:hover){
 .buy-stage:hover .buy-card{transform:rotateX(1.6deg) rotateY(-2.2deg) rotate(0deg) translateY(-6px);box-shadow:0 34px 74px -32px rgba(0,0,0,.7),0 0 50px rgba(139,92,246,.2),inset 0 1px 0 rgba(255,255,255,.12)}
@@ -429,7 +447,9 @@ body{-webkit-tap-highlight-color:transparent}
 .wallet-pill .addr{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 .page{padding:16px 12px 132px}
 .kpi-strip{grid-template-columns:repeat(2,1fr)}
-.kpi-cell{padding:11px 8px 10px}
+.kpi-cell{margin:1px;padding:10px 8px 9px;border-radius:12px}
+.kc-ic{width:26px;height:26px;margin-bottom:5px}
+.kc-ic .ic{width:13px;height:13px}
 .kc-label{font-size:9px;letter-spacing:1.2px}
 .kc-value{font-size:15px;margin-top:6px}
 .kc-sub{font-size:9px;margin-top:3px}
@@ -546,6 +566,10 @@ body{-webkit-tap-highlight-color:transparent}
   <div id="homePage" class="page active">
     <!-- 品牌主视觉 -->
     <div class="hero">
+      <!-- mp4 背景动画：CONFIG.heroVideoUrl 留空时自动移除，回退到代码卡牌动画 -->
+      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+        <source src="" type="video/mp4">
+      </video>
       <!-- AI 卡牌动画背景（代码实时渲染，无需视频文件） -->
       <div class="hero-scene" aria-hidden="true">
         <span class="float-card fc1"></span>
@@ -571,31 +595,37 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="console">
         <div class="kpi-strip">
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg></span>
             <div class="kc-label">分红池</div>
             <div class="kc-value" id="poolTokenBalance">--</div>
             <div class="kc-sub"><span class="u" id="poolBalanceU">--</span></div>
           </div>
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
             <div class="kc-label">有效卡牌</div>
             <div class="kc-value" id="activeCardsDisplay">-- / 520</div>
             <div class="kc-sub" id="launchStatus">--</div>
           </div>
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/></svg></span>
             <div class="kc-label">我的卡牌</div>
             <div class="kc-value" id="dashCardCount">0</div>
             <div class="kc-sub">灵魂绑定 · 独立计息</div>
           </div>
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span>
             <div class="kc-label">已销毁</div>
             <div class="kc-value" id="burnedSupply">--</div>
             <div class="kc-sub">占总量 <span id="burnedPercent">--</span> · 永久出流通</div>
           </div>
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg></span>
             <div class="kc-label">流通量</div>
             <div class="kc-value" id="circulatingSupply">--</div>
             <div class="kc-sub">上限 1000 万 · 永不增发</div>
           </div>
           <div class="kpi-cell">
+            <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg></span>
             <div class="kc-label">待领取分红</div>
             <div class="kc-value" id="myTotalPending" style="color:var(--gold)">-- U</div>
             <div class="kc-sub">全卡实时合计</div>
@@ -881,7 +911,9 @@ const CONFIG = {
     pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // TODO: 替换为新 CardDividendPool
     oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // TODO: 替换为新 PriceOracle
   },
-  refreshInterval: 15000  // 首页/卡牌刷新间隔（毫秒）；团队数据改为进页加载
+  refreshInterval: 15000,  // 首页/卡牌刷新间隔（毫秒）；团队数据改为进页加载
+  // 主视觉背景视频（mp4）：留空 '' 用代码卡牌动画；填 URL 后视频做底层动画，卡牌浮层继续在上方飘
+  heroVideoUrl: 'hero.mp4'
 };
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
@@ -2253,6 +2285,17 @@ function setHeroTravel() {
 setHeroTravel();
 window.addEventListener('resize', throttle(setHeroTravel, 600));
 window.addEventListener('load', setHeroTravel);
+
+/* 主视觉背景视频：CONFIG.heroVideoUrl 填了才启用；加载失败自动回退到代码卡牌动画 */
+(function initHeroVideo() {
+  const v = document.getElementById('heroVideo');
+  if (!v) return;
+  if (!CONFIG.heroVideoUrl) { v.remove(); return; }
+  v.addEventListener('error', () => v.remove(), true);
+  v.addEventListener('loadeddata', () => v.classList.add('video-ready'));
+  v.querySelector('source').src = CONFIG.heroVideoUrl;
+  v.load();
+})();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
