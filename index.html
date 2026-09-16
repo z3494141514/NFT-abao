@@ -154,13 +154,16 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .unit-char{font-size:.72em;font-weight:600;color:var(--gold);margin-left:5px;letter-spacing:.08em}
 .kc-sub{font-size:10px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kc-sub .u{color:var(--gold);font-weight:600}
-/* 上级绑定：标签提示形式，一行微提示，不占模块 */
-.bind-line{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 12px;margin-bottom:16px}
-.bind-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);border:1px dashed rgba(34,211,238,.45);background:rgba(34,211,238,.07);padding:4px 13px;border-radius:99px;white-space:nowrap}
-.bind-inline{display:flex;align-items:center;gap:8px}
-.bind-inline .input{width:290px;max-width:60vw;padding:7px 15px;font-size:12.5px;border-radius:99px}
-.btn-xs{padding:7px 18px;font-size:12px;border-radius:99px}
-.bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:4px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+/* 上级绑定：与数据小卡/购买卡同语言——磨砂芯片 + 渐变图标 + 渐变按钮 */
+.bind-card{display:flex;align-items:center;gap:14px;flex-wrap:wrap;max-width:760px;margin:0 auto 16px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.12);border-radius:16px;padding:12px 18px}
+.bind-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(139,92,246,.18));border:1px solid rgba(34,211,238,.3);box-shadow:0 3px 12px rgba(34,211,238,.2);flex-shrink:0}
+.bind-ic .ic{width:17px;height:17px;color:var(--cyan)}
+.bind-txt{display:flex;flex-direction:column;gap:2px;min-width:150px}
+.bind-title{font-size:13px;font-weight:800;letter-spacing:.5px}
+.bind-sub{font-size:10px;color:var(--muted);letter-spacing:.5px}
+.bind-inline{display:flex;align-items:center;gap:10px;flex:1;min-width:280px;justify-content:flex-end}
+.bind-inline .input{flex:1;max-width:330px;padding:10px 15px;font-size:13px}
+.bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:5px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
 .bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;min-width:0}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
 .buy-stage{padding:0;margin-bottom:8px;position:relative}
@@ -179,20 +182,26 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .qty-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
 .buy-card .qty-btn{width:30px;height:30px;font-size:15px}
 .buy-card .qty-value{min-width:24px;font-size:15px}
-.buy-card .data-row{padding:8px 0}
-.buy-card .buy-split{margin-top:10px}
 .buy-mini-note{margin-top:4px;font-size:10.5px;color:rgba(139,147,167,.85);line-height:1.7}
+/* 购买卡内数据：微型磨砂统计格（与数据小卡同语言，2/3/4 列自适应） */
+.buy-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.buy-stats-3{grid-template-columns:repeat(3,1fr)}
+.buy-stat{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.12);border-radius:12px;padding:9px 10px 8px;text-align:center;min-width:0}
+.bs-label{display:block;font-size:9.5px;letter-spacing:1px;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bs-value{display:block;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bs-value.gold{color:var(--gold)}
+.bs-value.hi{color:var(--cyan)}
 .buy-card>*{position:relative;z-index:1}
 /* ---------- 开盘后购买模块（资金拆分三格 + 说明条） ---------- */
-.buy-split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-.buy-split-item{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:11px 6px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;transition:border-color .25s,transform .25s}
+.buy-split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.buy-split-item{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid rgba(148,163,184,.14);border-radius:11px;padding:8px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;transition:border-color .25s,transform .25s}
 @media (hover:hover){
 .buy-split-item:hover{border-color:rgba(34,211,238,.4);transform:translateY(-2px)}
 }
-.buy-split-item .bs-ic{font-size:17px;filter:drop-shadow(0 0 8px rgba(34,211,238,.45))}
-.buy-split-item .bs-txt{font-size:10.5px;color:var(--muted);line-height:1.55}
-.buy-split-item .bs-txt b{color:var(--gold);font-size:12.5px;font-weight:800;letter-spacing:.5px}
-.buy-note{margin-top:12px;font-size:11px;color:rgba(139,147,167,.8);line-height:1.7;border-left:2px solid rgba(34,211,238,.45);padding:2px 0 2px 10px}
+.buy-split-item .bs-ic{font-size:15px;filter:drop-shadow(0 0 8px rgba(34,211,238,.45))}
+.buy-split-item .bs-txt{font-size:9.5px;color:var(--muted);line-height:1.5}
+.buy-split-item .bs-txt b{color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.5px}
+.buy-note{margin-top:10px;font-size:10.5px;color:rgba(139,147,167,.8);line-height:1.6;border-left:2px solid rgba(34,211,238,.45);padding:1px 0 1px 9px}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid}
 .chip-ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1)}
 .chip-warn{color:var(--gold);border-color:rgba(245,193,76,.4);background:rgba(245,193,76,.1)}
@@ -231,7 +240,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .btn-danger:hover:not(:disabled){background:rgba(251,113,133,.2)}
 .btn-sm{padding:9px 18px;font-size:13px;border-radius:11px}
 .btn-block{width:100%}
-.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
 /* ---------- 数量选择器 ---------- */
 .qty-stepper{display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:99px;padding:4px 5px}
 .qty-btn{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
@@ -448,9 +457,11 @@ body{-webkit-tap-highlight-color:transparent}
 .kc-label{font-size:9px;letter-spacing:1.2px}
 .kc-value{font-size:15px;margin-top:6px}
 .kc-sub{font-size:9px;margin-top:3px}
-.bind-line{gap:8px;padding:10px 14px 2px}
-.bind-inline{flex-wrap:wrap;justify-content:center;gap:8px}
-.bind-inline .input{width:100%;max-width:280px}
+.bind-card{gap:10px;padding:12px 14px}
+.bind-txt{min-width:0}
+.bind-inline{flex:1 1 100%;justify-content:flex-end;gap:8px}
+.bind-inline .input{flex:1;max-width:none}
+.buy-stats,.buy-stats-3{grid-template-columns:repeat(2,1fr)}
 .buy-stage{padding:0;margin-bottom:4px}
 .buy-card{padding:14px 13px 15px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
@@ -632,11 +643,15 @@ body{-webkit-tap-highlight-color:transparent}
             <div class="kc-sub">全卡实时合计</div>
           </div>
         </div>
-        <div class="bind-line">
-          <span class="bind-tag">🔗 上级绑定</span>
+        <div class="bind-card">
+          <span class="bind-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2.5 20c1.2-3.4 3.6-5.2 6.5-5.2s5.3 1.8 6.5 5.2"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M17.5 14.5c2 .4 3.4 1.8 4 4"/></svg></span>
+          <div class="bind-txt">
+            <span class="bind-title">上级绑定</span>
+            <span class="bind-sub">一次性 · 永久生效 · 直推奖励实时到账</span>
+          </div>
           <div id="bindArea" class="bind-inline">
             <input type="text" id="referrerInput" class="input" placeholder="推荐人钱包地址 0x…">
-            <button id="bindBtn" class="btn btn-primary btn-xs">绑定</button>
+            <button id="bindBtn" class="btn btn-primary btn-sm">绑定</button>
           </div>
           <div id="boundArea" class="bind-inline" style="display:none">
             <span class="bound-ok">✓ 已绑定</span>
@@ -664,39 +679,43 @@ body{-webkit-tap-highlight-color:transparent}
 
             <!-- 开盘前：USDT 预售 -->
             <div id="preLaunchBuyArea" style="display:none">
-              <div class="data-row">
-                <span class="data-label">需支付（<span id="buyQtyHintPre">1</span> 张）</span>
-                <span class="data-value hi" id="preLaunchPay">100 USDT</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">我的 USDT 余额</span>
-                <span class="data-value" id="usdtBalanceHint">--</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">剩余预售额度</span>
-                <span class="data-value" id="preLaunchRemainingDisplay">-- / 220</span>
+              <div class="buy-stats buy-stats-3">
+                <div class="buy-stat">
+                  <span class="bs-label">需支付（<span id="buyQtyHintPre">1</span> 张）</span>
+                  <span class="bs-value hi" id="preLaunchPay">100 USDT</span>
+                </div>
+                <div class="buy-stat">
+                  <span class="bs-label">我的 USDT</span>
+                  <span class="bs-value" id="usdtBalanceHint">--</span>
+                </div>
+                <div class="buy-stat">
+                  <span class="bs-label">剩余额度</span>
+                  <span class="bs-value" id="preLaunchRemainingDisplay">-- / 220</span>
+                </div>
               </div>
               <div class="buy-mini-note" id="preLaunchRewardText">🎁 购卡立得 2000 枚空投（价值 20U）· 上级每张实时得 20U · 每满 10 张直推再得 1 张卡</div>
-              <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt12">USDT 预售购买</button>
+              <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt10">USDT 预售购买</button>
             </div>
 
             <!-- 开盘后：代币购买 -->
             <div id="tokenBuyArea" style="display:none">
-              <div class="data-row">
-                <span class="data-label">实时价格（5 分钟 TWAP）</span>
-                <span class="data-value gold" id="buyPriceHint">--</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">需支付（<span id="buyQtyHint">1</span> 张）</span>
-                <span class="data-value hi" id="buyTokensNeeded">--</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">我的代币余额</span>
-                <span class="data-value" id="buyBalanceHint">--</span>
-              </div>
-              <div class="data-row">
-                <span class="data-label">剩余名额</span>
-                <span class="data-value" id="buyRemainingSlots">-- / 520</span>
+              <div class="buy-stats">
+                <div class="buy-stat">
+                  <span class="bs-label">实时价格</span>
+                  <span class="bs-value gold" id="buyPriceHint">--</span>
+                </div>
+                <div class="buy-stat">
+                  <span class="bs-label">需支付（<span id="buyQtyHint">1</span> 张）</span>
+                  <span class="bs-value hi" id="buyTokensNeeded">--</span>
+                </div>
+                <div class="buy-stat">
+                  <span class="bs-label">我的余额</span>
+                  <span class="bs-value" id="buyBalanceHint">--</span>
+                </div>
+                <div class="buy-stat">
+                  <span class="bs-label">剩余名额</span>
+                  <span class="bs-value" id="buyRemainingSlots">-- / 520</span>
+                </div>
               </div>
               <div class="buy-split">
                 <div class="buy-split-item">
@@ -712,8 +731,8 @@ body{-webkit-tap-highlight-color:transparent}
                   <span class="bs-txt"><b>100 U</b> 金本位<br>抗跌定价</span>
                 </div>
               </div>
-              <div class="buy-note">价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 波动缓冲 · 实际扣款以成交时价格为准</div>
-              <button id="buyBtn" class="btn btn-primary btn-block mt12">购买卡牌</button>
+              <div class="buy-note">价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 缓冲</div>
+              <button id="buyBtn" class="btn btn-primary btn-block mt10">购买卡牌</button>
             </div>
           </div>
         </div>
