@@ -117,12 +117,9 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero-chip b{color:#fff;font-weight:800;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(34,211,238,.6)}
 @keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 /* 数据胶囊随场景悬浮，与浮动卡牌同频呼吸 */
-/* ---------- 协议控制台：六项数据一条线 + 绑定 + 购买，整块玻璃浮岛长在动画场景内 ---------- */
-.console{position:relative;z-index:3;margin-top:30px;text-align:left;border-radius:24px;border:1px solid transparent;background:linear-gradient(180deg,rgba(15,22,44,.32),rgba(8,12,24,.18)) padding-box,linear-gradient(135deg,rgba(34,211,238,.32),rgba(139,92,246,.26) 38%,rgba(245,193,76,.22) 72%,rgba(34,211,238,.3)) border-box;backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:0 20px 60px -35px rgba(0,0,0,.55),0 0 60px rgba(34,211,238,.07),inset 0 1px 0 rgba(255,255,255,.06);overflow:hidden;animation:kpiIsland 9s ease-in-out infinite}
-@keyframes kpiIsland{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-/* 六项核心数据：微光磨砂小卡 + 彩色图标，悬浮错峰呼吸 */
-.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);padding:6px 10px 2px}
-.kpi-cell{position:relative;margin:2px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:11px 10px 10px;text-align:center;overflow:hidden;animation:kpiCellFloat 7s ease-in-out infinite}
+/* ---------- 六项核心数据：独立微光小卡（已剥离浮岛） ---------- */
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+.kpi-cell{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.12);border-radius:14px;padding:11px 10px 10px;text-align:center;overflow:hidden;animation:kpiCellFloat 7s ease-in-out infinite}
 .kpi-cell>*{position:relative;z-index:1}
 .kpi-cell::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.14),rgba(139,92,246,.06) 55%,transparent 75%);opacity:0;transition:opacity .35s}
 @media (hover:hover){
@@ -158,7 +155,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .kc-sub{font-size:10px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kc-sub .u{color:var(--gold);font-weight:600}
 /* 上级绑定：标签提示形式，一行微提示，不占模块 */
-.bind-line{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 24px 2px}
+.bind-line{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 12px;margin-bottom:16px}
 .bind-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);border:1px dashed rgba(34,211,238,.45);background:rgba(34,211,238,.07);padding:4px 13px;border-radius:99px;white-space:nowrap}
 .bind-inline{display:flex;align-items:center;gap:8px}
 .bind-inline .input{width:290px;max-width:60vw;padding:7px 15px;font-size:12.5px;border-radius:99px}
@@ -166,13 +163,11 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:4px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
 .bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;min-width:0}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
-.buy-stage{padding:14px 20px 16px;perspective:1400px;position:relative}
-.buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:16px 22px 18px;background:linear-gradient(180deg,rgba(15,20,38,.68),rgba(9,13,26,.5)) padding-box,linear-gradient(125deg,rgba(245,193,76,.5),rgba(34,211,238,.34) 28%,rgba(139,92,246,.45) 58%,rgba(245,193,76,.26)) border-box;backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),0 0 36px rgba(34,211,238,.1),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;transform:rotate(-.7deg);transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
-.buy-card::before{content:'';position:absolute;inset:-55%;background:conic-gradient(from 0deg,transparent 0 62%,rgba(245,193,76,.32) 74%,rgba(34,211,238,.28) 82%,rgba(139,92,246,.3) 88%,transparent 96%);animation:cardEdgeSpin 10s linear infinite;pointer-events:none}
-@keyframes cardEdgeSpin{to{transform:rotate(360deg)}}
+.buy-stage{padding:0;margin-bottom:8px;position:relative}
+.buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:16px 22px 18px;background:linear-gradient(180deg,rgba(15,20,38,.68),rgba(9,13,26,.5)) padding-box,linear-gradient(125deg,rgba(245,193,76,.5),rgba(34,211,238,.34) 28%,rgba(139,92,246,.45) 58%,rgba(245,193,76,.26)) border-box;backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);box-shadow:0 24px 60px -30px rgba(0,0,0,.6),0 0 36px rgba(34,211,238,.1),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;transition:transform .35s cubic-bezier(.22,.8,.36,1),box-shadow .35s}
 .buy-card::after{content:'◆';position:absolute;right:4px;bottom:-50px;font-size:150px;line-height:1;color:rgba(245,193,76,.07);pointer-events:none}
 @media (hover:hover){
-.buy-stage:hover .buy-card{transform:rotateX(1.6deg) rotateY(-2.2deg) rotate(0deg) translateY(-6px);box-shadow:0 34px 74px -32px rgba(0,0,0,.7),0 0 50px rgba(139,92,246,.2),inset 0 1px 0 rgba(255,255,255,.12)}
+.buy-stage:hover .buy-card{transform:translateY(-5px);box-shadow:0 34px 74px -32px rgba(0,0,0,.7),0 0 50px rgba(139,92,246,.2),inset 0 1px 0 rgba(255,255,255,.12)}
 }
 .buy-card-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
 .buy-card-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5c14c,#fb7185);border:1px solid rgba(245,193,76,.5);font-size:19px;box-shadow:0 6px 18px rgba(245,193,76,.35);flex-shrink:0}
@@ -446,8 +441,8 @@ body{-webkit-tap-highlight-color:transparent}
 .wallet-pill{padding:5px 6px 5px 11px;gap:7px;max-width:46vw}
 .wallet-pill .addr{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 .page{padding:16px 12px 132px}
-.kpi-strip{grid-template-columns:repeat(2,1fr)}
-.kpi-cell{margin:1px;padding:10px 8px 9px;border-radius:12px}
+.kpi-strip{grid-template-columns:repeat(2,1fr);gap:9px}
+.kpi-cell{padding:10px 8px 9px;border-radius:12px}
 .kc-ic{width:26px;height:26px;margin-bottom:5px}
 .kc-ic .ic{width:13px;height:13px}
 .kc-label{font-size:9px;letter-spacing:1.2px}
@@ -456,7 +451,7 @@ body{-webkit-tap-highlight-color:transparent}
 .bind-line{gap:8px;padding:10px 14px 2px}
 .bind-inline{flex-wrap:wrap;justify-content:center;gap:8px}
 .bind-inline .input{width:100%;max-width:280px}
-.buy-stage{padding:14px 12px 16px}
+.buy-stage{padding:0;margin-bottom:4px}
 .buy-card{padding:14px 13px 15px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
 .buy-card-titles{min-width:0;flex:1 1 100%}
@@ -529,7 +524,6 @@ body{-webkit-tap-highlight-color:transparent}
 .hero-sub{font-size:11.5px;letter-spacing:2px;margin-bottom:16px}
 .hero-chip{font-size:11px;padding:7px 13px}
 .hero-chips{gap:8px;margin-top:20px}
-.console{margin-top:22px;border-radius:18px}
 .footer{padding:12px 16px 96px;font-size:10.5px}
 }
 </style>
@@ -591,9 +585,16 @@ body{-webkit-tap-highlight-color:transparent}
         <span class="hero-chip">预售卡牌 <b>200</b> 张</span>
         <span class="hero-chip">预售空投 <b>40万</b> 枚</span>
       </div>
-      <!-- 协议控制台：六项数据一条线 + 上级绑定 + 购买卡牌，整块浮岛与卡牌动画同场呼吸 -->
-      <div class="console">
-        <div class="kpi-strip">
+    </div>
+
+    <!-- 开盘保护状态条（实时状态，非规则说明） -->
+    <div class="launch-bar" id="launchWindowBanner" style="display:none">
+      <span class="lb-ic">⚡</span>
+      <span class="lb-txt">开盘保护 · 剩余 <b id="launchWindowRemaining">--</b> 秒</span>
+    </div>
+
+    <!-- 六项核心数据：独立微光小卡，剥离浮岛直接悬浮于页面 -->
+    <div class="kpi-strip">
           <div class="kpi-cell">
             <span class="kc-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg></span>
             <div class="kc-label">分红池</div>
@@ -716,14 +717,6 @@ body{-webkit-tap-highlight-color:transparent}
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 开盘保护状态条（实时状态，非规则说明） -->
-    <div class="launch-bar" id="launchWindowBanner" style="display:none">
-      <span class="lb-ic">⚡</span>
-      <span class="lb-txt">开盘保护 · 剩余 <b id="launchWindowRemaining">--</b> 秒</span>
-    </div>
   </div>
 
   <!-- ================= 我的卡牌 ================= -->
@@ -2280,7 +2273,7 @@ function setHeroTravel() {
   const hero = document.querySelector('.hero');
   const scene = document.querySelector('.hero-scene');
   if (!hero || !scene) return;
-  scene.style.setProperty('--travel', (hero.offsetHeight + 360) + 'px');
+  scene.style.setProperty('--travel', Math.max(hero.offsetHeight + 360, 1100) + 'px');
 }
 setHeroTravel();
 window.addEventListener('resize', throttle(setHeroTravel, 600));
