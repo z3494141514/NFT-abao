@@ -155,8 +155,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="mt12"><input type="text" id="adminPreUsdtInput" class="input" placeholder="USDT 地址（BSC: 0x55d3…7955）"></div>
           <div class="mt12"><input type="text" id="adminPreProfitInput" class="input" placeholder="利润钱包地址（每张卡 30U）"></div>
           <button id="adminPreConfigSaveBtn" class="btn btn-primary btn-sm mt12">保存预售配置</button>
-          <button id="adminWithdrawReserveBtn" class="btn btn-primary btn-sm mt8">提取 TTT 储备（未用完部分）</button>
-          <button id="adminWithdrawPreUsdtBtn" class="btn btn-ghost btn-sm mt8">提取滞留 USDT（滑点粉尘）</button>
+          <div class="mt12"><input type="text" id="adminWithdrawReserveToInput" class="input" placeholder="收款地址（留空 = 当前钱包）"><button id="adminWithdrawReserveBtn" class="btn btn-primary btn-sm mt8">提取 TTT 储备（未用完部分）</button></div>
+          <div class="mt12"><input type="text" id="adminWithdrawPreUsdtToInput" class="input" placeholder="收款地址（留空 = 当前钱包）"><button id="adminWithdrawPreUsdtBtn" class="btn btn-ghost btn-sm mt8">提取滞留 USDT（滑点粉尘）</button></div>
           <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
           <div class="mt12"><input type="text" id="adminUpdateCoreToken" class="input" placeholder="代币地址"></div>
           <div class="mt12"><input type="text" id="adminUpdateCoreRouter" class="input" placeholder="路由地址"></div>
@@ -215,14 +215,14 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="flex mt12">
             <button id="adminSwapBtn" class="btn btn-ghost btn-sm">兑换手续费</button>
             <button id="adminSweepBtn" class="btn btn-ghost btn-sm">清理出局</button>
-            <button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm">提取超额</button>
+            <div class="mt12"><input type="text" id="adminWithdrawExcessToInput" class="input" placeholder="超额收款地址（留空 = 当前钱包）"><button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm mt8">提取超额</button></div>
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
           <div class="mt12"><input type="number" min="1" id="adminReleaseBurnedInput" class="input" placeholder="tokenId 释放已销毁卡牌负债"><button id="adminReleaseBurnedBtn" class="btn btn-ghost btn-sm mt8">释放负债</button></div>
           <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
           <div class="mt12"><input type="text" id="adminMinSwapPriceInput" class="input" placeholder="最低兑换价（U/枚，默认 0.01；0 = 关闭下限）"><button id="adminSetMinSwapPriceBtn" class="btn btn-primary btn-sm mt8">设置最低兑换价</button></div>
-          <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
+          <div class="mt12"><input type="text" id="adminWithdrawTttToInput" class="input" placeholder="收款地址（留空 = 当前钱包）"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm mt8">提取滞留 TTT</button></div>
           <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
           <div class="mt12"><input type="text" id="adminPoolCoreToken" class="input" placeholder="代币地址"></div>
           <div class="mt12"><input type="text" id="adminPoolCoreUsdt" class="input" placeholder="USDT 地址"></div>
@@ -435,8 +435,8 @@ const DOM = {
   adminPreUsdt: $('adminPreUsdt'), adminPreProfit: $('adminPreProfit'), adminPreRouter: $('adminPreRouter'),
   adminPreReserve: $('adminPreReserve'), adminPreReserveLabel: $('adminPreReserveLabel'), adminPreCounters: $('adminPreCounters'), adminPreUsdtInput: $('adminPreUsdtInput'),
   adminPreProfitInput: $('adminPreProfitInput'),
-  adminPreConfigSaveBtn: $('adminPreConfigSaveBtn'), adminWithdrawPreUsdtBtn: $('adminWithdrawPreUsdtBtn'),
-  adminWithdrawReserveBtn: $('adminWithdrawReserveBtn'),
+  adminPreConfigSaveBtn: $('adminPreConfigSaveBtn'), adminWithdrawPreUsdtBtn: $('adminWithdrawPreUsdtBtn'), adminWithdrawPreUsdtToInput: $('adminWithdrawPreUsdtToInput'),
+  adminWithdrawReserveBtn: $('adminWithdrawReserveBtn'), adminWithdrawReserveToInput: $('adminWithdrawReserveToInput'),
   adminUpdateCoreToken: $('adminUpdateCoreToken'), adminUpdateCoreRouter: $('adminUpdateCoreRouter'),
   adminUpdateCoreNft: $('adminUpdateCoreNft'), adminUpdateCorePool: $('adminUpdateCorePool'),
   adminUpdateCoreOracle: $('adminUpdateCoreOracle'), adminUpdateCoreBtn: $('adminUpdateCoreBtn'),
@@ -449,7 +449,7 @@ const DOM = {
   adminMinLiqInput: $('adminMinLiqInput'), adminSetMinLiqBtn: $('adminSetMinLiqBtn'),
   adminLockOracleBtn: $('adminLockOracleBtn'),
   adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolPendingLabel: $('adminPoolPendingLabel'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
-  adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
+  adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'), adminWithdrawTttToInput: $('adminWithdrawTttToInput'),
   adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
   adminMinSwapPriceInput: $('adminMinSwapPriceInput'), adminSetMinSwapPriceBtn: $('adminSetMinSwapPriceBtn'),
   adminMinSwapPriceDisplay: $('adminMinSwapPriceDisplay'),
@@ -459,7 +459,7 @@ const DOM = {
   adminPoolCoreLocked: $('adminPoolCoreLocked'), adminPoolLockCoreBtn: $('adminPoolLockCoreBtn'),
   adminForceExitInput: $('adminForceExitInput'), adminForceExitBtn: $('adminForceExitBtn'),
   adminReleaseBurnedInput: $('adminReleaseBurnedInput'), adminReleaseBurnedBtn: $('adminReleaseBurnedBtn'),
-  adminSweepBtn: $('adminSweepBtn'), adminWithdrawExcessBtn: $('adminWithdrawExcessBtn'),
+  adminSweepBtn: $('adminSweepBtn'), adminWithdrawExcessBtn: $('adminWithdrawExcessBtn'), adminWithdrawExcessToInput: $('adminWithdrawExcessToInput'),
   adminNftBlock: $('adminNftBlock'), adminBurnInput: $('adminBurnInput'), adminBurnBtn: $('adminBurnBtn'),
   adminRevokeMinterInput: $('adminRevokeMinterInput'), adminRevokeMinterBtn: $('adminRevokeMinterBtn'),
   adminTokenBlock: $('adminTokenBlock'), adminTradingEnabled: $('adminTradingEnabled'), adminDividendPool: $('adminDividendPool'),
@@ -1113,24 +1113,30 @@ async function adminSetLaunchPartner() {
 }
 
 async function adminWithdrawPreUsdt() {
-  if (!confirm('提取销售合约内滞留的 USDT（加池滑点粉尘）到当前钱包？')) return;
+  const to = DOM.adminWithdrawPreUsdtToInput.value.trim() || userAddress;
+  if (!ethers.utils.isAddress(to)) { showToast('请输入合法的收款地址', 'error'); return; }
+  if (!confirm(`确认提取销售合约内滞留的 USDT（加池滑点粉尘）到 ${to}？`)) return;
   showLoading();
   try {
-    const tx = await saleC.connect(signer).withdrawStrandedUsdt(userAddress);
+    const tx = await saleC.connect(signer).withdrawStrandedUsdt(to);
     await waitForTx(tx);
     showToast('滞留 USDT 已提取', 'success');
+    DOM.adminWithdrawPreUsdtToInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
 }
 
 async function adminWithdrawReserve() {
-  if (!confirm(`提取销售合约内未用完的 ${tokenSymbol} 储备到当前钱包？\n（提取后若储备不足，新的预售购买会被回滚提示，不影响已成交卡牌）`)) return;
+  const to = DOM.adminWithdrawReserveToInput.value.trim() || userAddress;
+  if (!ethers.utils.isAddress(to)) { showToast('请输入合法的收款地址', 'error'); return; }
+  if (!confirm(`提取销售合约内未用完的 ${tokenSymbol} 储备到 ${to}？\n（提取后若储备不足，新的预售购买会被回滚提示，不影响已成交卡牌）`)) return;
   showLoading();
   try {
-    const tx = await saleC.connect(signer).withdrawTokenReserve(userAddress);
+    const tx = await saleC.connect(signer).withdrawTokenReserve(to);
     await waitForTx(tx);
     showToast(`${tokenSymbol} 储备已提取`, 'success');
+    DOM.adminWithdrawReserveToInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1447,12 +1453,15 @@ async function adminSwap() {
 }
 
 async function adminWithdrawTtt() {
-  if (!confirm(`确认提取滞留 ${tokenSymbol}？（仅超出待兑换积压的部分，不影响卡牌分红）`)) return;
+  const to = DOM.adminWithdrawTttToInput.value.trim() || userAddress;
+  if (!ethers.utils.isAddress(to)) { showToast('请输入合法的收款地址', 'error'); return; }
+  if (!confirm(`确认提取滞留 ${tokenSymbol} 到 ${to}？（仅超出待兑换积压的部分，不影响卡牌分红）`)) return;
   showLoading();
   try {
-    const tx = await poolC.connect(signer).withdrawStrandedTokens(userAddress);
+    const tx = await poolC.connect(signer).withdrawStrandedTokens(to);
     await waitForTx(tx);
     showToast(`滞留 ${tokenSymbol} 已提取`, 'success');
+    DOM.adminWithdrawTttToInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1492,12 +1501,15 @@ async function adminSetMinSwapPrice() {
 }
 
 async function adminWithdrawExcess() {
-  if (!confirm('确认提取超额资金？（不影响卡牌待领取分红负债）')) return;
+  const to = DOM.adminWithdrawExcessToInput.value.trim() || userAddress; // 留空 = 当前钱包
+  if (!ethers.utils.isAddress(to)) { showToast('请输入合法的收款地址', 'error'); return; }
+  if (!confirm(`确认提取超额资金到 ${to}？（不影响卡牌待领取分红负债）`)) return;
   showLoading();
   try {
-    const tx = await poolC.connect(signer).withdrawExcess(userAddress);
+    const tx = await poolC.connect(signer).withdrawExcess(to);
     await waitForTx(tx);
     showToast('超额资金已提取', 'success');
+    DOM.adminWithdrawExcessToInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }

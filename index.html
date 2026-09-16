@@ -799,6 +799,9 @@ const ABIS = {
     'function approve(address spender, uint256 amount) returns (bool)',
     'function increaseAllowance(address spender, uint256 addedValue) returns (bool)',
     'function allowance(address owner, address spender) view returns (uint256)',
+    // OZ v5 自定义错误声明：让 ethers 解码空数据回滚（execution reverted:0x）为可读原因
+    'error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed)',
+    'error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed)',
     'function dividendPool() view returns (address)',
     'function setDividendPool(address pool)',
     'function tradingEnabled() view returns (bool)',
@@ -1005,6 +1008,8 @@ const parseError = (e) => {
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
   if (m.includes('insufficient allowance')) return '授权额度不足，请重新授权后再试';
+  if (m.includes('erc20insufficientallowance')) return '授权额度不足（价格波动导致）：已自动放宽，请重新授权后再试';
+  if (m.includes('erc20insufficientbalance')) return '代币余额不足';
   if (m.includes('not launched')) return '尚未开盘';
   if (m.includes('pre-launch limit reached')) return '开盘前名额已满（220 张）';
   if (m.includes('usdt not configured')) return '预售收款币种未配置';
@@ -2033,12 +2038,19 @@ async function buyCardToken() {
   const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
   if (allowance.lt(total)) {
     showToast('请先在钱包中确认授权…', '');
-    // 增量授权：目标额度 = 本笔 115%（覆盖 ±10% 价格波动缓冲）；
+    // 增量授权：目标额度 = 本笔 130%（覆盖 ±10% 价格波动 + 授权与成交间的剧烈波动缓冲）；
     // 只补「目标 - 现有」的缺口——消除「覆盖式 approve 新旧额度叠加」的经典授权竞态
-    const target = total.mul(115).div(100);
+    const target = total.mul(130).div(100);
     const addAmt = target.gt(allowance) ? target.sub(allowance) : ethers.BigNumber.from(0);
-    const tx = await tokenC.connect(signer).increaseAllowance(CONFIG.contracts.sale, addAmt);
-    await waitForTx(tx);
+    try {
+      // 新代币有 increaseAllowance；旧代币（OZ v5 原生）没有该函数会空回滚——
+      // 失败自动回退覆盖式 approve，新旧合约前端通用
+      const tx = await tokenC.connect(signer).increaseAllowance(CONFIG.contracts.sale, addAmt);
+      await waitForTx(tx);
+    } catch (e1) {
+      const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, target);
+      await waitForTx(tx);
+    }
     showToast('授权成功，继续购买…', 'success');
   }
 
