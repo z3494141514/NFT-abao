@@ -259,7 +259,12 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
 .page-title span{color:var(--cyan)}
-.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.nft-grid{display:grid;grid-template-columns:1fr;gap:18px;max-width:560px;margin:0 auto}
+/* 翻页动效：仅在切换页码时由 JS 挂类触发，方向感知（下一页右入/上一页左入） */
+.nft-grid.flip-next .nft-card{animation:cardInRight .45s cubic-bezier(.22,.8,.36,1)}
+.nft-grid.flip-prev .nft-card{animation:cardInLeft .45s cubic-bezier(.22,.8,.36,1)}
+@keyframes cardInRight{from{opacity:0;transform:translateX(46px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
+@keyframes cardInLeft{from{opacity:0;transform:translateX(-46px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
 .nft-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(24,28,48,.98),rgba(11,14,28,.99));border:1px solid rgba(148,163,184,.16);border-radius:20px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:15px;transition:transform .3s cubic-bezier(.22,.8,.36,1),border-color .3s,box-shadow .3s}
 .nft-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.75),rgba(139,92,246,.75),transparent)}
 .nft-card::after{content:'';position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.06),transparent);transform:skewX(-12deg);pointer-events:none;opacity:0}
@@ -585,7 +590,7 @@ body{-webkit-tap-highlight-color:transparent}
     <div class="page-head">
       <div class="page-title">我的卡牌 · <span id="myCardCount">0</span></div>
       <div class="flex">
-        <span class="live-chip"><span class="live-dot"></span>实时 · 10s 刷新</span>
+        <span class="live-chip"><span class="live-dot"></span>实时 · 15s 刷新</span>
         <button id="claimAllBtn" class="btn btn-primary btn-sm">批量领取分红</button>
       </div>
     </div>
@@ -937,10 +942,12 @@ let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页
 let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
 let teamRenderKey = '';           // 列表渲染签名（未变化则跳过重绘）
-let cardPageNo = 1;               // 卡牌明细当前页（每页 3 张）
+let cardPageNo = 1;               // 卡牌明细当前页（每页 1 张）
+let lastRenderedPage = -1;        // 上次渲染页码（仅翻页时触发入场动画，自动刷新不播）
 let cardsAgg = null;              // 全量汇总缓存 {count, accrued, claimed, pending}
 let cardsAggBusy = false;         // 汇总计算在途标记（防并发重复拉全量）
 let cardsAggTick = 0;             // 汇总慢刷新计数（每 4 轮 ≈ 60 秒重算）
+let cardsAggTargetCount = 0;      // 最新卡牌数量（汇总完成后若不一致则立即重算）
 let slowTick = 5;                 // 慢数据刷新计数（首次即刷新，之后每 6 轮 ≈ 60 秒一次）
 
 /* ============================================================
@@ -995,6 +1002,7 @@ const parseError = (e) => {
   const m = ((e && (e.reason || e.message)) || '').toLowerCase();
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
+  if (m.includes('insufficient allowance')) return '授权额度不足，请重新授权后再试';
   if (m.includes('not launched')) return '尚未开盘';
   if (m.includes('pre-launch limit reached')) return '开盘前名额已满（220 张）';
   if (m.includes('usdt not configured')) return '预售收款币种未配置';
@@ -1303,6 +1311,7 @@ function disconnectWallet() {
   teamCache = { count: -1, addrs: [] };
   teamRenderKey = '';
   cardPageNo = 1;
+  lastRenderedPage = -1;
   cardsAgg = null;
   cardsAggBusy = false;
   cardsAggTick = 0;
@@ -1364,6 +1373,7 @@ async function loadAll() {
 }
 
 async function loadStats() {
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
   const [poolStats, pendingSwap, lp, winActive, myBal, unitPrice] = await Promise.all([
     poolC.getPoolStats().catch(() => null),
@@ -1460,6 +1470,7 @@ async function loadSlowData() {
 }
 
 async function loadUser() {
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   const ref = await saleC.referrerOf(userAddress);
   if (ref && ref !== ZERO_ADDR) {
     DOM.bindArea.style.display = 'none';
@@ -1478,6 +1489,7 @@ async function loadUser() {
 
 /* 团队：一级下级人数、地址列表与两块推荐奖励 */
 async function loadTeam() {
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   // 块二：开盘后推荐奖励（30% 代币）
   try {
     const earned = await saleC.referralRewardsEarned(userAddress);
@@ -1624,10 +1636,15 @@ async function refreshCardsAgg(count) {
     cardsAgg = agg;
     if (userAddress) applyCardsAgg(agg); // 计算期间断开则丢弃
   } catch (e) { /* 单轮失败，下一轮自动重试 */ }
-  finally { cardsAggBusy = false; }
+  finally {
+    cardsAggBusy = false;
+    // 计算期间卡牌数量又变了（新买/销毁）：立即补算一轮，避免汇总滞后最多 60 秒
+    if (cardsAgg && cardsAgg.count !== cardsAggTargetCount) refreshCardsAgg(cardsAggTargetCount);
+  }
 }
 
 async function loadCards() {
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   const bal = await nftC.balanceOf(userAddress);
   // 防御：合约地址未配置/配错时 balanceOf 可能返回任意存储槽数据（天文数字），
   // toNumber() 对超大值会抛异常，统一归零处理
@@ -1636,6 +1653,7 @@ async function loadCards() {
     count = bal.toNumber();
     if (!Number.isFinite(count) || count < 0 || count > 10000) count = 0;
   } catch (e) { count = 0; }
+  cardsAggTargetCount = count;
   DOM.myCardCount.innerText = count;
   DOM.dashCardCount.innerText = count;
 
@@ -1647,8 +1665,8 @@ async function loadCards() {
     return;
   }
 
-  // 分页：每页最多 3 张（tokenOfOwnerByIndex 枚举顺序即铸造顺序 = 卡号升序，无需全量排序）
-  const CARD_PAGE_SIZE = 3;
+  // 分页：每页 1 张（tokenOfOwnerByIndex 枚举顺序即铸造顺序 = 卡号升序，无需全量排序）
+  const CARD_PAGE_SIZE = 1;
   const totalPages = Math.max(1, Math.ceil(count / CARD_PAGE_SIZE));
   if (cardPageNo > totalPages) cardPageNo = totalPages;
   const start = (cardPageNo - 1) * CARD_PAGE_SIZE;
@@ -1724,6 +1742,13 @@ async function loadCards() {
     </div>`;
   }).join('');
 
+  // 翻页动效：仅页码变化时触发（15 秒自动刷新重渲染不播动画，避免闪动/视觉疲劳）
+  let flipClass = '';
+  if (lastRenderedPage !== -1 && cardPageNo !== lastRenderedPage) {
+    flipClass = cardPageNo > lastRenderedPage ? ' flip-next' : ' flip-prev';
+  }
+  lastRenderedPage = cardPageNo;
+
   const pagerHtml = count > CARD_PAGE_SIZE ? `
     <div class="pager">
       <button class="pager-btn" id="cardPrevBtn" ${cardPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
@@ -1731,7 +1756,7 @@ async function loadCards() {
       <button class="pager-btn" id="cardNextBtn" ${cardPageNo >= totalPages ? 'disabled' : ''}>下一页 ›</button>
     </div>` : '';
 
-  DOM.cardList.innerHTML = `<div class="nft-grid">${cardsHtml}</div>` + pagerHtml;
+  DOM.cardList.innerHTML = `<div class="nft-grid${flipClass}">${cardsHtml}</div>` + pagerHtml;
 
   document.querySelectorAll('.claim-one-btn').forEach(btn => {
     btn.onclick = throttle(() => claimCard(btn.dataset.token), 1500);
