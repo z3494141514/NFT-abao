@@ -73,7 +73,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 .page.active{display:block}
 /* ---------- 品牌主视觉 Hero（AI 动画视频背景） ---------- */
-.hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 120px;margin-bottom:18px}
+.hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 168px;margin-bottom:18px}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.9;pointer-events:none}
 .hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(5,7,13,.55),rgba(5,7,13,.28) 42%,rgba(5,7,13,.85))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
@@ -103,11 +103,17 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 @keyframes goldFlow{to{background-position:200% center}}
 .hero-sub{font-size:14px;color:var(--muted);letter-spacing:3px;margin-bottom:22px}
 .hero-chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);background:rgba(10,13,26,.5);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(148,163,184,.18);border-radius:99px;padding:8px 16px}
-.hero-chip b{color:var(--text);font-weight:800;font-variant-numeric:tabular-nums}
-/* ---------- KPI 模块（玻璃拟态，上移压入动画底部） ---------- */
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:-96px;margin-bottom:18px;position:relative;z-index:3}
-.kpi{position:relative;background:rgba(10,13,26,.55);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(148,163,184,.2);border-radius:20px;padding:20px;overflow:hidden;box-shadow:0 18px 44px -18px rgba(0,0,0,.7)}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:rgba(233,237,245,.85);background:rgba(10,13,26,.32);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(34,211,238,.22);border-radius:99px;padding:9px 17px;box-shadow:0 6px 26px rgba(34,211,238,.14),inset 0 1px 0 rgba(255,255,255,.1);animation:chipFloat 5.5s ease-in-out infinite}
+.hero-chip:nth-child(2){animation-delay:-1.8s}
+.hero-chip:nth-child(3){animation-delay:-3.6s}
+.hero-chip b{color:#fff;font-weight:800;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(34,211,238,.6)}
+@keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+/* 数据胶囊沉入动画区：定位于 Hero 下三分之一，与浮动卡牌同层呼吸 */
+.hero-chips{position:absolute;left:0;right:0;bottom:132px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 20px}
+/* ---------- KPI 模块（玻璃拟态，深压入动画底部，与卡牌场景融为一体） ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:-132px;margin-bottom:18px;position:relative;z-index:3}
+.kpi{position:relative;background:rgba(8,11,22,.4);backdrop-filter:blur(26px) saturate(1.4);-webkit-backdrop-filter:blur(26px) saturate(1.4);border:1px solid rgba(34,211,238,.2);border-radius:20px;padding:20px;overflow:hidden;box-shadow:0 20px 50px -20px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.08)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.65),rgba(139,92,246,.65),transparent)}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),transparent);opacity:0}
 @media (hover:hover){
 .kpi:hover{transform:translateY(-4px);border-color:var(--border-hi);background:var(--panel-hi)}
@@ -451,11 +457,12 @@ body{-webkit-tap-highlight-color:transparent}
 .reward-value{font-size:26px}
 .reward-label{font-size:10.5px;letter-spacing:1.8px}
 .reward-sub{font-size:11px}
-.hero{padding:34px 16px 84px;border-radius:18px;margin-bottom:12px}
+.hero{padding:34px 16px 128px;border-radius:18px;margin-bottom:12px}
 .hero-title{font-size:30px}
 .hero-sub{font-size:11.5px;letter-spacing:2px;margin-bottom:16px}
-.hero-chip{font-size:11px;padding:6px 12px}
-.kpi-grid{grid-template-columns:1fr;gap:12px;margin-top:-56px}
+.hero-chip{font-size:11px;padding:7px 13px}
+.hero-chips{bottom:96px;gap:8px}
+.kpi-grid{grid-template-columns:1fr;gap:12px;margin-top:-76px}
 .kpi{padding:16px;border-radius:16px}
 .footer{padding:12px 16px 96px;font-size:10.5px}
 }
