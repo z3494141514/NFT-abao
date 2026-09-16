@@ -17,8 +17,8 @@
   --border:rgba(148,163,184,.14);--border-hi:rgba(34,211,238,.35);
   --text:#e9edf5;--muted:#8b93a7;--cyan:#22d3ee;--violet:#8b5cf6;--gold:#f5c14c;
   --green:#34d399;--red:#fb7185;
-  /* 团队名册行内动态变量默认值（--i 入场序号 / --hue 头像色相） */
-  --i:0;--hue:200;
+  /* 团队名册行内动态变量默认值（--i 入场序号） */
+  --i:0;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -182,7 +182,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .team-table-head{display:grid;grid-template-columns:86px 1fr 46px;gap:12px;padding:12px 16px 10px;font-size:9.5px;font-weight:700;letter-spacing:2.5px;color:rgba(139,147,167,.62);text-transform:uppercase;border-bottom:1px solid rgba(148,163,184,.12);margin-bottom:12px}
 .team-table-head .th-act{text-align:right}
 /* 成员行 */
-.team-row{position:relative;display:grid;grid-template-columns:86px 1fr 46px;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.13);border-radius:14px;padding:15px 16px 14px;margin-bottom:10px;overflow:hidden;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease;animation:teamIn .5s cubic-bezier(.22,.8,.36,1) backwards;animation-delay:calc(var(--i,0)*55ms)}
+.team-row{position:relative;display:grid;grid-template-columns:86px 1fr 46px;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.13);border-radius:14px;padding:13px 16px;margin-bottom:10px;overflow:hidden;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease;animation:teamIn .5s cubic-bezier(.22,.8,.36,1) backwards;animation-delay:calc(var(--i,0)*55ms)}
 @keyframes teamIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .team-row::after{content:'';position:absolute;top:0;left:-70%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-12deg);pointer-events:none;opacity:0}
 @media (hover:hover){
@@ -205,15 +205,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 @keyframes crownFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-1.5px)}}
 .team-no{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(245,193,76,.85)}
 .team-no i{font-style:normal;color:rgba(139,147,167,.55);font-weight:600}
-/* 成员信息 */
-.team-who{display:flex;align-items:center;gap:13px;min-width:0}
-.team-avatar{width:37px;height:37px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,monospace;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.94);letter-spacing:.5px;flex-shrink:0;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,hsl(var(--hue,200) 70% 55%),hsl(calc(var(--hue,200) + 42) 70% 36%));box-shadow:0 4px 14px hsla(var(--hue,200),70%,50%,.35)}
-.t1 .team-avatar{border-color:rgba(245,193,76,.75);box-shadow:0 0 0 2px rgba(245,193,76,.28),0 4px 14px rgba(245,193,76,.35)}
-.t2 .team-avatar{border-color:rgba(203,213,225,.6);box-shadow:0 0 0 2px rgba(203,213,225,.2),0 4px 14px rgba(203,213,225,.3)}
-.t3 .team-avatar{border-color:rgba(205,127,50,.6);box-shadow:0 0 0 2px rgba(205,127,50,.22),0 4px 14px rgba(205,127,50,.3)}
-.team-name{min-width:0;display:flex;flex-direction:column;gap:3px}
-.team-addr-main{font-family:ui-monospace,SFMono-Regular,monospace;font-size:13.5px;font-weight:700;color:#c9d7ec;letter-spacing:.3px;white-space:nowrap}
-.team-addr-full{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px;color:rgba(139,147,167,.6);word-break:break-all;line-height:1.5;letter-spacing:.2px}
+/* 成员地址（仅省略地址） */
+.team-addr-main{font-family:ui-monospace,SFMono-Regular,monospace;font-size:14.5px;font-weight:700;color:#c9d7ec;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 /* 复制按钮 */
 .team-act{display:flex;justify-content:flex-end}
 .team-copy{width:34px;height:34px;border-radius:10px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.2);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease}
@@ -374,9 +367,7 @@ body{-webkit-tap-highlight-color:transparent}
 .team-crown{top:-12px}
 .team-crown .ic{width:13px;height:13px}
 .team-no{font-size:10.5px;letter-spacing:1px}
-.team-avatar{width:32px;height:32px;font-size:9px}
-.team-addr-main{font-size:12.5px}
-.team-addr-full{font-size:9px}
+.team-addr-main{font-size:13px;letter-spacing:.3px}
 .team-copy{width:31px;height:31px}
 .reward-hero{padding:18px 16px;border-radius:16px;gap:14px;margin-bottom:12px}
 .reward-hero-ic{width:48px;height:48px;border-radius:14px}
@@ -604,10 +595,6 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="data-row">
         <span class="data-label">我的上级</span>
         <span class="data-value hi" id="inviteMyReferrer">--</span>
-      </div>
-      <div class="data-row">
-        <span class="data-label">已获得推荐奖励</span>
-        <span class="data-value" id="inviteRewardEarned" style="color:var(--gold);font-size:17px;font-weight:800">0.00</span>
       </div>
       <div class="mt16">
         <input type="text" id="inviteLink" class="input" readonly style="margin-bottom:14px">
@@ -861,7 +848,7 @@ const DOM = {
   dashCardCount: $('dashCardCount'), myTotalPending: $('myTotalPending'),
   burnedSupply: $('burnedSupply'), burnedPercent: $('burnedPercent'), circulatingSupply: $('circulatingSupply'),
   heroActiveCards: $('heroActiveCards'), heroPoolUsdt: $('heroPoolUsdt'), heroBurned: $('heroBurned'),
-  inviteRewardEarned: $('inviteRewardEarned'), gotoTeamBtn: $('gotoTeamBtn'),
+  gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
   buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
@@ -961,6 +948,8 @@ const parseError = (e) => {
   if (m.includes('bind referrer first') || m.includes('请先绑定')) return '请先绑定上级';
   if (m.includes('referrer already bound') || m.includes('已绑定')) return '已绑定过上级，不可更换';
   if (m.includes('cannot bind self')) return '不能绑定自己';
+  if (m.includes('cannot bind downline')) return '不能绑定自己的下级为上级';
+  if (m.includes('cannot bind protocol')) return '不能绑定协议合约地址为上级';
   if (m.includes('zero referrer')) return '请输入合法的上级地址';
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('nothing to claim')) return '暂无待领取分红';
@@ -1091,14 +1080,16 @@ async function connectWallet() {
   }
 }
 
-/* 只读 RPC 轮换器：串行尝试、单节点 8 秒超时、失败自动换下一个（最多 4 个）。
-   不用 ethers 的 FallbackProvider——它会向全部节点广播每个请求，公共节点极易触发限流导致全站卡死 */
-function createReadProvider(urls, chainId) {
+/* 只读 RPC 轮换器：串行尝试、单节点 8 秒超时、失败自动换下一个（最多 5 个）。
+   不用 ethers 的 FallbackProvider——它会向全部节点广播每个请求，公共节点极易触发限流导致全站卡死。
+   节点顺序 = [钱包注入节点, 公共节点...]：钱包能连上 BSC 说明该 RPC 在当前网络可达，
+   优先复用钱包通道（对国内用户最稳），失败再轮换公共节点 */
+function createReadProvider(providers) {
   let idx = 0;
-  let current = new ethers.providers.JsonRpcProvider(urls[idx], chainId);
+  let current = providers[0];
   const rotate = () => {
-    idx = (idx + 1) % urls.length;
-    current = new ethers.providers.JsonRpcProvider(urls[idx], chainId);
+    idx = (idx + 1) % providers.length;
+    current = providers[idx];
   };
   const withTimeout = (p) => Promise.race([
     p,
@@ -1119,7 +1110,7 @@ function createReadProvider(urls, chainId) {
               throw e;
             }
           };
-          return tryOne(current, Math.min(urls.length, 4));
+          return tryOne(current, Math.min(providers.length, 5));
         };
       }
       return current[prop];
@@ -1137,9 +1128,12 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：串行轮换（一次只问一个节点，8 秒超时/失败自动换下一个）
-  // 签名交易仍走 MetaMask
-  readProvider = createReadProvider(CONFIG.rpcUrls, CONFIG.chainId);
+  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，8 秒超时/失败自动换）
+  // 签名交易仍走钱包注入的 signer
+  const readNodes = [provider].concat(
+    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
+  );
+  readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
   nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
@@ -1217,7 +1211,6 @@ function disconnectWallet() {
   // 邀请 / 团队
   DOM.inviteMyReferrer.innerText = '--';
   DOM.inviteLink.value = '';
-  DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
   DOM.teamCount.innerText = '0';
   DOM.teamCount2.innerText = '0';
   DOM.teamMyReferrer.innerText = '--';
@@ -1398,24 +1391,14 @@ async function loadUser() {
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
 
-/* 邀请页：轻量拉取推荐奖励（不加载下级列表） */
-async function loadInviteReward() {
-  try {
-    const earned = await saleC.referralRewardsEarned(userAddress);
-    DOM.inviteRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
-  } catch (e) { DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol; }
-}
-
 /* 团队：一级下级人数、地址列表与两块推荐奖励 */
 async function loadTeam() {
   // 块二：开盘后推荐奖励（30% 代币）
   try {
     const earned = await saleC.referralRewardsEarned(userAddress);
     DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
-    DOM.inviteRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
   } catch (e) {
     DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
-    DOM.inviteRewardEarned.innerText = '0.00 ' + tokenSymbol;
   }
 
   // 块一：预售直推奖励（20U 实时到账 + 直推金额每满 1000U 送 1 张卡）
@@ -1450,7 +1433,9 @@ async function loadTeam() {
     return;
   }
 
-  // 缓存：数量没变时复用已拉取的下级地址列表，避免每 10 秒重复全量读取
+  // 缓存：数量没变时复用已拉取的下级地址列表，避免每 10 秒重复全量读取。
+  // 注意：必须拉满 cnt 个才写缓存——中途 RPC 失败会 break，若此时写入缓存，
+  // 残缺列表会一直显示到数量变化为止（列表被永久截断）。
   if (teamCache.count !== cnt) {
     const addrs = [];
     for (let i = 0; i < cnt; i++) {
@@ -1459,11 +1444,11 @@ async function loadTeam() {
         addrs.push(a);
       } catch (e) { break; }
     }
-    teamCache = { count: cnt, addrs };
+    if (addrs.length === cnt) teamCache = { count: cnt, addrs };
   }
 
-  // 分页（每页 10 个）
-  const TEAM_PAGE_SIZE = 10;
+  // 分页（每页 5 个）
+  const TEAM_PAGE_SIZE = 5;
   const totalPages = Math.max(1, Math.ceil(teamCache.addrs.length / TEAM_PAGE_SIZE));
   if (teamPageNo > totalPages) teamPageNo = totalPages;
   const start = (teamPageNo - 1) * TEAM_PAGE_SIZE;
@@ -1481,21 +1466,14 @@ async function loadTeam() {
     DOM.teamList.innerHTML = pageAddrs.map((a, i) => {
       const g = start + i; // 全局排名（0 起）
       const tier = tierOf(g);
-      const hue = parseInt(a.slice(2, 8), 16) % 360; // 由地址派生专属头像色相
       const rankHtml = tier
         ? `<span class="team-medal">${g === 0 ? crown : ''}${g + 1}</span>`
         : `<span class="team-no"><i>NO.</i>${String(g + 1).padStart(3, '0')}</span>`;
       return `
-      <div class="team-row ${tier}" style="--i:${i};--hue:${hue}">
+      <div class="team-row ${tier}" style="--i:${i}">
         <div class="team-rank">${rankHtml}</div>
-        <div class="team-who">
-          <span class="team-avatar">${a.slice(2, 4).toUpperCase()}</span>
-          <div class="team-name">
-            <span class="team-addr-main">${shortAddr(a)}</span>
-            <span class="team-addr-full">${a}</span>
-          </div>
-        </div>
-        <div class="team-act"><button class="team-copy" data-addr="${a}" title="复制地址">${copyIc}</button></div>
+        <span class="team-addr-main">${shortAddr(a)}</span>
+        <div class="team-act"><button class="team-copy" data-addr="${a}" title="${a}">${copyIc}</button></div>
       </div>`;
     }).join('')
       + `
@@ -1823,10 +1801,6 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     // 团队页：打开时才加载团队数据（逐地址查询较重，避免拖慢整页轮询）
     if (btn.dataset.page === 'teamPage' && userAddress) {
       loadTeam();
-    }
-    // 邀请页：轻量拉一次推荐奖励
-    if (btn.dataset.page === 'invitePage' && userAddress) {
-      loadInviteReward();
     }
 
     // 团队页流光动画：display:none→block 时部分浏览器不重启动画，
