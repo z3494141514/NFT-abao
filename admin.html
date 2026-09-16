@@ -256,13 +256,16 @@ const CONFIG = {
     'https://bsc-dataseed1.defibit.io/',
     'https://bsc-dataseed1.ninicoin.io/',
     'https://bsc-dataseed2.defibit.io/',
+    'https://rpc.ankr.com/bsc',
+    'https://bsc-rpc.publicnode.com',
+    'https://1rpc.io/bnb',
     'https://bsc-dataseed.binance.org/',
     'https://bsc-dataseed1.binance.org/',
     'https://bsc-dataseed2.binance.org/',
     'https://bsc-dataseed3.binance.org/',
     'https://bsc-dataseed4.binance.org/'
   ],
-  rpcUrl: 'https://bsc-dataseed.binance.org/',
+  rpcUrl: 'https://bsc-dataseed1.defibit.io/',
   contracts: {
     token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // OfficialToken 主网（已重部署 ✅）
     nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // OfficialNFT 主网（已重部署 ✅）
@@ -574,16 +577,50 @@ function applyTokenSymbols() {
   DOM.adminWithdrawTttBtn.innerText = '提取滞留 ' + t;
 }
 
+/* 只读 RPC 轮换器：串行尝试、单节点 8 秒超时、失败自动换下一个（最多 4 个）。
+   不用 ethers 的 FallbackProvider——它会向全部节点广播每个请求，公共节点极易触发限流导致全站卡死 */
+function createReadProvider(urls, chainId) {
+  let idx = 0;
+  let current = new ethers.providers.JsonRpcProvider(urls[idx], chainId);
+  const rotate = () => {
+    idx = (idx + 1) % urls.length;
+    current = new ethers.providers.JsonRpcProvider(urls[idx], chainId);
+  };
+  const withTimeout = (p) => Promise.race([
+    p,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 8000))
+  ]);
+  return new Proxy(current, {
+    get(target, prop) {
+      if (typeof current[prop] === 'function') {
+        return (...args) => {
+          const tryOne = async (prov, left) => {
+            try {
+              return await withTimeout(prov[prop].apply(prov, args));
+            } catch (e) {
+              if (left > 1) {
+                rotate();
+                return tryOne(current, left - 1);
+              }
+              throw e;
+            }
+          };
+          return tryOne(current, Math.min(urls.length, 4));
+        };
+      }
+      return current[prop];
+    }
+  });
+}
+
 async function setupProvider(address) {
   provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：公共节点自动故障切换（3 秒无响应换下一个）；签名交易仍走 MetaMask
-  readProvider = new ethers.providers.FallbackProvider(
-    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
-  );
-  readProvider.stallTimeout = 3000;
+  // 只读数据层：串行轮换（一次只问一个节点，8 秒超时/失败自动换下一个）
+  // 签名交易仍走 MetaMask
+  readProvider = createReadProvider(CONFIG.rpcUrls, CONFIG.chainId);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
   nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
