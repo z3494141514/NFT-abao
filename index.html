@@ -21,6 +21,8 @@
   --i:0;
   /* 浮动卡牌透明度动态变量（--o） */
   --o:.8;
+  /* 卡牌背景飞行距离默认值（--travel，JS 按 Hero 高度注入实际值） */
+  --travel:1200px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -78,7 +80,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(5,7,13,.5),rgba(5,7,13,.22) 46%,rgba(5,7,13,.5))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
 .hero-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.float-card{position:absolute;bottom:-160px;width:112px;height:152px;border-radius:15px;background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(139,92,246,.26)),linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.28);box-shadow:0 0 38px rgba(34,211,238,.28),inset 0 0 26px rgba(139,92,246,.18);animation:cardFloat linear infinite;--o:.8}
+.float-card{position:absolute;bottom:-160px;width:112px;height:152px;border-radius:15px;background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(139,92,246,.26)),linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.28);box-shadow:0 0 38px rgba(34,211,238,.28),inset 0 0 26px rgba(139,92,246,.18);animation:cardFloat linear infinite;--o:.8;will-change:transform,opacity}
 .float-card::before{content:'';position:absolute;inset:9px;border:1px solid rgba(245,193,76,.3);border-radius:10px;background:radial-gradient(circle at 50% 38%,rgba(245,193,76,.32),transparent 62%)}
 .float-card::after{content:'';position:absolute;top:0;left:-70%;width:46%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-14deg);animation:cardSheen 4.5s ease-in-out infinite}
 @keyframes cardSheen{0%{left:-70%}55%,100%{left:130%}}
@@ -88,13 +90,20 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .fc4{left:52%;animation-duration:26s;animation-delay:-3s;--o:.5}
 .fc5{left:68%;width:80px;height:110px;animation-duration:19s;animation-delay:-15s;--o:.65}
 .fc6{left:84%;width:104px;height:142px;animation-duration:24s;animation-delay:-9s;--o:.55}
+.fc7{left:9%;width:88px;height:120px;animation-duration:21s;animation-delay:-16s;--o:.5}
+.fc8{left:40%;width:72px;height:100px;animation-duration:18s;animation-delay:-5s;--o:.6}
+.fc9{left:63%;width:106px;height:146px;animation-duration:27s;animation-delay:-20s;--o:.45}
+.fc10{left:90%;width:80px;height:112px;animation-duration:22s;animation-delay:-11s;--o:.5}
+/* 飞行距离自适应：--travel 由 JS 按 Hero 实际高度注入（顶到顶），默认 1200px 兜底 */
 @keyframes cardFloat{
   0%{transform:translateY(0) rotate(-9deg) rotateY(0deg);opacity:0}
-  8%{opacity:var(--o)}
-  50%{transform:translateY(-46vh) rotate(7deg) rotateY(180deg)}
-  92%{opacity:var(--o)}
-  100%{transform:translateY(-96vh) rotate(-7deg) rotateY(360deg);opacity:0}
+  6%{opacity:var(--o)}
+  50%{transform:translateY(calc(var(--travel,1200px) * -.5)) rotate(7deg) rotateY(180deg)}
+  94%{opacity:var(--o)}
+  100%{transform:translateY(calc(var(--travel,1200px) * -1)) rotate(-7deg) rotateY(360deg);opacity:0}
 }
+/* 切页后强制重启动画：display:none→block 部分浏览器不动画，挂/摘该类即重启 */
+.anim-restart,.anim-restart *,.anim-restart::before,.anim-restart::after{animation:none!important}
 .hero::before{content:'';position:absolute;inset:-40%;z-index:1;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.16),transparent 55%);pointer-events:none;animation:pulse 5s ease-in-out infinite}
 .hero-badge,.hero-title,.hero-sub,.hero-chips{position:relative;z-index:2}
 .hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);padding:5px 14px;border-radius:99px;margin-bottom:16px}
@@ -128,15 +137,32 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .unit-char{font-size:.72em;font-weight:600;color:var(--gold);margin-left:5px;letter-spacing:.08em}
 .kc-sub{font-size:10px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kc-sub .u{color:var(--gold);font-weight:600}
-/* 绑定 + 购买：并排嵌进同一块浮岛，中间一线光隔开 */
-.console-cols{display:grid;grid-template-columns:1fr 1.7fr;gap:1px;background:rgba(148,163,184,.16)}
-.console-col{background:rgba(9,12,24,.4);padding:20px 24px 22px;min-width:0}
-.console-col-buy{background:rgba(11,15,28,.46)}
-.console-col-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.console-col-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(139,92,246,.18));border:1px solid rgba(34,211,238,.32);font-size:15px;box-shadow:0 4px 14px rgba(34,211,238,.25);flex-shrink:0}
-.console-col-title{font-size:15px;font-weight:800;letter-spacing:.5px}
-.console-col-badge{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);border:1px solid rgba(34,211,238,.35);padding:2px 9px;border-radius:99px;background:rgba(34,211,238,.08);white-space:nowrap}
-.console-tip{margin-top:14px;font-size:10.5px;color:var(--muted);letter-spacing:.5px;line-height:1.7}
+/* 上级绑定：一行轻便条，不占格子 */
+.bind-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid rgba(148,163,184,.16);background:rgba(9,12,24,.32)}
+.bind-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(139,92,246,.18));border:1px solid rgba(34,211,238,.3);font-size:13px;flex-shrink:0}
+.bind-label{font-size:12.5px;font-weight:700;letter-spacing:1px;color:rgba(233,237,245,.8);white-space:nowrap}
+.bind-inline{display:flex;align-items:center;gap:10px;flex:1;min-width:280px}
+.bind-inline .input{flex:1;max-width:430px}
+.input-sm{padding:9px 15px;font-size:13px;border-radius:11px}
+.bind-once{font-size:10px;color:rgba(139,147,167,.6);letter-spacing:1px;white-space:nowrap}
+.bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:5px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;flex:1;min-width:0}
+/* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
+.buy-stage{padding:28px 28px 32px;perspective:1400px;position:relative}
+.buy-card{position:relative;max-width:720px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:22px 26px 24px;background:linear-gradient(180deg,rgba(13,17,32,.94),rgba(8,11,22,.9)) padding-box,linear-gradient(125deg,rgba(245,193,76,.6),rgba(34,211,238,.42) 28%,rgba(139,92,246,.55) 58%,rgba(245,193,76,.32)) border-box;box-shadow:0 30px 70px -28px rgba(0,0,0,.9),0 0 44px rgba(34,211,238,.12),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden;transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
+.buy-card::before{content:'';position:absolute;top:0;left:-70%;width:44%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-14deg);animation:buySheen 8s ease-in-out 2s infinite;pointer-events:none}
+.buy-card::after{content:'◆';position:absolute;right:4px;bottom:-50px;font-size:150px;line-height:1;color:rgba(245,193,76,.07);pointer-events:none}
+@keyframes buySheen{0%{left:-70%}55%,100%{left:135%}}
+@media (hover:hover){
+.buy-stage:hover .buy-card{transform:rotateX(1.6deg) rotateY(-2.2deg) translateY(-6px);box-shadow:0 42px 90px -30px rgba(0,0,0,.95),0 0 60px rgba(139,92,246,.22),inset 0 1px 0 rgba(255,255,255,.15)}
+}
+.buy-card-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.buy-card-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5c14c,#fb7185);border:1px solid rgba(245,193,76,.5);font-size:19px;box-shadow:0 6px 18px rgba(245,193,76,.35);flex-shrink:0}
+.buy-card-titles{display:flex;flex-direction:column;gap:3px;min-width:0}
+.buy-card-title{font-size:16px;font-weight:900;letter-spacing:1px}
+.buy-card-sub{font-size:9.5px;letter-spacing:2px;color:rgba(139,147,167,.8);text-transform:uppercase;font-weight:700}
+.buy-card-badge{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:1px;color:var(--gold);border:1px solid rgba(245,193,76,.4);padding:3px 11px;border-radius:99px;background:rgba(245,193,76,.1);box-shadow:0 0 14px rgba(245,193,76,.18);white-space:nowrap}
+.buy-card>*{position:relative;z-index:1}
 /* ---------- 开盘后购买模块（资金拆分三格 + 说明条） ---------- */
 .buy-split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 .buy-split-item{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:11px 6px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;transition:border-color .25s,transform .25s}
@@ -376,7 +402,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .global-loader.active{display:flex}
 .spinner{width:46px;height:46px;border:3px solid rgba(34,211,238,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(3,1fr)}.console-cols{grid-template-columns:1fr}.modules{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr}}
+@media(max-width:1100px){.kpi-strip{grid-template-columns:repeat(3,1fr)}.modules{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr}}
 @media(max-width:768px){
 .kpi-strip{grid-template-columns:repeat(3,1fr)}
 .header{flex-wrap:nowrap}
@@ -400,8 +426,13 @@ body{-webkit-tap-highlight-color:transparent}
 .kc-label{font-size:9px;letter-spacing:1.2px}
 .kc-value{font-size:15px;margin-top:6px}
 .kc-sub{font-size:9px;margin-top:3px}
-.console-col{padding:16px 14px 18px}
-.console-col-badge{font-size:9px;padding:2px 8px}
+.bind-bar{gap:10px;padding:12px 14px}
+.bind-inline{flex-direction:column;align-items:stretch;gap:8px;min-width:0;flex:1 1 100%}
+.bind-inline .input{max-width:none}
+.bind-once{display:none}
+.buy-stage{padding:18px 14px 22px}
+.buy-card{padding:16px 14px 18px;border-radius:18px}
+.buy-card-badge{font-size:9.5px;padding:2px 9px}
 .launch-bar{padding:11px 14px;border-radius:13px;gap:9px;margin-bottom:12px}
 .launch-bar .lb-txt{font-size:12px}
 .module{padding:17px 14px;border-radius:16px;margin-bottom:12px}
@@ -515,6 +546,10 @@ body{-webkit-tap-highlight-color:transparent}
         <span class="float-card fc4"></span>
         <span class="float-card fc5"></span>
         <span class="float-card fc6"></span>
+        <span class="float-card fc7"></span>
+        <span class="float-card fc8"></span>
+        <span class="float-card fc9"></span>
+        <span class="float-card fc10"></span>
       </div>
       <div class="hero-overlay"></div>
       <div class="hero-badge"><span class="live-dot"></span>LIVE · 数据实时上链</div>
@@ -559,30 +594,28 @@ body{-webkit-tap-highlight-color:transparent}
             <div class="kc-sub">全卡实时合计</div>
           </div>
         </div>
-        <div class="console-cols">
-          <div class="console-col">
-            <div class="console-col-head">
-              <span class="console-col-ic">🔗</span>
-              <span class="console-col-title">上级绑定</span>
-              <span class="console-col-badge">ONE-TIME</span>
-            </div>
-            <div id="bindArea">
-              <input type="text" id="referrerInput" class="input" placeholder="推荐人钱包地址 0x…" style="margin-bottom:14px">
-              <button id="bindBtn" class="btn btn-primary btn-block">绑定</button>
-            </div>
-            <div id="boundArea" style="display:none">
-              <div class="data-row">
-                <span class="data-label">已绑定</span>
-                <span class="data-value hi" id="myReferrerAddress"></span>
-              </div>
-            </div>
-            <div class="console-tip">绑定一次 · 永久生效 · 直推奖励实时到账</div>
+        <div class="bind-bar">
+          <span class="bind-ic">🔗</span>
+          <span class="bind-label">上级绑定</span>
+          <div id="bindArea" class="bind-inline">
+            <input type="text" id="referrerInput" class="input input-sm" placeholder="推荐人钱包地址 0x…">
+            <button id="bindBtn" class="btn btn-primary btn-sm">绑定</button>
           </div>
-          <div class="console-col console-col-buy">
-            <div class="console-col-head">
-              <span class="console-col-ic">💳</span>
-              <span class="console-col-title">购买卡牌</span>
-              <span class="console-col-badge" id="buyModeBadge">100 U / 张</span>
+          <div id="boundArea" class="bind-inline" style="display:none">
+            <span class="bound-ok">✓ 已绑定</span>
+            <span class="bound-addr" id="myReferrerAddress">--</span>
+          </div>
+          <span class="bind-once">一次绑定 · 永久生效</span>
+        </div>
+        <div class="buy-stage">
+          <div class="buy-card">
+            <div class="buy-card-head">
+              <span class="buy-card-ic">💳</span>
+              <div class="buy-card-titles">
+                <span class="buy-card-title">购买卡牌</span>
+                <span class="buy-card-sub">GOLD CARD · 金本位分红 · 3 倍出局</span>
+              </div>
+              <span class="buy-card-badge" id="buyModeBadge">100 U / 张</span>
             </div>
             <div class="data-row">
               <span class="data-label">购买数量</span>
@@ -1484,6 +1517,7 @@ async function loadAll() {
   try {
     // 团队数据量大（逐地址查询），改为「打开团队页时才加载」，不再随 10 秒轮询
     await Promise.all([loadStats(), loadUser(), loadCards()]);
+    setHeroTravel(); // 绑定态/预售态切换会改变 Hero 高度，重算背景卡牌飞行距离
   } catch (e) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
   }
@@ -2226,6 +2260,17 @@ async function claimAll() {
 /* ============================================================
  * 页面导航 / 粒子 / 事件绑定
  * ============================================================ */
+/* 卡牌背景飞行距离：按 Hero 实际高度自适应（顶到顶），窗口变化/切页/数据刷新时重算 */
+function setHeroTravel() {
+  const hero = document.querySelector('.hero');
+  const scene = document.querySelector('.hero-scene');
+  if (!hero || !scene) return;
+  scene.style.setProperty('--travel', (hero.offsetHeight + 360) + 'px');
+}
+setHeroTravel();
+window.addEventListener('resize', throttle(setHeroTravel, 600));
+window.addEventListener('load', setHeroTravel);
+
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -2236,6 +2281,17 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     // 团队页：打开时才加载团队数据（逐地址查询较重，避免拖慢整页轮询）
     if (btn.dataset.page === 'teamPage' && userAddress) {
       loadTeam();
+    }
+
+    // 首页：重算背景飞行距离（绑定态/预售态会改变 Hero 高度），
+    // 并强制重启动画——display:none→block 后部分浏览器把 CSS 动画停住
+    if (btn.dataset.page === 'homePage') {
+      setHeroTravel();
+      const home = $(btn.dataset.page);
+      home.classList.add('anim-restart');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        home.classList.remove('anim-restart');
+      }));
     }
 
     // 团队页流光动画：display:none→block 时部分浏览器不重启动画，
