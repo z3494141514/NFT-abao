@@ -47,8 +47,9 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 /* ---------- 顶栏（半透明毛玻璃） ---------- */
 .header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 28px;background:rgba(8,10,20,.24);backdrop-filter:blur(34px) saturate(1.8);-webkit-backdrop-filter:blur(34px) saturate(1.8);border-bottom:1px solid rgba(148,163,184,.14);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:13px}
-.brand-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 22px rgba(34,211,238,.35)}
-.brand-mark .ic{width:21px;height:21px;stroke:#fff;stroke-width:1.6}
+.brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#fde68a,#f5c14c 42%,#b45309);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(245,193,76,.45),inset 0 1px 0 rgba(255,255,255,.55);position:relative;overflow:hidden;flex-shrink:0}
+.brand-mark::after{content:'';position:absolute;top:0;left:0;right:0;height:46%;background:linear-gradient(180deg,rgba(255,255,255,.55),transparent);pointer-events:none}
+.brand-mark .ic{width:20px;height:20px;stroke:#7c2d12;stroke-width:1.7;position:relative;z-index:1}
 .brand-text{display:flex;flex-direction:column;line-height:1.15}
 .brand-title{font-size:17px;font-weight:800;letter-spacing:.5px}
 .brand-sub{font-size:10px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase}
@@ -442,7 +443,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 body{-webkit-tap-highlight-color:transparent}
 .header{padding:10px 12px;gap:8px;flex-wrap:nowrap}
 .brand{gap:9px}
-.brand-mark{width:36px;height:36px;border-radius:11px;box-shadow:0 3px 14px rgba(34,211,238,.3)}
+.brand-mark{width:36px;height:36px;border-radius:11px;box-shadow:0 3px 14px rgba(245,193,76,.4)}
 .brand-mark .ic{width:18px;height:18px}
 .brand-title{font-size:15px}
 .brand-sub{display:none}
@@ -561,12 +562,12 @@ body{-webkit-tap-highlight-color:transparent}
   <!-- ================= 顶栏 ================= -->
   <div class="header">
     <div class="brand">
-      <div class="brand-mark"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.5 20.5 9 12 21.5 3.5 9 12 2.5z"/><path d="M3.5 9h17"/><path d="M12 2.5 8.6 9l3.4 12.5"/><path d="M12 2.5l3.4 6.5L12 21.5"/></svg></div>
+      <div class="brand-mark"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="13" rx="2.2"/><path d="M12 9.4 13.5 12l2.6 1.3-2.6 1.3L12 17.2l-1.5-2.6L7.9 13.3l2.6-1.3L12 9.4z"/></svg></div>
       <div class="brand-text">
-        <span class="brand-title">卡牌分红</span>
+        <span class="brand-title" data-i18n="brandTitle">卡牌分红</span>
         <span class="brand-sub">NFT Dividend Protocol</span>
       </div>
-      <span class="chain-chip" id="chainBadge"><span class="dot"></span><span id="chainText">检测中…</span></span>
+      <span class="chain-chip" id="chainBadge"><span class="dot"></span><span id="chainText" data-i18n="chainChecking">检测中…</span></span>
     </div>
     <div class="flex">
       <button class="wallet-btn" id="connectBtn"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2.5"/><path d="M2 10h20"/></svg><span data-i18n="connect">连接</span></button>
@@ -1135,7 +1136,7 @@ const DOM = {
  * ============================================================ */
 const I18N = {
   zh: {
-    connect:'连接', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
+    connect:'连接', brandTitle:'卡牌分红', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
     heroBadge:'LIVE · 数据实时上链', heroTitle:'卡牌分红 ', heroSub:'每张卡牌 · 金本位分红 · 三倍出局',
     chipPreCards:'预售卡牌', chipAirdrop:'预售空投', unitCard:'张', unitToken:'枚',
     kpiPool:'分红池', kpiActive:'有效卡牌', kpiMyCards:'我的卡牌', kpiBurned:'已销毁', kpiCirc:'流通量', kpiPending:'待领取分红',
@@ -1145,6 +1146,7 @@ const I18N = {
     price:'实时价格', myBalance:'我的余额', slotsLeft:'剩余名额',
     splitRefCash:'实时转上级', splitLp:'自动加池', splitTreasury:'项目金库', splitRefTok:'转给上级', splitBurn:'永久销毁', splitGold:'金本位',
     buyNote:'价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌',
+    buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
     ovTitle:'收益总览', ovSub:'Earnings Overview · 金本位分红', ovTotal:'总获得分红', ovClaimed:'已领取', ovPending:'待领取',
@@ -1164,6 +1166,7 @@ const I18N = {
     cardActive:'计息中', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算',
     cardDone:'已完成 · 待领取可随时提取', cardProgress:'分红进度', cardAccrued:'累计分红', cardClaimed:'已领取',
     cardPending:'待领取', cardExitP:'出局进度', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
+    calc:'计算中…',
     noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
     toastBusy:'操作太频繁，请稍后再试', toastConnect:'请先连接钱包', toastDisconnected:'已断开钱包',
     toastConnected:'钱包连接成功', toastCanceled:'您取消了连接', toastNoWallet:'未检测到钱包，请安装 MetaMask',
@@ -1175,10 +1178,11 @@ const I18N = {
     toastNotLaunched:'尚未开盘，暂不能购买', toastNoPrice:'预言机价格未就绪', toastTokLow:'代币余额不足',
     toastPreOk:'预售成功！{n} 张卡牌已激活并开始累积分红 🎉', toastBuyOk:'购买成功！{n} 张卡牌已开始累积分红 🎉',
     toastClaimOk:'分红领取成功', toastNothing:'没有待领取的分红', toastClaimAll:'已领取 {n} 张卡牌的分红 🎉',
-    toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试'
+    toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试',
+    chainChecking:'检测中…', chainNoWallet:'未检测到钱包', chainNetErr:'网络错误，点击连接以切换', chainFail:'网络检测失败'
   },
   en: {
-    connect:'Connect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
+    connect:'Connect', brandTitle:'CARD DIVIDEND', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
     heroBadge:'LIVE · ON-CHAIN DATA', heroTitle:'CARD DIVIDEND ', heroSub:'Every Card · Gold-Standard Dividends · 3× Exit',
     chipPreCards:'Pre-sale Cards', chipAirdrop:'Pre-sale Airdrop', unitCard:'cards', unitToken:'tokens',
     kpiPool:'Dividend Pool', kpiActive:'Active Cards', kpiMyCards:'My Cards', kpiBurned:'Burned', kpiCirc:'Circulating', kpiPending:'Pending Rewards',
@@ -1188,6 +1192,7 @@ const I18N = {
     price:'Live Price', myBalance:'My Balance', slotsLeft:'Slots Left',
     splitRefCash:'to Referrer', splitLp:'Auto LP', splitTreasury:'Treasury', splitRefTok:'to Referrer', splitBurn:'Burned Forever', splitGold:'Gold Standard',
     buyNote:'Price auto-converts via 5-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards',
+    buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
     launchProtect:'Launch Shield · ', sec:'s left',
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
     ovTitle:'Earnings', ovSub:'Earnings Overview · Gold-Standard', ovTotal:'Total Earned', ovClaimed:'Claimed', ovPending:'Pending',
@@ -1207,6 +1212,7 @@ const I18N = {
     cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit',
     cardDone:'Completed · withdraw anytime', cardProgress:'Dividend Progress', cardAccrued:'Total Accrued', cardClaimed:'Claimed',
     cardPending:'Pending', cardExitP:'Exit Progress', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
+    calc:'Calculating…',
     noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
     toastBusy:'Too frequent — try again shortly', toastConnect:'Connect wallet first', toastDisconnected:'Wallet disconnected',
     toastConnected:'Wallet connected', toastCanceled:'Connection cancelled', toastNoWallet:'No wallet detected — install MetaMask',
@@ -1218,7 +1224,8 @@ const I18N = {
     toastNotLaunched:'Not launched yet', toastNoPrice:'Oracle price not ready', toastTokLow:'Insufficient tokens',
     toastPreOk:'Pre-sale success! {n} cards activated and earning 🎉', toastBuyOk:'Purchase success! {n} cards now earning 🎉',
     toastClaimOk:'dividend claimed', toastNothing:'Nothing to claim', toastClaimAll:'Claimed {n} cards\u2019 dividends 🎉',
-    toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry'
+    toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry',
+    chainChecking:'Checking…', chainNoWallet:'No wallet', chainNetErr:'Network error — tap to connect', chainFail:'Network check failed'
   }
 };
 let LANG = (localStorage.getItem('lang') === 'en') ? 'en' : 'zh';
@@ -1410,20 +1417,20 @@ function updateBuyDisplay() {
     DOM.minusBtn.disabled = buyQuantity <= 1;
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, preLaunchRemain);
     DOM.preLaunchPay.innerText = (buyQuantity * 100) + ' USDT';
-    DOM.preLaunchBuyBtn.innerText = `预售购买 ${buyQuantity} 张`;
+    DOM.preLaunchBuyBtn.innerText = t('buyPreQty').replace('{n}', buyQuantity);
   } else {
     DOM.buyQtyHint.innerText = buyQuantity;
     DOM.minusBtn.disabled = buyQuantity <= 1;
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
-    DOM.buyBtn.innerText = `购买 ${buyQuantity} 张卡牌`;
+    DOM.buyBtn.innerText = t('buyQtyBtn').replace('{n}', buyQuantity);
     if (unitPriceTokens && !unitPriceTokens.isZero()) {
       // 「≈」表示约数：实际扣款以成交时价格为准（授权已留 130% 缓冲）
       DOM.buyTokensNeeded.innerText = '≈ ' + fmtTokens(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
       // 隐含价格 = 100U×1e24 / 单张所需代币（与合约公式互逆，显示为 U/枚）
       const priceBN = BN.from(10000).mul(BN.from(10).pow(24)).div(unitPriceTokens);
-      DOM.buyPriceHint.innerText = fmtPrice(priceBN) + ' / 枚';
+      DOM.buyPriceHint.innerText = fmtPrice(priceBN) + ' / ' + t('unitToken');
     } else {
-      DOM.buyTokensNeeded.innerText = '--（价格未就绪）';
+      DOM.buyTokensNeeded.innerText = '--（' + t('priceNotReady') + '）';
       DOM.buyPriceHint.innerText = '--';
     }
   }
@@ -1591,6 +1598,10 @@ async function setupProvider(address) {
 
   loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
+  // 团队数据是「进页才加载」：若重连时正停留在团队页，主动补拉一次，
+  // 避免断开→重连后下级列表空着、必须切页才出现
+  const activePage = document.querySelector('.page.active');
+  if (activePage && activePage.id === 'teamPage') loadTeam();
   startRefresh();
   checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
 }
@@ -1653,7 +1664,7 @@ function disconnectWallet() {
   remainingSlots = 520;
   isPreLaunch = false;
   preLaunchRemain = 220;
-  DOM.buyModeBadge.innerText = '100 U / 张'; // 断开后复位徽标（避免残留旧模式文案）
+  DOM.buyModeBadge.innerText = '100 U / ' + t('unitCard'); // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
   updateBuyDisplay();
@@ -1672,7 +1683,7 @@ function stopRefresh() {
 
 async function checkChain() {
   if (!window.ethereum) {
-    DOM.chainText.innerText = '未检测到钱包';
+    DOM.chainText.innerText = t('chainNoWallet');
     DOM.chainBadge.style.color = '#fb7185';
     return;
   }
@@ -1682,11 +1693,11 @@ async function checkChain() {
       DOM.chainText.innerText = CONFIG.chainName;
       DOM.chainBadge.style.color = '';
     } else {
-      DOM.chainText.innerText = '网络错误，点击连接以切换';
+      DOM.chainText.innerText = t('chainNetErr');
       DOM.chainBadge.style.color = '#f5c14c';
     }
   } catch (e) {
-    DOM.chainText.innerText = '网络检测失败';
+    DOM.chainText.innerText = t('chainFail');
   }
 }
 
@@ -1809,8 +1820,8 @@ async function loadSlowData() {
     // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
     const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
     const burned = MAXSUP.sub(circ);
-    DOM.burnedSupply.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">枚</span>';
-    DOM.circulatingSupply.innerHTML = fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">枚</span>';
+    DOM.burnedSupply.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>';
+    DOM.circulatingSupply.innerHTML = fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>';
     DOM.burnedPercent.innerText = MAXSUP.isZero() || burned.isZero()
       ? '0%'
       : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%';
@@ -2088,7 +2099,7 @@ function patchCardDom(r) {
   if (btn) {
     const zero = r.pending.isZero();
     btn.disabled = zero;
-    btn.innerText = zero ? '无待领取' : '领取分红';
+    btn.innerText = zero ? t('cardNone') : t('cardClaim');
   }
 }
 
@@ -2205,10 +2216,10 @@ async function refreshCardsAfterRender(count, start) {
   // 全量汇总触发（缓存缺失/数量变化/每 4 轮重算），后台执行
   cardsAggTick++;
   if (!cardsAgg || cardsAgg.count !== count) {
-    DOM.cardsTotalAccrued.innerText = '计算中…';
-    DOM.cardsTotalClaimed.innerText = '计算中…';
-    DOM.cardsTotalPending.innerText = '计算中…';
-    DOM.myTotalPending.innerText = '计算中…';
+    DOM.cardsTotalAccrued.innerText = t('calc');
+    DOM.cardsTotalClaimed.innerText = t('calc');
+    DOM.cardsTotalPending.innerText = t('calc');
+    DOM.myTotalPending.innerText = t('calc');
   } else {
     applyCardsAgg(cardsAgg); // 有缓存：沿用缓存值，后台静默重算
   }
