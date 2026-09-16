@@ -117,21 +117,23 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 @keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 /* 数据胶囊随场景悬浮，与浮动卡牌同频呼吸 */
 /* ---------- 协议控制台：六项数据一条线 + 绑定 + 购买，整块玻璃浮岛长在动画场景内 ---------- */
-.console{position:relative;z-index:3;margin-top:30px;text-align:left;border:1px solid rgba(34,211,238,.22);border-radius:24px;background:linear-gradient(170deg,rgba(15,20,40,.55),rgba(8,11,22,.34));backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);box-shadow:0 26px 70px -30px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.1);overflow:hidden;animation:kpiIsland 9s ease-in-out infinite}
+.console{position:relative;z-index:3;margin-top:30px;text-align:left;border-radius:24px;border:1px solid transparent;background:linear-gradient(180deg,rgba(13,18,34,.58),rgba(7,10,20,.4)) padding-box,linear-gradient(135deg,rgba(34,211,238,.5),rgba(139,92,246,.4) 38%,rgba(245,193,76,.34) 72%,rgba(34,211,238,.45)) border-box;backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6);box-shadow:0 30px 80px -32px rgba(0,0,0,.9),0 0 70px rgba(34,211,238,.09),inset 0 1px 0 rgba(255,255,255,.09);overflow:hidden;animation:kpiIsland 9s ease-in-out infinite}
 @keyframes kpiIsland{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-.console::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.7),rgba(139,92,246,.7),rgba(245,193,76,.55),transparent);z-index:1}
-/* 六项核心数据：一条轻带，不发福不占高度 */
-.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:rgba(148,163,184,.16);border-bottom:1px solid rgba(148,163,184,.16)}
-.kpi-cell{position:relative;background:linear-gradient(180deg,rgba(26,34,64,.34),rgba(10,14,28,.18));padding:13px 10px 12px;text-align:center;overflow:hidden;transition:background .3s;animation:kpiCellFloat 7s ease-in-out infinite}
+/* 六项核心数据：透明轻带，只留细光线分隔与悬浮光晕，不叠盒子 */
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);padding:4px 10px 0}
+.kpi-cell{position:relative;background:transparent;padding:12px 10px 12px;text-align:center;overflow:hidden;animation:kpiCellFloat 7s ease-in-out infinite}
+.kpi-cell>*{position:relative;z-index:1}
+.kpi-cell:not(:last-child)::after{content:'';position:absolute;right:0;top:24%;height:52%;width:1px;background:linear-gradient(180deg,transparent,rgba(148,163,184,.28),transparent)}
+.kpi-cell::before{content:'';position:absolute;inset:4px 14px;border-radius:14px;background:radial-gradient(circle at 50% 18%,rgba(34,211,238,.16),rgba(139,92,246,.07) 55%,transparent 75%);opacity:0;transition:opacity .35s}
+@media (hover:hover){
+.kpi-cell:hover::before{opacity:1}
+}
 .kpi-cell:nth-child(2){animation-delay:-1.2s}
 .kpi-cell:nth-child(3){animation-delay:-2.4s}
 .kpi-cell:nth-child(4){animation-delay:-3.6s}
 .kpi-cell:nth-child(5){animation-delay:-4.8s}
 .kpi-cell:nth-child(6){animation-delay:-6s}
 @keyframes kpiCellFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@media (hover:hover){
-.kpi-cell:hover{background:rgba(34,211,238,.12);box-shadow:inset 0 0 24px rgba(34,211,238,.14)}
-}
 .kc-label{font-size:10px;font-weight:700;letter-spacing:1.6px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
 .kc-label::before{content:'';width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#8b5cf6);box-shadow:0 0 8px rgba(34,211,238,.8);flex-shrink:0}
 .kc-value{font-size:17px;font-weight:800;letter-spacing:.2px;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:7px;word-break:break-all}
@@ -139,16 +141,14 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .unit-char{font-size:.72em;font-weight:600;color:var(--gold);margin-left:5px;letter-spacing:.08em}
 .kc-sub{font-size:10px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kc-sub .u{color:var(--gold);font-weight:600}
-/* 上级绑定：一行轻便条，不占格子 */
-.bind-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid rgba(148,163,184,.16);background:rgba(9,12,24,.32)}
-.bind-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(34,211,238,.18),rgba(139,92,246,.18));border:1px solid rgba(34,211,238,.3);font-size:13px;flex-shrink:0}
-.bind-label{font-size:12.5px;font-weight:700;letter-spacing:1px;color:rgba(233,237,245,.8);white-space:nowrap}
-.bind-inline{display:flex;align-items:center;gap:10px;flex:1;min-width:280px}
-.bind-inline .input{flex:1;max-width:430px}
-.input-sm{padding:9px 15px;font-size:13px;border-radius:11px}
-.bind-once{font-size:10px;color:rgba(139,147,167,.6);letter-spacing:1px;white-space:nowrap}
-.bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:5px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
-.bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;flex:1;min-width:0}
+/* 上级绑定：标签提示形式，一行微提示，不占模块 */
+.bind-line{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 24px 2px}
+.bind-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);border:1px dashed rgba(34,211,238,.45);background:rgba(34,211,238,.07);padding:4px 13px;border-radius:99px;white-space:nowrap}
+.bind-inline{display:flex;align-items:center;gap:8px}
+.bind-inline .input{width:290px;max-width:60vw;padding:7px 15px;font-size:12.5px;border-radius:99px}
+.btn-xs{padding:7px 18px;font-size:12px;border-radius:99px}
+.bound-ok{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.1);padding:4px 12px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.bound-addr{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all;min-width:0}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
 .buy-stage{padding:18px 24px 20px;perspective:1400px;position:relative}
 .buy-card{position:relative;max-width:720px;margin:0 auto;border-radius:22px;border:1.5px solid transparent;padding:16px 22px 18px;background:linear-gradient(180deg,rgba(13,17,32,.94),rgba(8,11,22,.9)) padding-box,linear-gradient(125deg,rgba(245,193,76,.6),rgba(34,211,238,.42) 28%,rgba(139,92,246,.55) 58%,rgba(245,193,76,.32)) border-box;box-shadow:0 30px 70px -28px rgba(0,0,0,.9),0 0 44px rgba(34,211,238,.12),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden;transition:transform .4s cubic-bezier(.22,.8,.36,1),box-shadow .4s}
@@ -433,10 +433,9 @@ body{-webkit-tap-highlight-color:transparent}
 .kc-label{font-size:9px;letter-spacing:1.2px}
 .kc-value{font-size:15px;margin-top:6px}
 .kc-sub{font-size:9px;margin-top:3px}
-.bind-bar{gap:10px;padding:12px 14px}
-.bind-inline{flex-direction:column;align-items:stretch;gap:8px;min-width:0;flex:1 1 100%}
-.bind-inline .input{max-width:none}
-.bind-once{display:none}
+.bind-line{gap:8px;padding:10px 14px 2px}
+.bind-inline{flex-wrap:wrap;justify-content:center;gap:8px}
+.bind-inline .input{width:100%;max-width:280px}
 .buy-stage{padding:14px 12px 16px}
 .buy-card{padding:14px 13px 15px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
@@ -602,18 +601,16 @@ body{-webkit-tap-highlight-color:transparent}
             <div class="kc-sub">全卡实时合计</div>
           </div>
         </div>
-        <div class="bind-bar">
-          <span class="bind-ic">🔗</span>
-          <span class="bind-label">上级绑定</span>
+        <div class="bind-line">
+          <span class="bind-tag">🔗 上级绑定</span>
           <div id="bindArea" class="bind-inline">
-            <input type="text" id="referrerInput" class="input input-sm" placeholder="推荐人钱包地址 0x…">
-            <button id="bindBtn" class="btn btn-primary btn-sm">绑定</button>
+            <input type="text" id="referrerInput" class="input" placeholder="推荐人钱包地址 0x…">
+            <button id="bindBtn" class="btn btn-primary btn-xs">绑定</button>
           </div>
           <div id="boundArea" class="bind-inline" style="display:none">
             <span class="bound-ok">✓ 已绑定</span>
             <span class="bound-addr" id="myReferrerAddress">--</span>
           </div>
-          <span class="bind-once">一次绑定 · 永久生效</span>
         </div>
         <div class="buy-stage">
           <div class="buy-card">
