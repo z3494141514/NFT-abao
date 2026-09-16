@@ -868,7 +868,7 @@ async function loadAdminData() {
   DOM.adminPoolBlock.style.display = isPoolOwner ? '' : 'none';
   if (isPoolOwner) {
     const s = await poolC.getPoolStats();
-    DOM.adminPoolBalance.innerText = fmtAmt(s[0], usdtDecimals) + ' ' + usdtSymbol;
+    DOM.adminPoolBalance.innerText = fmtAmt(s[0], usdtDecimals) + ' U';
     DOM.adminPoolLiability.innerText = fmtCents(s[2]);
     let pendingTtt = '0';
     try {
@@ -877,7 +877,7 @@ async function loadAdminData() {
     } catch (e) { /* ignore */ }
     DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol;
     const excess = await poolC.excessTokens();
-    DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' ' + usdtSymbol;
+    DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' U';
     try {
       const st = await poolC.swapThreshold();
       DOM.adminSwapThreshold.innerText = fmtAmt(st, tokenDecimals) + ' ' + tokenSymbol;
