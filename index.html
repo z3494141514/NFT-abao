@@ -574,7 +574,7 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="wallet-pill" id="walletInfo" style="display:none">
         <span class="dot"></span>
         <span class="addr" id="walletAddressDisplay"></span>
-        <button class="icon-btn" id="disconnectBtn" title="断开钱包">
+        <button class="icon-btn" id="disconnectBtn" title="断开钱包" data-i18n-title="dcTitle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         </button>
       </div>
@@ -609,7 +609,7 @@ body{-webkit-tap-highlight-color:transparent}
       <p class="hero-sub" data-i18n="heroSub">每张卡牌 · 金本位分红 · 三倍出局</p>
       <div class="hero-chips">
         <span class="hero-chip"><span data-i18n="chipPreCards">预售卡牌</span> <b>200</b> <span data-i18n="unitCard">张</span></span>
-        <span class="hero-chip"><span data-i18n="chipAirdrop">预售空投</span> <b>40万</b> <span data-i18n="unitToken">枚</span></span>
+        <span class="hero-chip"><span data-i18n="chipAirdrop">预售空投</span> <b data-i18n="chipAirdropNum">40万</b> <span data-i18n="unitToken">枚</span></span>
       </div>
     </div>
 
@@ -1136,9 +1136,9 @@ const DOM = {
  * ============================================================ */
 const I18N = {
   zh: {
-    connect:'连接', brandTitle:'卡牌分红', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
+    connect:'连接', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
     heroBadge:'LIVE · 数据实时上链', heroTitle:'卡牌分红 ', heroSub:'每张卡牌 · 金本位分红 · 三倍出局',
-    chipPreCards:'预售卡牌', chipAirdrop:'预售空投', unitCard:'张', unitToken:'枚',
+    chipPreCards:'预售卡牌', chipAirdrop:'预售空投', chipAirdropNum:'40万', unitCard:'张', unitToken:'枚',
     kpiPool:'分红池', kpiActive:'有效卡牌', kpiMyCards:'我的卡牌', kpiBurned:'已销毁', kpiCirc:'流通量', kpiPending:'待领取分红',
     kpiSoul:'灵魂绑定 · 独立计息', kpiBurnedOf:'占总量', kpiBurnedOut:' · 永久出流通', kpiCap:'上限 1000 万 · 永不增发', kpiAllTotal:'全卡实时合计',
     bindTitle:'上级绑定', bindPh:'推荐人钱包地址 0x…', bindBtn:'绑定', boundOk:'✓ 已绑定',
@@ -1179,12 +1179,33 @@ const I18N = {
     toastPreOk:'预售成功！{n} 张卡牌已激活并开始累积分红 🎉', toastBuyOk:'购买成功！{n} 张卡牌已开始累积分红 🎉',
     toastClaimOk:'分红领取成功', toastNothing:'没有待领取的分红', toastClaimAll:'已领取 {n} 张卡牌的分红 🎉',
     toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试',
-    chainChecking:'检测中…', chainNoWallet:'未检测到钱包', chainNetErr:'网络错误，点击连接以切换', chainFail:'网络检测失败'
+    chainChecking:'检测中…', chainNoWallet:'未检测到钱包', chainNetErr:'网络错误，点击连接以切换', chainFail:'网络检测失败',
+    errReject:'您取消了交易', errFunds:'余额不足', errAllow:'授权额度不足，请重新授权后再试',
+    errAllow2:'授权额度不足（价格波动导致）：已自动放宽，请重新授权后再试', errTokLow:'代币余额不足',
+    errNotLaunched:'尚未开盘', errPreLimit:'开盘前名额已满（220 张）', errUsdtCfg:'预售收款币种未配置',
+    errProfitCfg:'利润钱包未配置', errReserve:'代币储备不足，请联系管理员充值', errPoolCfg:'分红池地址未配置（需先 updateCore）',
+    errBindFirst:'请先绑定上级', errBound:'已绑定过上级，不可更换', errSelf:'不能绑定自己',
+    errDownline:'不能绑定自己的下级为上级', errProtocol:'不能绑定协议合约地址为上级', errZeroRef:'请输入合法的上级地址',
+    errMaxCards:'有效卡牌已达 520 张上限', errNothing:'暂无待领取分红', errNotOwner:'您不是该卡牌的持有者',
+    errLaunched:'已开盘', errTradingOn:'交易已开启，预售已结束', errPairWl:'交易对尚未登记白名单，请稍后重试或联系管理员',
+    errCardExists:'卡牌已存在', errBuyBatch:'单笔最多购买 10 张卡牌', errClaimBatch:'单笔最多领取 100 张卡牌',
+    errBatch:'单笔数量过多（最多 50 张），已自动分批', errEmptyBatch:'没有可领取的卡牌', errLaunchLimit:'开盘 3 分钟内每个地址最多买入 50U 代币',
+    errPriceNReady:'实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）', errPairNo:'交易对尚未创建，价格暂不可用',
+    errLiq:'池子流动性低于门槛，价格暂不可读', errObs:'价格观测引导中，请稍后再试',
+    errZeroPrice:'价格异常为 0，请稍后再试', errPriceNotReady:'预言机价格未就绪，请稍后再试', errPriceNew:'预言机价格时间异常，请稍后再试',
+    errPriceRange:'预言机价格超出合理范围，请稍后再试', errQtyZero:'购买数量无效', errTradingNot:'预售加池未放行（预售伙伴未配置），请联系管理员',
+    errPriceHigh:'预言机价格过高，暂时无法购买', errPriceDev:'预言机价格偏差过大，请稍后再试', errPriceOld:'预言机价格已过期，请稍后再试',
+    errSoulbound:'卡牌不可转让/转赠（灵魂绑定）', errPaused:'合约已暂停，操作被拒绝', errCoreLocked:'核心配置已锁定，不可修改',
+    errNoCard:'卡牌不存在', errOracleSet:'预言机已设置；更换请使用「提议更换」（24 小时生效）', errNoPendingOracle:'没有待应用的预言机变更',
+    errOracleLock:'预言机变更时间锁未到期（24 小时）', errPoolLocked:'分红池地址已锁定（开盘后不可更换）',
+    errNoLiq:'交易对流动性不足，手续费兑换失败', errNoStranded:'没有可提取的滞留代币', errOnlyToken:'该操作仅限代币合约调用',
+    errGeneric:'交易执行失败，请重试', errTimeout:'交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果',
+    pageTitle:'卡牌分红 · NFT Dividend'
   },
   en: {
-    connect:'Connect', brandTitle:'CARD DIVIDEND', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
+    connect:'Connect', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
     heroBadge:'LIVE · ON-CHAIN DATA', heroTitle:'CARD DIVIDEND ', heroSub:'Every Card · Gold-Standard Dividends · 3× Exit',
-    chipPreCards:'Pre-sale Cards', chipAirdrop:'Pre-sale Airdrop', unitCard:'cards', unitToken:'tokens',
+    chipPreCards:'Pre-sale Cards', chipAirdrop:'Pre-sale Airdrop', chipAirdropNum:'400K', unitCard:'cards', unitToken:'tokens',
     kpiPool:'Dividend Pool', kpiActive:'Active Cards', kpiMyCards:'My Cards', kpiBurned:'Burned', kpiCirc:'Circulating', kpiPending:'Pending Rewards',
     kpiSoul:'Soulbound · Independent', kpiBurnedOf:'', kpiBurnedOut:' · out of circulation', kpiCap:'Cap 10M · never more', kpiAllTotal:'All cards total',
     bindTitle:'Referrer', bindPh:'Referrer wallet address 0x…', bindBtn:'Bind', boundOk:'✓ Bound',
@@ -1225,18 +1246,41 @@ const I18N = {
     toastPreOk:'Pre-sale success! {n} cards activated and earning 🎉', toastBuyOk:'Purchase success! {n} cards now earning 🎉',
     toastClaimOk:'dividend claimed', toastNothing:'Nothing to claim', toastClaimAll:'Claimed {n} cards\u2019 dividends 🎉',
     toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry',
-    chainChecking:'Checking…', chainNoWallet:'No wallet', chainNetErr:'Network error — tap to connect', chainFail:'Network check failed'
+    chainChecking:'Checking…', chainNoWallet:'No wallet', chainNetErr:'Network error — tap to connect', chainFail:'Network check failed',
+    errReject:'Transaction cancelled', errFunds:'Insufficient balance', errAllow:'Allowance too low — approve again',
+    errAllow2:'Allowance too low (price moved): widened automatically — approve again', errTokLow:'Insufficient tokens',
+    errNotLaunched:'Not launched yet', errPreLimit:'Pre-sale quota full (220 cards)', errUsdtCfg:'USDT not configured',
+    errProfitCfg:'Profit wallet not configured', errReserve:'Token reserve low — contact admin', errPoolCfg:'Pool address not set (run updateCore first)',
+    errBindFirst:'Bind a referrer first', errBound:'Referrer already bound — cannot change', errSelf:'Cannot bind yourself',
+    errDownline:'Cannot bind your own downline', errProtocol:'Cannot bind protocol contracts', errZeroRef:'Enter a valid referrer address',
+    errMaxCards:'Active cards reached the 520 cap', errNothing:'Nothing to claim', errNotOwner:'You are not the card owner',
+    errLaunched:'Already launched', errTradingOn:'Trading enabled — pre-sale ended', errPairWl:'Pair not whitelisted — retry later or contact admin',
+    errCardExists:'Card already exists', errBuyBatch:'Max 10 cards per purchase', errClaimBatch:'Max 100 cards per claim',
+    errBatch:'Batch too large (max 50) — split automatically', errEmptyBatch:'No claimable cards', errLaunchLimit:'Max 50U tokens per address in the first 3 minutes',
+    errPriceNReady:'Live price read failed: no liquidity / observations not ready (retry later)', errPairNo:'Pair not created — price unavailable',
+    errLiq:'Liquidity below threshold — price unreadable', errObs:'Price observations bootstrapping — retry later',
+    errZeroPrice:'Price is zero — retry later', errPriceNotReady:'Oracle price not ready — retry later', errPriceNew:'Oracle price timestamp invalid — retry later',
+    errPriceRange:'Oracle price out of range — retry later', errQtyZero:'Invalid quantity', errTradingNot:'Pre-sale LP not released (partner not configured) — contact admin',
+    errPriceHigh:'Oracle price too high — cannot buy now', errPriceDev:'Oracle price deviation too large — retry later', errPriceOld:'Oracle price expired — retry later',
+    errSoulbound:'Card is soulbound — cannot transfer', errPaused:'Contract paused', errCoreLocked:'Core config locked',
+    errNoCard:'Card not found', errOracleSet:'Oracle set — use \u201cPropose Change\u201d (24h lock)', errNoPendingOracle:'No pending oracle change',
+    errOracleLock:'Oracle timelock not expired (24h)', errPoolLocked:'Pool address locked after launch',
+    errNoLiq:'Insufficient pair liquidity — fee conversion failed', errNoStranded:'No stranded tokens to withdraw', errOnlyToken:'Token contract only',
+    errGeneric:'Transaction failed — retry', errTimeout:'Confirmation timeout: the tx may still be processing — refresh the page shortly',
+    pageTitle:'CARD DIVIDEND · NFT Dividend'
   }
 };
 let LANG = (localStorage.getItem('lang') === 'en') ? 'en' : 'zh';
 const t = (k) => (I18N[LANG] && I18N[LANG][k] != null) ? I18N[LANG][k] : (I18N.zh[k] != null ? I18N.zh[k] : k);
 function applyLang() {
   document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+  document.title = t('pageTitle');
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   const r = document.querySelector('.lang-radio[value="' + LANG + '"]');
   if (r) r.checked = true;
-  if (userAddress) loadAll(); // 动态文案随语言刷新
+  if (userAddress) { loadAll(); loadSlowData(); } // 动态文案随语言刷新（含「枚」等 JS 渲染单位）
 }
 
 /* ============================================================
@@ -1319,60 +1363,33 @@ const fmtTime = (ts) => {
 const shortAddr = (a) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '--';
 const parseError = (e) => {
   const m = ((e && (e.reason || e.message || e.errorName)) || '').toLowerCase();
-  if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
-  if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
-  if (m.includes('insufficient allowance')) return '授权额度不足，请重新授权后再试';
-  if (m.includes('erc20insufficientallowance')) return '授权额度不足（价格波动导致）：已自动放宽，请重新授权后再试';
-  if (m.includes('erc20insufficientbalance')) return '代币余额不足';
-  if (m.includes('not launched')) return '尚未开盘';
-  if (m.includes('pre-launch limit reached')) return '开盘前名额已满（220 张）';
-  if (m.includes('usdt not configured')) return '预售收款币种未配置';
-  if (m.includes('profit wallet not configured')) return '利润钱包未配置';
-  if (m.includes('token reserve insufficient')) return '代币储备不足，请联系管理员充值';
-  if (m.includes('pool not configured')) return '分红池地址未配置（需先 updateCore）';
-  if (m.includes('bind referrer first') || m.includes('请先绑定')) return '请先绑定上级';
-  if (m.includes('referrer already bound') || m.includes('已绑定')) return '已绑定过上级，不可更换';
-  if (m.includes('cannot bind self')) return '不能绑定自己';
-  if (m.includes('cannot bind downline')) return '不能绑定自己的下级为上级';
-  if (m.includes('cannot bind protocol')) return '不能绑定协议合约地址为上级';
-  if (m.includes('zero referrer')) return '请输入合法的上级地址';
-  if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
-  if (m.includes('nothing to claim')) return '暂无待领取分红';
-  if (m.includes('not card owner')) return '您不是该卡牌的持有者';
-  if (m.includes('already launched')) return '已开盘';
-  if (m.includes('trading already enabled')) return '交易已开启，预售已结束';
-  if (m.includes('pair not whitelisted')) return '交易对尚未登记白名单，请稍后重试或联系管理员';
-  if (m.includes('card already exists')) return '卡牌已存在';
-  if (m.includes('buy batch too large')) return '单笔最多购买 10 张卡牌';
-  if (m.includes('claim batch too large')) return '单笔最多领取 100 张卡牌';
-  if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
-  if (m.includes('empty batch')) return '没有可领取的卡牌';
-  if (m.includes('launch buy limit')) return '开盘 3 分钟内每个地址最多买入 50U 代币';
-  if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）';
-  if (m.includes('pair not created')) return '交易对尚未创建，价格暂不可用';
-  if (m.includes('liquidity too low')) return '池子流动性低于门槛，价格暂不可读';
-  if (m.includes('no observations') || m.includes('observations too young') || m.includes('no time elapsed')) return '价格观测引导中，请稍后再试';
-  if (m.includes('zero price')) return '价格异常为 0，请稍后再试';
-  if (m.includes('price not ready')) return '预言机价格未就绪，请稍后再试';
-  if (m.includes('price too new')) return '预言机价格时间异常，请稍后再试';
-  if (m.includes('price out of range')) return '预言机价格超出合理范围，请稍后再试';
-  if (m.includes('quantity zero')) return '购买数量无效';
-  if (m.includes('tradingnotenabled')) return '预售加池未放行（预售伙伴未配置），请联系管理员';
-  if (m.includes('price too high')) return '预言机价格过高，暂时无法购买';
-  if (m.includes('price deviation too high')) return '预言机价格偏差过大，请稍后再试';
-  if (m.includes('price too old')) return '预言机价格已过期，请稍后再试';
-  if (m.includes('soulbound')) return '卡牌不可转让/转赠（灵魂绑定）';
-  if (m.includes('paused')) return '合约已暂停，操作被拒绝';
-  if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
-  if (m.includes('card not found')) return '卡牌不存在';
-  if (m.includes('oracle already set')) return '预言机已设置；更换请使用「提议更换」（24 小时生效）';
-  if (m.includes('no pending oracle')) return '没有待应用的预言机变更';
-  if (m.includes('oracle timelock')) return '预言机变更时间锁未到期（24 小时）';
-  if (m.includes('dividend pool locked')) return '分红池地址已锁定（开盘后不可更换）';
-  if (m.includes('no liquidity')) return '交易对流动性不足，手续费兑换失败';
-  if (m.includes('no stranded tokens')) return '没有可提取的滞留代币';
-  if (m.includes('only token contract')) return '该操作仅限代币合约调用';
-  return (e && (e.reason || e.message)) || '交易执行失败，请重试';
+  const R = [
+    ['user rejected', 'errReject'], ['user denied', 'errReject'],
+    ['insufficient funds', 'errFunds'], ['exceeds balance', 'errFunds'], ['insufficient balance', 'errFunds'],
+    ['insufficient allowance', 'errAllow'], ['erc20insufficientallowance', 'errAllow2'],
+    ['erc20insufficientbalance', 'errTokLow'], ['not launched', 'errNotLaunched'],
+    ['pre-launch limit reached', 'errPreLimit'], ['usdt not configured', 'errUsdtCfg'],
+    ['profit wallet not configured', 'errProfitCfg'], ['token reserve insufficient', 'errReserve'],
+    ['pool not configured', 'errPoolCfg'], ['bind referrer first', 'errBindFirst'], ['请先绑定', 'errBindFirst'],
+    ['referrer already bound', 'errBound'], ['已绑定', 'errBound'], ['cannot bind self', 'errSelf'],
+    ['cannot bind downline', 'errDownline'], ['cannot bind protocol', 'errProtocol'], ['zero referrer', 'errZeroRef'],
+    ['max active cards', 'errMaxCards'], ['nothing to claim', 'errNothing'], ['not card owner', 'errNotOwner'],
+    ['already launched', 'errLaunched'], ['trading already enabled', 'errTradingOn'],
+    ['pair not whitelisted', 'errPairWl'], ['card already exists', 'errCardExists'],
+    ['buy batch too large', 'errBuyBatch'], ['claim batch too large', 'errClaimBatch'], ['batch too large', 'errBatch'],
+    ['empty batch', 'errEmptyBatch'], ['launch buy limit', 'errLaunchLimit'], ['launch price not ready', 'errPriceNReady'],
+    ['pair not created', 'errPairNo'], ['liquidity too low', 'errLiq'],
+    ['no observations', 'errObs'], ['observations too young', 'errObs'], ['no time elapsed', 'errObs'],
+    ['zero price', 'errZeroPrice'], ['price not ready', 'errPriceNotReady'], ['price too new', 'errPriceNew'],
+    ['price out of range', 'errPriceRange'], ['quantity zero', 'errQtyZero'], ['tradingnotenabled', 'errTradingNot'],
+    ['price too high', 'errPriceHigh'], ['price deviation too high', 'errPriceDev'], ['price too old', 'errPriceOld'],
+    ['soulbound', 'errSoulbound'], ['paused', 'errPaused'], ['core locked', 'errCoreLocked'], ['core already locked', 'errCoreLocked'],
+    ['card not found', 'errNoCard'], ['oracle already set', 'errOracleSet'], ['no pending oracle', 'errNoPendingOracle'],
+    ['oracle timelock', 'errOracleLock'], ['dividend pool locked', 'errPoolLocked'], ['no liquidity', 'errNoLiq'],
+    ['no stranded tokens', 'errNoStranded'], ['only token contract', 'errOnlyToken']
+  ];
+  for (const [needle, key] of R) { if (m.includes(needle)) return t(key); }
+  return (e && (e.reason || e.message)) || t('errGeneric');
 };
 const showLoading = () => DOM.globalLoader.classList.add('active');
 const hideLoading = () => DOM.globalLoader.classList.remove('active');
@@ -2253,7 +2270,7 @@ async function waitForTx(tx, timeoutMs = 180000) {
     }
     await new Promise(res => setTimeout(res, 2500));
   }
-  throw new Error('交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果');
+  throw new Error(t('errTimeout'));
 }
 
 async function doBindReferrer(ref) {
