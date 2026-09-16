@@ -128,6 +128,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
   <div class="page">
     <div class="empty-tip" id="adminEmpty">连接管理员钱包后显示管理面板</div>
     <div id="adminPanels" style="display:none">
+      <div id="adminSelfCheckWarn" style="display:none;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.7"></div>
       <div class="admin-grid">
         <div class="admin-grid-item" id="adminSaleBlock" style="display:none">
           <div class="admin-title">销售合约</div>
@@ -163,6 +164,10 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="mt12"><input type="text" id="adminUpdateCorePool" class="input" placeholder="分红池地址"></div>
           <div class="mt12"><input type="text" id="adminUpdateCoreOracle" class="input" placeholder="预言机地址"></div>
           <button id="adminUpdateCoreBtn" class="btn btn-primary btn-sm mt12">更新核心配置</button>
+          <div class="admin-title mt16">卡价预言机（开盘后更换 · 24h 时间锁）</div>
+          <div class="mt12"><input type="text" id="adminSaleProposeOracleInput" class="input" placeholder="新卡价预言机地址">
+            <div class="flex mt8"><button id="adminSaleProposeOracleBtn" class="btn btn-ghost btn-sm">提议更换</button><button id="adminSaleApplyOracleBtn" class="btn btn-ghost btn-sm">应用变更</button></div>
+          </div>
         </div>
 
         <div class="admin-grid-item" id="adminTokenBlock" style="display:none">
@@ -198,6 +203,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
           <div class="data-row"><span class="data-label" id="adminPoolPendingLabel">待兑换</span><span class="data-value" id="adminPoolPending"></span></div>
           <div class="data-row"><span class="data-label">自动兑换阈值</span><span class="data-value" id="adminSwapThreshold"></span></div>
+          <div class="data-row"><span class="data-label">最低兑换价</span><span class="data-value" id="adminMinSwapPriceDisplay">--</span></div>
           <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
           <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
           <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
@@ -215,6 +221,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
           <div class="mt12"><input type="number" min="1" id="adminReleaseBurnedInput" class="input" placeholder="tokenId 释放已销毁卡牌负债"><button id="adminReleaseBurnedBtn" class="btn btn-ghost btn-sm mt8">释放负债</button></div>
           <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
+          <div class="mt12"><input type="text" id="adminMinSwapPriceInput" class="input" placeholder="最低兑换价（U/枚，默认 0.01；0 = 关闭下限）"><button id="adminSetMinSwapPriceBtn" class="btn btn-primary btn-sm mt8">设置最低兑换价</button></div>
           <div class="mt12"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm">提取滞留 TTT</button></div>
           <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
           <div class="mt12"><input type="text" id="adminPoolCoreToken" class="input" placeholder="代币地址"></div>
@@ -270,12 +277,16 @@ const CONFIG = {
     'https://bsc-dataseed4.binance.org/'
   ],
   rpcUrl: 'https://bsc-dataseed1.defibit.io/',
+  // 链上常量（自检用）：Pancake V2 路由 / BSC USDT
+  router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+  usdt:   '0x55d398326f99059fF775485246999027B3197955',
   contracts: {
-    token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // OfficialToken 主网（已重部署 ✅）
-    nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // OfficialNFT 主网（已重部署 ✅）
-    sale:   '0xA3588A5d7966b59fAe62bCC4e172F16979aB2ff4', // OfficialNFTSale 主网（已重部署 ✅）
-    pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // CardDividendPool 主网（已重部署 ✅）
-    oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // PriceOracle TWAP 主网（已重部署 ✅）
+    // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
+    token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // TODO: 替换为新 OfficialToken
+    nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // TODO: 替换为新 OfficialNFT
+    sale:   '0xA3588A5d7966b59fAe62bCC4e172F16979aB2ff4', // TODO: 替换为新 OfficialNFTSale
+    pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // TODO: 替换为新 CardDividendPool
+    oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // TODO: 替换为新 PriceOracle
   },
   refreshInterval: 10000
 };
@@ -291,6 +302,7 @@ const ABIS = {
     'function decimals() view returns (uint8)',
     'function symbol() view returns (string)',
     'function dividendPool() view returns (address)',
+    'function oracle() view returns (address)',
     'function setDividendPool(address pool)',
     'function tradingEnabled() view returns (bool)',
     'function enableTrading()',
@@ -298,6 +310,23 @@ const ABIS = {
     'function launchTime() view returns (uint256)',
     'function launchWindowActive() view returns (bool)',
     'function launchWindowRemaining() view returns (uint256)',
+    // 自定义错误声明：让 ethers 解码 revert，parseError 才能匹配到具体原因
+    'error TradingAlreadyEnabled()',
+    'error TimelockNotExpired()',
+    'error DividendPoolNotSet()',
+    'error DividendPoolLocked()',
+    'error OracleNotSet()',
+    'error OracleAlreadySet()',
+    'error OracleTimelockNotExpired()',
+    'error NoPendingOracle()',
+    'error LaunchPriceNotReady()',
+    'error LaunchBuyLimitExceeded()',
+    'error LastAdminRenounceNotAllowed()',
+    'error ZeroAddressNotAllowed()',
+    'error LpPairAlreadyAdded()',
+    'error LpPairNotAdded()',
+    'error PrimaryLpPairCannotBeRemoved()',
+    'error LpPairLocked()',
     'function oracle() view returns (address)',
     'function setOracle(address)',
     'function proposeOracle(address)',
@@ -331,13 +360,21 @@ const ABIS = {
     'function usdt() view returns (address)',
     'function profitWallet() view returns (address)',
     'function router() view returns (address)',
+    'function token() view returns (address)',
+    'function nft() view returns (address)',
+    'function pool() view returns (address)',
+    'function oracle() view returns (address)',
     'function adminMintedCount() view returns (uint256)',
     'function preLaunchPurchaseCount() view returns (uint256)',
     'function totalBonusCardsMinted() view returns (uint256)',
     'function preLaunchRemaining() view returns (uint256)',
     'function setPreLaunchConfig(address, address)',
     'function withdrawStrandedUsdt(address)',
-    'function withdrawTokenReserve(address)'
+    'function withdrawTokenReserve(address)',
+    'function proposeOracle(address)',
+    'function applyOracle()',
+    'function pendingOracle() view returns (address)',
+    'function oracleChangeTime() view returns (uint256)'
   ],
   pool: [
     'function activeCardCount() view returns (uint256)',
@@ -355,10 +392,16 @@ const ABIS = {
     'function lockCore()',
     'function usdt() view returns (address)',
     'function pendingSwapTokens() view returns (uint256)',
+    'function sale() view returns (address)',
+    'function token() view returns (address)',
+    'function nft() view returns (address)',
+    'function router() view returns (address)',
     'function swapFeesToUsdt()',
     'function withdrawStrandedTokens(address)',
     'function swapThreshold() view returns (uint256)',
     'function setSwapThreshold(uint256)',
+    'function minSwapPrice() view returns (uint256)',
+    'function setMinSwapPrice(uint256)',
     'function updateCore(address, address, address, address, address)'
   ],
   oracle: [
@@ -384,7 +427,7 @@ const DOM = {
   globalLoader: $('globalLoader'),
   connectBtn: $('connectBtn'), walletInfo: $('walletInfo'),
   walletAddressDisplay: $('walletAddressDisplay'), disconnectBtn: $('disconnectBtn'),
-  adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'),
+  adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'), adminSelfCheckWarn: $('adminSelfCheckWarn'),
   adminSaleBlock: $('adminSaleBlock'), adminLaunched: $('adminLaunched'), adminPaused: $('adminPaused'), adminActiveCards: $('adminActiveCards'),
   adminSaleCoreLocked: $('adminSaleCoreLocked'), adminSaleLockCoreBtn: $('adminSaleLockCoreBtn'),
   adminLaunchBtn: $('adminLaunchBtn'), adminPauseBtn: $('adminPauseBtn'), adminUnpauseBtn: $('adminUnpauseBtn'),
@@ -397,6 +440,8 @@ const DOM = {
   adminUpdateCoreToken: $('adminUpdateCoreToken'), adminUpdateCoreRouter: $('adminUpdateCoreRouter'),
   adminUpdateCoreNft: $('adminUpdateCoreNft'), adminUpdateCorePool: $('adminUpdateCorePool'),
   adminUpdateCoreOracle: $('adminUpdateCoreOracle'), adminUpdateCoreBtn: $('adminUpdateCoreBtn'),
+  adminSaleProposeOracleInput: $('adminSaleProposeOracleInput'),
+  adminSaleProposeOracleBtn: $('adminSaleProposeOracleBtn'), adminSaleApplyOracleBtn: $('adminSaleApplyOracleBtn'),
   adminOracleBlock: $('adminOracleBlock'), adminOraclePrice: $('adminOraclePrice'),
   adminOracleObs: $('adminOracleObs'), adminOracleMinLiq: $('adminOracleMinLiq'), adminOracleTax: $('adminOracleTax'),
   adminOracleLocked: $('adminOracleLocked'),
@@ -406,6 +451,8 @@ const DOM = {
   adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolPendingLabel: $('adminPoolPendingLabel'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
   adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'),
   adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
+  adminMinSwapPriceInput: $('adminMinSwapPriceInput'), adminSetMinSwapPriceBtn: $('adminSetMinSwapPriceBtn'),
+  adminMinSwapPriceDisplay: $('adminMinSwapPriceDisplay'),
   adminPoolCoreToken: $('adminPoolCoreToken'), adminPoolCoreUsdt: $('adminPoolCoreUsdt'), adminPoolCoreRouter: $('adminPoolCoreRouter'),
   adminPoolCoreNft: $('adminPoolCoreNft'), adminPoolCoreSale: $('adminPoolCoreSale'), adminPoolCoreBtn: $('adminPoolCoreBtn'),
   adminPoolPaused: $('adminPoolPaused'), adminPoolPauseBtn: $('adminPoolPauseBtn'), adminPoolUnpauseBtn: $('adminPoolUnpauseBtn'),
@@ -475,11 +522,19 @@ const fmtTime = (ts) => {
 };
 const shortAddr = (a) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '--';
 const parseError = (e) => {
-  const m = ((e && (e.reason || e.message)) || '').toLowerCase();
+  const m = ((e && (e.reason || e.message || e.errorName)) || '').toLowerCase();
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
+  if (m.includes('insufficient allowance')) return '授权额度不足，请重新授权后再试';
   if (m.includes('already launched')) return '已开盘';
+  if (m.includes('trading already enabled')) return '交易已开启，预售已结束（此操作不可执行）';
+  if (m.includes('pair not whitelisted')) return '交易对尚未登记白名单（需先 setLpPair/addLpPair）';
+  if (m.includes('usdt locked')) return 'USDT 已配置并永久冻结，不可更换';
+  if (m.includes('price below twap')) return '兑换价低于 5 分钟均价 97%，已暂缓（价格回稳后自动恢复）';
   if (m.includes('not launched')) return '尚未开盘';
+  if (m.includes('trading not enabled')) return '代币交易尚未开启（请先执行「开启交易」再开盘）';
+  if (m.includes('oracle timelock')) return '卡价预言机变更时间锁未到期（24 小时）';
+  if (m.includes('no pending oracle')) return '没有待应用的卡价预言机变更';
   if (m.includes('zero usdt') || m.includes('usdt not configured')) return 'USDT 地址未配置';
   if (m.includes('zero profit wallet') || m.includes('profit wallet not configured')) return '利润钱包地址未配置';
   if (m.includes('token reserve insufficient')) return `${tokenSymbol} 储备不足，请先向销售合约转入代币`;
@@ -487,6 +542,9 @@ const parseError = (e) => {
   if (m.includes('max active cards')) return '有效卡牌已达 520 张上限';
   if (m.includes('batch too large')) return '单笔数量过多（最多 50 张），已自动分批';
   if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/未建立/观测点未就绪';
+  if (m.includes('price too high')) return '预言机价格过高，暂时无法操作';
+  if (m.includes('price deviation too high')) return '预言机价格偏差过大，请稍后再试';
+  if (m.includes('price too old')) return '预言机价格已过期，请稍后再试';
   if (m.includes('poke too soon')) return '观测点间隔需 ≥2.5 分钟';
   if (m.includes('no observations')) return '尚未记录价格观测点（请点「记录价格观测点」初始化）';
   if (m.includes('observations too young')) return '观测历史不足 5 分钟，请再多点几次「记录价格观测点」（间隔 ≥2.5 分钟）';
@@ -494,6 +552,22 @@ const parseError = (e) => {
   if (m.includes('pair not created')) return '交易对尚未创建（需先完成一笔预售购买）';
   if (m.includes('zero price')) return '实时价异常为 0，请稍后再试';
   if (m.includes('liquidity too low')) return '池子流动性低于门槛，价格拒读';
+  if (m.includes('price too low')) return '兑换价低于下限，积压保留待价格恢复';
+  if (m.includes('threshold out of range')) return '兑换阈值需在 1 ~ 100000 枚之间';
+  if (m.includes('cards exist')) return '已有卡牌在册，禁止更换 USDT/NFT/销售合约';
+  if (m.includes('last admin')) return '最后一名管理员不可弃权';
+  // token 侧自定义错误名（errorName 无空格，camelCase → 小写后匹配）
+  if (m.includes('tradingalreadyenabled')) return '交易已开启，不可重复执行';
+  if (m.includes('timelocknotexpired')) return 'LP 时间锁未到期（设置主 LP 后需等 1 小时）';
+  if (m.includes('dividendpoolnotset')) return '分红池地址未配置（需先「设置分红池」）';
+  if (m.includes('dividendpoollocked')) return '分红池地址已锁定（开盘后不可更换）';
+  if (m.includes('oraclenotset')) return '预言机未设置（需先「设置预言机」）';
+  if (m.includes('oraclealreadyset')) return '预言机已设置；更换请使用「提议更换」（24 小时生效）';
+  if (m.includes('oracletimelocknotexpired')) return '预言机变更时间锁未到期（24 小时）';
+  if (m.includes('nopendingoracle')) return '没有待应用的预言机变更';
+  if (m.includes('launchpricenotready')) return '开盘限购价格未就绪（交易对无流动性/观测点未就绪）';
+  if (m.includes('launchbuylimitexceeded')) return '超过开盘窗口 50U 限购';
+  if (m.includes('lastadminrenouncenotallowed')) return '最后一名管理员不可弃权';
   if (m.includes('timelock not expired')) return 'LP 时间锁未到期（设置主 LP 后需等 1 小时）';
   if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
   if (m.includes('card not found')) return '卡牌不存在';
@@ -741,7 +815,11 @@ async function loadAdminData() {
     DOM.adminPaused.innerText = paused ? '✅ 已暂停' : '❌ 运行中';
     DOM.adminActiveCards.innerText = `${active.toString()} / 520`;
     DOM.adminSaleCoreLocked.innerText = saleCoreLocked ? '🔒 已锁定' : '🔓 未锁定';
-    DOM.adminLaunchBtn.disabled = launched;
+    // 开盘前置：代币交易必须已开启（新合约 launch 强校验），未开启时禁用按钮并提示
+    let trading = false;
+    try { trading = await tokenC.tradingEnabled(); } catch (e) { /* 读不到按未开启处理 */ }
+    DOM.adminLaunchBtn.disabled = launched || !trading;
+    DOM.adminLaunchBtn.title = !trading ? '请先在「代币」区块执行「开启交易」' : '';
     DOM.adminSaleLockCoreBtn.disabled = saleCoreLocked;
     // 预售配置（开盘前）
     try {
@@ -804,6 +882,10 @@ async function loadAdminData() {
       const st = await poolC.swapThreshold();
       DOM.adminSwapThreshold.innerText = fmtAmt(st, tokenDecimals) + ' ' + tokenSymbol;
     } catch (e) { /* ignore */ }
+    try {
+      const mp = await poolC.minSwapPrice();
+      DOM.adminMinSwapPriceDisplay.innerText = mp.isZero() ? '已关闭（无下限）' : (Number(mp) / 1e8).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U/枚';
+    } catch (e) { DOM.adminMinSwapPriceDisplay.innerText = '--'; }
     const poolPaused = await poolC.paused();
     DOM.adminPoolPaused.innerText = poolPaused ? '⏸ 已暂停（禁止领取）' : '▶ 运行中';
     DOM.adminPoolPauseBtn.disabled = poolPaused;
@@ -844,10 +926,90 @@ async function loadAdminData() {
       DOM.adminLaunchWindow.innerText = trading ? '✅ 已结束（常规税率 3%/3% · 不限购）' : '-- 未开盘';
     }
   }
+
+  // CONFIG ↔ 链上关系交叉自检（防地址配置错误导致误授权/误操作）
+  runConfigSelfCheck();
 }
 
 function parseAddressList(text) {
   return text.split(/[\s,;，；]+/).map(s => s.trim()).filter(s => s.length > 0);
+}
+
+/* CONFIG ↔ 链上关系交叉自检：防地址配置错误导致误授权/误操作。
+   核心关系错配（issues）→ 顶部红条 + 禁用高危配置按钮；
+   允许合法变更的关系（warnings，如开盘后更换卡价预言机）→ 仅提示不禁用。 */
+async function runConfigSelfCheck() {
+  const eq = (a, b) => a && b && a.toLowerCase() === b.toLowerCase();
+  const issues = [];
+  const warnings = [];
+  let minterMissing = false;
+  try {
+    const dp = await tokenC.dividendPool();
+    if (!eq(dp, CONFIG.contracts.pool)) issues.push('代币的分红池 ≠ CONFIG.pool');
+  } catch (e) { issues.push('读不到代币分红池（token 地址可能有误）'); }
+  try {
+    if (!eq(await saleC.token(), CONFIG.contracts.token)) issues.push('销售合约的 token ≠ CONFIG.token');
+    if (!eq(await saleC.nft(), CONFIG.contracts.nft)) issues.push('销售合约的 nft ≠ CONFIG.nft');
+    if (!eq(await saleC.pool(), CONFIG.contracts.pool)) issues.push('销售合约的 pool ≠ CONFIG.pool');
+    if (!eq(await saleC.router(), CONFIG.router)) issues.push('销售合约的 router ≠ Pancake 路由');
+    if (!eq(await saleC.usdt(), CONFIG.usdt)) issues.push('销售合约的 usdt ≠ BSC USDT');
+    if (!eq(await saleC.oracle(), CONFIG.contracts.oracle)) {
+      // 开盘后卡价预言机可合法更换：仅提示，不禁用按钮
+      warnings.push('销售合约的卡价预言机 ≠ CONFIG.oracle（若经后台「卡价预言机」按钮更换属正常）');
+    }
+  } catch (e) { issues.push('读不到销售合约核心配置（sale 地址可能有误）'); }
+  try {
+    const lpPartner = await tokenC.launchPartner();
+    if (!eq(lpPartner, CONFIG.contracts.sale)) issues.push('代币的预售伙伴 ≠ CONFIG.sale（预售加池将被 TradingNotEnabled 回滚）');
+  } catch (e) { issues.push('读不到代币预售伙伴'); }
+  try {
+    const ml = await oracleC.minLiquidityWei();
+    if (ml.isZero()) warnings.push('预言机流动性门槛未设置（launch 将回滚「min liquidity not set」）');
+  } catch (e) { /* 读不到不阻断 */ }
+  try {
+    if (!eq(await poolC.sale(), CONFIG.contracts.sale)) issues.push('分红池的 sale ≠ CONFIG.sale');
+    if (!eq(await poolC.token(), CONFIG.contracts.token)) issues.push('分红池的 token ≠ CONFIG.token');
+    if (!eq(await poolC.nft(), CONFIG.contracts.nft)) issues.push('分红池的 nft ≠ CONFIG.nft');
+    if (!eq(await poolC.router(), CONFIG.router)) issues.push('分红池的 router ≠ Pancake 路由');
+    if (!eq(await poolC.usdt(), CONFIG.usdt)) issues.push('分红池的 usdt ≠ BSC USDT');
+  } catch (e) { issues.push('读不到分红池核心配置（pool 地址可能有误）'); }
+  try {
+    if (!eq(await tokenC.oracle(), CONFIG.contracts.oracle)) {
+      warnings.push('代币的限购预言机 ≠ CONFIG.oracle（若经 24h 时间锁更换属正常）');
+    }
+  } catch (e) { /* 读不到 oracle 不阻断 */ }
+  try {
+    if (!eq(await oracleC.token(), CONFIG.contracts.token)) issues.push('预言机的 token ≠ CONFIG.token');
+    if (!eq(await oracleC.router(), CONFIG.router)) issues.push('预言机的 router ≠ Pancake 路由');
+  } catch (e) { issues.push('读不到预言机配置（oracle 地址可能有误）'); }
+  try {
+    const role = await nftC.MINTER_ROLE();
+    const has = await nftC.hasRole(role, CONFIG.contracts.sale);
+    if (!has) minterMissing = true;
+  } catch (e) { issues.push('读不到 NFT 铸币权（nft 地址可能有误）'); }
+
+  const warnEl = DOM.adminSelfCheckWarn;
+  const all = issues.slice();
+  if (minterMissing) warnings.push('销售合约尚未持有 NFT 铸币权（请在「NFT 区块」点「授予铸币权」）');
+  if (issues.length > 0 || warnings.length > 0) {
+    warnEl.style.display = '';
+    warnEl.innerText = '⚠️ 配置自检：' + (issues.length > 0 ? issues.join('；') : warnings.join('；'))
+      + (issues.length > 0 && warnings.length > 0 ? '；提示：' + warnings.join('；') : '');
+    // 只有核心关系错配才禁用高危按钮；缺铸币权/预言机变更仅提示（授予/更换本身就是修复动作）
+    const dangerBtns = ['adminGrantMinterBtn', 'adminUpdateCoreBtn', 'adminPoolCoreBtn',
+      'adminEnableTradingBtn', 'adminSetLpPairBtn', 'adminSetLaunchPartnerBtn'];
+    dangerBtns.forEach(id => {
+      const b = $(id);
+      if (b) b.disabled = issues.length > 0; // 无错配时恢复（消除单向闩锁）
+    });
+  } else {
+    warnEl.style.display = 'none';
+    ['adminGrantMinterBtn', 'adminUpdateCoreBtn', 'adminPoolCoreBtn',
+     'adminEnableTradingBtn', 'adminSetLpPairBtn', 'adminSetLaunchPartnerBtn'].forEach(id => {
+      const b = $(id);
+      if (b) b.disabled = false;
+    });
+  }
 }
 
 /* 交易确认竞速：广播后按「钱包节点 → 公共节点轮换」轮询回执（2.5 秒一次）。
@@ -885,6 +1047,7 @@ async function adminLaunch() {
 }
 
 async function adminPauseToggle(pause) {
+  if (!confirm(pause ? '确认暂停销售合约？（暂停后购买/预分发全部回滚）' : '确认恢复销售合约？')) return;
   showLoading();
   try {
     const tx = pause ? await saleC.connect(signer).pause() : await saleC.connect(signer).unpause();
@@ -989,6 +1152,31 @@ async function adminUpdateCore() {
     const tx = await saleC.connect(signer).updateCore(token, router, nft, pool, oracle);
     await waitForTx(tx);
     showToast('核心配置已更新', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSaleProposeOracle() {
+  const a = DOM.adminSaleProposeOracleInput.value.trim();
+  if (!ethers.utils.isAddress(a)) { showToast('请输入合法的新卡价预言机地址', 'error'); return; }
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).proposeOracle(a);
+    await waitForTx(tx);
+    showToast('已提议更换卡价预言机（24 小时后可应用）', 'success');
+    DOM.adminSaleProposeOracleInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSaleApplyOracle() {
+  showLoading();
+  try {
+    const tx = await saleC.connect(signer).applyOracle();
+    await waitForTx(tx);
+    showToast('卡价预言机变更已应用', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1108,6 +1296,7 @@ async function adminPoolUpdateCore() {  const token = DOM.adminPoolCoreToken.val
 }
 
 async function adminPoolPauseToggle(pause) {
+  if (!confirm(pause ? '确认暂停分红池领取？（分红继续累计，仅冻结兑付）' : '确认恢复分红池领取？')) return;
   showLoading();
   try {
     const tx = pause ? await poolC.connect(signer).pause() : await poolC.connect(signer).unpause();
@@ -1121,6 +1310,7 @@ async function adminPoolPauseToggle(pause) {
 async function adminAddLp() {
   const a = DOM.adminAddLpInput.value.trim();
   if (!ethers.utils.isAddress(a)) { showToast('请输入合法的交易对地址', 'error'); return; }
+  if (!confirm(`确认登记 LP 交易对 ${a}？（登记后该交易对买卖将被征税）`)) return;
   showLoading();
   try {
     const tx = await tokenC.connect(signer).addLpPair(a);
@@ -1198,16 +1388,36 @@ async function adminBurnCard() {
   showLoading();
   try {
     let exitDone = false;
+    let isPoolOwner = false;
     try {
+      const poolOwner = await poolC.owner();
+      isPoolOwner = poolOwner && poolOwner.toLowerCase() === userAddress.toLowerCase();
+    } catch (e0) { /* 读不到 owner 按非 owner 处理 */ }
+    if (isPoolOwner) {
       const tx1 = await poolC.connect(signer).adminForceExit(id);
-      await tx1.wait();
+      await waitForTx(tx1);
       exitDone = true;
-    } catch (e1) { /* 当前钱包不是分红池 Owner 时跳过 */ }
+    }
     const tx2 = await nftC.connect(signer).adminBurn(id);
-    await tx2.wait();
-    showToast(exitDone
-      ? `卡牌 #${id} 已强制出局并销毁`
-      : `卡牌 #${id} 已销毁（⚠️ 未强制出局：当前钱包不是分红池 Owner）`, exitDone ? 'success' : '');
+    await waitForTx(tx2);
+    // 销毁成功后自动释放该卡剩余负债（仅对已 Exited 且已销毁的卡生效），
+    // 避免漏点导致该卡 ≤300U 待领取负债永久锁死
+    let released = false;
+    if (exitDone) {
+      try {
+        const tx3 = await poolC.connect(signer).adminReleaseBurnedCard(id);
+        await waitForTx(tx3);
+        released = true;
+      } catch (e3) { /* 无负债或状态不符：忽略 */ }
+    }
+    showToast(
+      released
+        ? `卡牌 #${id} 已强制出局、销毁并释放负债`
+        : (exitDone
+          ? `卡牌 #${id} 已强制出局并销毁（无负债可释放）`
+          : `卡牌 #${id} 已销毁（⚠️ 当前钱包不是分红池 Owner：未出局/未释放负债，需先强制出局再销毁）`),
+      exitDone ? 'success' : ''
+    );
     DOM.adminBurnInput.value = '';
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
@@ -1263,6 +1473,24 @@ async function adminSetSwapThreshold() {
   finally { hideLoading(); }
 }
 
+async function adminSetMinSwapPrice() {
+  const v = DOM.adminMinSwapPriceInput.value.trim();
+  if (v === '') { showToast('请输入最低兑换价（U/枚，0 = 关闭下限）', 'error'); return; }
+  const n = parseFloat(v);
+  if (!(n >= 0)) { showToast('请输入 ≥0 的价格', 'error'); return; }
+  if (!confirm(`确认把手续费兑换最低价下限设为 ${n} U/枚？（低于此价时兑换暂缓，积压保留待价格恢复）`)) return;
+  showLoading();
+  try {
+    const wei = ethers.utils.parseUnits(String(n), 8); // 价格精度 1e8
+    const tx = await poolC.connect(signer).setMinSwapPrice(wei);
+    await waitForTx(tx);
+    showToast('最低兑换价已设置', 'success');
+    DOM.adminMinSwapPriceInput.value = '';
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
 async function adminWithdrawExcess() {
   if (!confirm('确认提取超额资金？（不影响卡牌待领取分红负债）')) return;
   showLoading();
@@ -1278,6 +1506,7 @@ async function adminWithdrawExcess() {
 async function adminSetPool() {
   const a = DOM.adminSetPoolInput.value.trim();
   if (!ethers.utils.isAddress(a)) { showToast('请输入合法的分红池地址', 'error'); return; }
+  if (!confirm(`确认把分红池设置为 ${a}？（全部手续费将转入该地址）`)) return;
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setDividendPool(a);
@@ -1292,6 +1521,7 @@ async function adminSetPool() {
 async function adminSetOracle() {
   const a = DOM.adminSetOracleInput.value.trim();
   if (!ethers.utils.isAddress(a)) { showToast('请输入合法的预言机地址', 'error'); return; }
+  if (!confirm(`确认设置预言机为 ${a}？（首次设置立即生效，之后更换需 24 小时时间锁）`)) return;
   showLoading();
   try {
     const tx = await tokenC.connect(signer).setOracle(a);
@@ -1318,6 +1548,7 @@ async function adminProposeOracle() {
 }
 
 async function adminApplyOracle() {
+  if (!confirm('确认应用已到期的预言机变更？（限购价格源将切换）')) return;
   showLoading();
   try {
     const tx = await tokenC.connect(signer).applyOracle();
@@ -1341,6 +1572,7 @@ async function adminEnableTrading() {
 }
 
 async function adminGrantMinter() {
+  if (!confirm(`确认把 NFT 铸币权授予 ${CONFIG.contracts.sale}？（请确认该地址确为销售合约）`)) return;
   showLoading();
   try {
     const role = await nftC.MINTER_ROLE();
@@ -1363,6 +1595,8 @@ DOM.adminPreConfigSaveBtn.addEventListener('click', throttle(adminSavePreLaunchC
 DOM.adminWithdrawPreUsdtBtn.addEventListener('click', throttle(adminWithdrawPreUsdt, 2000));
 DOM.adminWithdrawReserveBtn.addEventListener('click', throttle(adminWithdrawReserve, 2000));
 DOM.adminUpdateCoreBtn.addEventListener('click', throttle(adminUpdateCore, 2000));
+DOM.adminSaleProposeOracleBtn.addEventListener('click', throttle(adminSaleProposeOracle, 2000));
+DOM.adminSaleApplyOracleBtn.addEventListener('click', throttle(adminSaleApplyOracle, 1500));
 DOM.adminRevokeMinterBtn.addEventListener('click', throttle(adminRevokeMinter, 2000));
 DOM.adminSetLaunchPartnerBtn.addEventListener('click', throttle(adminSetLaunchPartner, 2000));
 DOM.adminComputePairBtn.addEventListener('click', throttle(adminComputePair, 2000));
@@ -1384,6 +1618,7 @@ DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
 DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
 DOM.adminWithdrawTttBtn.addEventListener('click', throttle(adminWithdrawTtt, 2000));
 DOM.adminSetSwapThresholdBtn.addEventListener('click', throttle(adminSetSwapThreshold, 1500));
+DOM.adminSetMinSwapPriceBtn.addEventListener('click', throttle(adminSetMinSwapPrice, 1500));
 DOM.adminWithdrawExcessBtn.addEventListener('click', throttle(adminWithdrawExcess, 2000));
 DOM.adminSetPoolBtn.addEventListener('click', throttle(adminSetPool, 1500));
 DOM.adminSetOracleBtn.addEventListener('click', throttle(adminSetOracle, 1500));

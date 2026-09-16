@@ -763,11 +763,12 @@ const CONFIG = {
   ],
   rpcUrl: 'https://bsc-dataseed1.defibit.io/',
   contracts: {
-    token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // OfficialToken 主网（已重部署 ✅）
-    nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // OfficialNFT 主网（已重部署 ✅）
-    sale:   '0xA3588A5d7966b59fAe62bCC4e172F16979aB2ff4', // OfficialNFTSale 主网（已重部署 ✅）
-    pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // CardDividendPool 主网（已重部署 ✅）
-    oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // PriceOracle TWAP 主网（已重部署 ✅）
+    // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
+    token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // TODO: 替换为新 OfficialToken
+    nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // TODO: 替换为新 OfficialNFT
+    sale:   '0xA3588A5d7966b59fAe62bCC4e172F16979aB2ff4', // TODO: 替换为新 OfficialNFTSale
+    pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // TODO: 替换为新 CardDividendPool
+    oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // TODO: 替换为新 PriceOracle
   },
   refreshInterval: 15000  // 首页/卡牌刷新间隔（毫秒）；团队数据改为进页加载
 };
@@ -796,6 +797,7 @@ const ABIS = {
     'function symbol() view returns (string)',
     'function totalSupply() view returns (uint256)',
     'function approve(address spender, uint256 amount) returns (bool)',
+    'function increaseAllowance(address spender, uint256 addedValue) returns (bool)',
     'function allowance(address owner, address spender) view returns (uint256)',
     'function dividendPool() view returns (address)',
     'function setDividendPool(address pool)',
@@ -939,8 +941,7 @@ let isPreLaunch = false;          // 是否开盘前（USDT 预售模式）
 let usdtContract = null;          // USDT 合约实例
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
-let teamPageNo = 1;               // 团队列表当前页
-let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
+let teamPageNo = 1;               // 团队列表当前页（每页 5 个，逐页懒加载）
 let teamRenderKey = '';           // 列表渲染签名（未变化则跳过重绘）
 let cardPageNo = 1;               // 卡牌明细当前页（每页 1 张）
 let lastRenderedPage = -1;        // 上次渲染页码（仅翻页时触发入场动画，自动刷新不播）
@@ -1000,7 +1001,7 @@ const fmtTime = (ts) => {
 };
 const shortAddr = (a) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '--';
 const parseError = (e) => {
-  const m = ((e && (e.reason || e.message)) || '').toLowerCase();
+  const m = ((e && (e.reason || e.message || e.errorName)) || '').toLowerCase();
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
   if (m.includes('insufficient funds') || m.includes('exceeds balance') || m.includes('insufficient balance')) return '余额不足';
   if (m.includes('insufficient allowance')) return '授权额度不足，请重新授权后再试';
@@ -1020,6 +1021,8 @@ const parseError = (e) => {
   if (m.includes('nothing to claim')) return '暂无待领取分红';
   if (m.includes('not card owner')) return '您不是该卡牌的持有者';
   if (m.includes('already launched')) return '已开盘';
+  if (m.includes('trading already enabled')) return '交易已开启，预售已结束';
+  if (m.includes('pair not whitelisted')) return '交易对尚未登记白名单，请稍后重试或联系管理员';
   if (m.includes('card already exists')) return '卡牌已存在';
   if (m.includes('buy batch too large')) return '单笔最多购买 10 张卡牌';
   if (m.includes('claim batch too large')) return '单笔最多领取 100 张卡牌';
@@ -1027,6 +1030,18 @@ const parseError = (e) => {
   if (m.includes('empty batch')) return '没有可领取的卡牌';
   if (m.includes('launch buy limit')) return '开盘 3 分钟内每个地址最多买入 50U 代币';
   if (m.includes('launch price not ready')) return '实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）';
+  if (m.includes('pair not created')) return '交易对尚未创建，价格暂不可用';
+  if (m.includes('liquidity too low')) return '池子流动性低于门槛，价格暂不可读';
+  if (m.includes('no observations') || m.includes('observations too young') || m.includes('no time elapsed')) return '价格观测引导中，请稍后再试';
+  if (m.includes('zero price')) return '价格异常为 0，请稍后再试';
+  if (m.includes('price not ready')) return '预言机价格未就绪，请稍后再试';
+  if (m.includes('price too new')) return '预言机价格时间异常，请稍后再试';
+  if (m.includes('price out of range')) return '预言机价格超出合理范围，请稍后再试';
+  if (m.includes('quantity zero')) return '购买数量无效';
+  if (m.includes('tradingnotenabled')) return '预售加池未放行（预售伙伴未配置），请联系管理员';
+  if (m.includes('price too high')) return '预言机价格过高，暂时无法购买';
+  if (m.includes('price deviation too high')) return '预言机价格偏差过大，请稍后再试';
+  if (m.includes('price too old')) return '预言机价格已过期，请稍后再试';
   if (m.includes('soulbound')) return '卡牌不可转让/转赠（灵魂绑定）';
   if (m.includes('paused')) return '合约已暂停，操作被拒绝';
   if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
@@ -1309,7 +1324,6 @@ function disconnectWallet() {
   DOM.teamBonusCards.innerText = '0';
   DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
   teamPageNo = 1;
-  teamCache = { count: -1, addrs: [] };
   teamRenderKey = '';
   cardPageNo = 1;
   lastRenderedPage = -1;
@@ -1325,6 +1339,7 @@ function disconnectWallet() {
   remainingSlots = 520;
   isPreLaunch = false;
   preLaunchRemain = 220;
+  DOM.buyModeBadge.innerText = '100 U / 张'; // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
   updateBuyDisplay();
@@ -1376,15 +1391,20 @@ async function loadAll() {
 
 async function loadStats() {
   if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+  const epoch = connEpoch;
+  const addr = userAddress;
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
-  const [poolStats, pendingSwap, lp, winActive, myBal, unitPrice] = await Promise.all([
+  const [poolStats, pendingSwap, lp, winActive, myBal, unitPrice, tradingOn] = await Promise.all([
     poolC.getPoolStats().catch(() => null),
     poolC.pendingSwapTokens().catch(() => null),
     Promise.all([saleC.launched().catch(() => false), saleC.paused().catch(() => false)]),
     tokenC.launchWindowActive().catch(() => false),
     userAddress ? tokenC.balanceOf(userAddress).catch(() => null) : Promise.resolve(null),
-    saleC.requiredTokensForCard().catch(() => null)
+    saleC.requiredTokensForCard().catch(() => null),
+    tokenC.tradingEnabled().catch(() => false)
   ]);
+  // 拉取期间可能已断开/换号：过期结果直接丢弃
+  if (epoch !== connEpoch || userAddress !== addr) return;
 
   // 分红池（USDT 兑付池）——独立容错
   const poolOk = poolStats !== null;
@@ -1410,24 +1430,38 @@ async function loadStats() {
     DOM.launchStatus.innerHTML = '--';
   }
 
-  // 购买模式切换：开盘前 USDT 预售 / 开盘后代币购买
-  isPreLaunch = (launched === false);
-  DOM.buyModeBadge.innerText = isPreLaunch ? '100 USDT / 张' : '100 U / 张';
+  // 购买模式切换：开盘前 USDT 预售 / 开盘后代币购买。
+  // 注意：交易一旦开启（tradingEnabled）预售即终止（合约强校验），即使 launch 尚未执行。
+  const gapState = (launched === false && tradingOn === true); // enableTrading→launch 的切换窗口
+  isPreLaunch = (launched === false && tradingOn === false);
+  DOM.buyModeBadge.innerText = gapState ? '开盘切换中…' : (isPreLaunch ? '100 USDT / 张' : '100 U / 张');
   DOM.preLaunchBuyArea.style.display = isPreLaunch ? '' : 'none';
-  DOM.tokenBuyArea.style.display = isPreLaunch ? 'none' : '';
+  DOM.tokenBuyArea.style.display = (isPreLaunch || gapState) ? 'none' : '';
+  // 暂停态禁用购买/领取按钮（仅靠 revert 兜底不够，UI 应同步）
+  DOM.buyBtn.disabled = (paused === true);
+  DOM.preLaunchBuyBtn.disabled = (paused === true);
+  DOM.claimAllBtn.disabled = (paused === true);
   if (isPreLaunch) {
     try {
       const pr = await saleC.preLaunchRemaining();
       preLaunchRemain = toNum(pr);
       if (!Number.isFinite(preLaunchRemain) || preLaunchRemain < 0) preLaunchRemain = 0;
-    } catch (e) { preLaunchRemain = 220; }
-    DOM.preLaunchRemainingDisplay.innerText = preLaunchRemain + ' / 220';
+    } catch (e) { preLaunchRemain = -1; } // 读取失败：显示未知并拦截购买（避免误导性 220 乐观回退）
+    // 额度被抢购后回钳数量：否则按钮仍显示「5 张」但实际只买剩余张数（静默截断）
+    if (preLaunchRemain >= 0 && buyQuantity > Math.min(10, preLaunchRemain)) {
+      buyQuantity = Math.max(1, Math.min(10, preLaunchRemain));
+    }
+    DOM.preLaunchRemainingDisplay.innerText = preLaunchRemain >= 0 ? preLaunchRemain + ' / 220' : '-- / 220';
     if (usdtContract) {
       try {
         const ub = await usdtContract.balanceOf(userAddress);
-        DOM.usdtBalanceHint.innerText = fmtAmt(ub, 18) + ' USDT';
+        DOM.usdtBalanceHint.innerText = fmtAmt(ub, usdtDecimals) + ' USDT';
       } catch (e) { DOM.usdtBalanceHint.innerText = '--'; }
     }
+  }
+  // 代币路径同理：剩余名额不足时回钳数量
+  if (!isPreLaunch && remainingSlots < buyQuantity) {
+    buyQuantity = Math.max(1, Math.min(10, remainingSlots));
   }
 
   // 开盘防机器人窗口状态条
@@ -1473,7 +1507,10 @@ async function loadSlowData() {
 
 async function loadUser() {
   if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+  const epoch = connEpoch;
+  const addr = userAddress;
   const ref = await saleC.referrerOf(userAddress);
+  if (epoch !== connEpoch || userAddress !== addr) return; // 拉取期间断开/换号：丢弃
   if (ref && ref !== ZERO_ADDR) {
     DOM.bindArea.style.display = 'none';
     DOM.boundArea.style.display = '';
@@ -1492,10 +1529,12 @@ async function loadUser() {
 /* 团队：一级下级人数、地址列表与两块推荐奖励 */
 async function loadTeam() {
   if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+  const epoch = connEpoch;
+  const addr = userAddress;
   // 块二：开盘后推荐奖励（30% 代币）
   try {
     const earned = await saleC.referralRewardsEarned(userAddress);
-    DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
+    if (epoch === connEpoch && userAddress === addr) DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
   } catch (e) {
     DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
   }
@@ -1521,40 +1560,36 @@ async function loadTeam() {
   try {
     const c = await saleC.referralCountOf(userAddress);
     cnt = toNum(c);
-    if (!Number.isFinite(cnt) || cnt < 0 || cnt > 100000) cnt = 0;
+    // 宽松上限仅防异常读数；列表本身逐页懒加载，超大团队不再拖垮页面
+    if (!Number.isFinite(cnt) || cnt < 0 || cnt > 10000000) cnt = 0;
   } catch (e) { cnt = 0; }
   DOM.teamCount.innerText = cnt;
   DOM.teamCount2.innerText = cnt;
 
   if (cnt === 0) {
     DOM.teamList.innerHTML = '<div class="empty-tip">暂无下级，快去邀请好友吧</div>';
-    teamCache = { count: 0, addrs: [] };
     return;
   }
 
-  // 缓存：数量没变时复用已拉取的下级地址列表，避免每 10 秒重复全量读取。
-  // 注意：必须拉满 cnt 个才写缓存——中途 RPC 失败会 break，若此时写入缓存，
-  // 残缺列表会一直显示到数量变化为止（列表被永久截断）。
-  if (teamCache.count !== cnt) {
-    const addrs = [];
-    for (let i = 0; i < cnt; i++) {
-      try {
-        const a = await saleC.referralAt(userAddress, i);
-        addrs.push(a);
-      } catch (e) { break; }
-    }
-    if (addrs.length === cnt) teamCache = { count: cnt, addrs };
-  }
-
-  // 分页（每页 5 个）
+  // 分页（每页 5 个）：只拉当前页地址——僵尸绑定可把下级数刷到十万级，
+  // 全量拉取会卡死页面；逐页懒加载使任何规模的团队都可正常浏览
   const TEAM_PAGE_SIZE = 5;
-  const totalPages = Math.max(1, Math.ceil(teamCache.addrs.length / TEAM_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(cnt / TEAM_PAGE_SIZE));
   if (teamPageNo > totalPages) teamPageNo = totalPages;
   const start = (teamPageNo - 1) * TEAM_PAGE_SIZE;
-  const pageAddrs = teamCache.addrs.slice(start, start + TEAM_PAGE_SIZE);
+  const pageAddrs = [];
+  for (let i = 0; i < Math.min(TEAM_PAGE_SIZE, cnt - start); i++) {
+    try {
+      const a = await saleC.referralAt(userAddress, start + i);
+      if (a) pageAddrs.push(a);
+    } catch (e) { break; }
+  }
+  // 拉取期间可能已断开/换号：丢弃过期渲染
+  if (epoch !== connEpoch || userAddress !== addr) return;
 
-  // 渲染缓存：页码与地址列表未变时跳过重绘，避免 15 秒轮询反复触发入场动画与事件重绑
-  const renderKey = teamPageNo + '|' + pageAddrs.join(',');
+  // 渲染缓存：页码/总页数/地址列表未变时跳过重绘——总页数必须纳入签名，
+  // 否则团队增长到需要新页时（当前页地址未变）分页器不会刷新，新下级永远翻不到
+  const renderKey = teamPageNo + '|' + totalPages + '|' + pageAddrs.join(',');
   if (teamRenderKey !== renderKey) {
     teamRenderKey = renderKey;
 
@@ -1667,7 +1702,7 @@ function cardRowHtml(r) {
   const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
   const serial = String(r.tokenId.toString()).padStart(3, '0');
   const progressTxt = r.active
-    ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
+    ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '已满 300U · 待出局结算')
     : '已完成 · 待领取可随时提取';
   return `
     <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
@@ -1734,7 +1769,7 @@ function patchCardDom(r) {
   const pctEl = card.querySelector('.pct');
   if (pctEl) { pctEl.innerText = pct.toFixed(2) + '%'; pctEl.classList.toggle('done', pct >= 100); }
   const txt = card.querySelector('.progress-txt');
-  if (txt) txt.innerText = r.active ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成') : '已完成 · 待领取可随时提取';
+  if (txt) txt.innerText = r.active ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '已满 300U · 待出局结算') : '已完成 · 待领取可随时提取';
   const btn = card.querySelector('.claim-one-btn');
   if (btn) {
     const zero = r.pending.isZero();
@@ -1773,6 +1808,8 @@ function renderCardsView(rows, totalPages, count) {
 
 async function loadCards() {
   if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+  const epoch = connEpoch;
+  const addr = userAddress;
 
   // ① 渲染路径：有全量缓存直接同步渲染（翻页零等待），冷启动才直读本页 1 张
   let count = 0, fromCache = false;
@@ -1819,6 +1856,9 @@ async function loadCards() {
     );
     rows = pageIds.map((id, i) => makeCardRow(id, pageInfos[i]));
   }
+
+  // 拉取期间可能已断开/换号：丢弃过期渲染
+  if (epoch !== connEpoch || userAddress !== addr) return;
 
   renderCardsView(rows, totalPages, count);
 
@@ -1933,6 +1973,7 @@ async function buyCard() {
 
 /* 开盘前：USDT 购买（100U/张，自动拆分 20U 直推 + 50U 底池 + 30U 利润） */
 async function buyCardPreLaunch() {
+  if (preLaunchRemain < 0) { showToast('预售状态读取中，请稍后重试', 'error'); return; }
   if (preLaunchRemain <= 0) { showToast('预售名额已满', 'error'); return; }
   const qty = Math.min(buyQuantity, preLaunchRemain);
   const ref = await saleC.referrerOf(userAddress);
@@ -1971,6 +2012,7 @@ async function buyCardPreLaunch() {
   const tx = await saleC.connect(signer).mintCardPreLaunchBatch(qty);
   await waitForTx(tx);
   showToast(`预售成功！${qty} 张卡牌已激活并开始累积分红 🎉`, 'success');
+  cardsAgg = null; cardsAllCache = null; // 新卡入账：强制刷新卡牌缓存与全量汇总
   loadAll();
 }
 
@@ -1991,9 +2033,11 @@ async function buyCardToken() {
   const allowance = await tokenC.allowance(userAddress, CONFIG.contracts.sale);
   if (allowance.lt(total)) {
     showToast('请先在钱包中确认授权…', '');
-    // 授权额加 15% 缓冲：覆盖授权与成交之间预言机 ±10% 波动 + 滑点，避免 allowance 不足
-    const approveAmt = total.mul(115).div(100);
-    const tx = await tokenC.connect(signer).approve(CONFIG.contracts.sale, approveAmt);
+    // 增量授权：目标额度 = 本笔 115%（覆盖 ±10% 价格波动缓冲）；
+    // 只补「目标 - 现有」的缺口——消除「覆盖式 approve 新旧额度叠加」的经典授权竞态
+    const target = total.mul(115).div(100);
+    const addAmt = target.gt(allowance) ? target.sub(allowance) : ethers.BigNumber.from(0);
+    const tx = await tokenC.connect(signer).increaseAllowance(CONFIG.contracts.sale, addAmt);
     await waitForTx(tx);
     showToast('授权成功，继续购买…', 'success');
   }
@@ -2001,6 +2045,7 @@ async function buyCardToken() {
   const tx = await saleC.connect(signer).mintCardBatch(buyQuantity);
   await waitForTx(tx);
   showToast(`购买成功！${buyQuantity} 张卡牌已开始累积分红 🎉`, 'success');
+  cardsAgg = null; cardsAllCache = null; // 新卡入账：强制刷新卡牌缓存与全量汇总
   loadAll();
 }
 
@@ -2062,6 +2107,9 @@ async function claimAll() {
     cardsAgg = null; cardsAllCache = null; // 强制下一轮立即重算汇总并刷新卡面缓存
     loadAll();
   } catch (e) {
+    // 失败路径同样强制刷新：并发领取（多标签页）导致的整批回滚会让 UI 停留旧数据
+    cardsAgg = null; cardsAllCache = null;
+    loadAll();
     showToast(parseError(e), 'error');
   } finally {
     hideLoading();
