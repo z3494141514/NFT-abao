@@ -4,15 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>卡牌分红 · NFT Dividend</title>
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script src="./ethers.umd.min.js"></script>
+<script>window.ethers||document.write('<script src="https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
 <script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
 <script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.addEventListener('DOMContentLoaded',function(){if(!window.ethers){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';b.textContent='⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';document.body.appendChild(b)}})</script>
 <style>
 :root{
   --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
   --border:rgba(148,163,184,.14);--border-hi:rgba(34,211,238,.35);
   --text:#e9edf5;--muted:#8b93a7;--cyan:#22d3ee;--violet:#8b5cf6;--gold:#f5c14c;
   --green:#34d399;--red:#fb7185;
+  /* 团队名册行内动态变量默认值（--i 入场序号 / --hue 头像色相） */
+  --i:0;--hue:200;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-behavior:smooth}
@@ -165,18 +171,60 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .modal-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .modal-tip{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px}
 .modal-addr{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:13px 15px;font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all}
-/* ---------- 团队列表 ---------- */
-.team-row{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(23,27,46,.97),rgba(13,16,30,.98));border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;flex-wrap:wrap}
-.team-idx{font-size:11px;font-weight:800;color:var(--gold);background:rgba(245,193,76,.1);border:1px solid rgba(245,193,76,.25);border-radius:8px;padding:3px 9px;flex-shrink:0}
-.team-addr{font-family:ui-monospace,monospace;font-size:13px;color:#9db4d6;background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.14);border-radius:9px;padding:7px 12px;word-break:break-all;overflow-wrap:anywhere;flex:1;min-width:0}
-.team-copy{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:5px 12px;font-size:11.5px;transition:all .2s}
-.team-copy:hover{color:var(--cyan);border-color:var(--border-hi)}
+/* ---------- 团队名册面板 ---------- */
+.team-panel{position:relative;border:1px solid transparent;border-radius:22px;padding:22px 22px 24px;background:linear-gradient(180deg,rgba(22,26,44,1),rgba(11,14,26,1)) padding-box,linear-gradient(160deg,rgba(34,211,238,.4),rgba(139,92,246,.24) 50%,rgba(245,193,76,.32)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 50px -22px rgba(0,0,0,.8)}
+.team-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.team-panel-title{display:flex;align-items:center;gap:10px;font-size:15.5px;font-weight:800;letter-spacing:.5px}
+.team-panel-title .ic{width:19px;height:19px;color:var(--gold)}
+.team-panel-sub{font-size:9.5px;letter-spacing:2.4px;color:rgba(139,147,167,.7);text-transform:uppercase;font-weight:700;margin-top:4px;margin-left:29px}
+.team-total{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:5px 15px;background:rgba(255,255,255,.03);letter-spacing:.5px}
+.team-total b{color:var(--gold);font-size:15px;font-weight:900;margin:0 3px;font-variant-numeric:tabular-nums}
+.team-table-head{display:grid;grid-template-columns:86px 1fr 46px;gap:12px;padding:12px 16px 10px;font-size:9.5px;font-weight:700;letter-spacing:2.5px;color:rgba(139,147,167,.62);text-transform:uppercase;border-bottom:1px solid rgba(148,163,184,.12);margin-bottom:12px}
+.team-table-head .th-act{text-align:right}
+/* 成员行 */
+.team-row{position:relative;display:grid;grid-template-columns:86px 1fr 46px;gap:12px;align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.015));border:1px solid rgba(148,163,184,.13);border-radius:14px;padding:15px 16px 14px;margin-bottom:10px;overflow:hidden;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease;animation:teamIn .5s cubic-bezier(.22,.8,.36,1) backwards;animation-delay:calc(var(--i,0)*55ms)}
+@keyframes teamIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.team-row::after{content:'';position:absolute;top:0;left:-70%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-12deg);pointer-events:none;opacity:0}
+@media (hover:hover){
+.team-row:hover{border-color:rgba(34,211,238,.45);transform:translateX(4px);box-shadow:0 8px 24px rgba(34,211,238,.13)}
+.team-row:hover::after{animation:rowshine .8s ease}
+}
+@keyframes rowshine{0%{left:-70%;opacity:1}100%{left:130%;opacity:0}}
+/* 前三名金/银/铜高亮 */
+.team-row.t1{border-color:rgba(245,193,76,.42);background:linear-gradient(180deg,rgba(245,193,76,.09),rgba(255,255,255,.02));box-shadow:0 6px 22px rgba(245,193,76,.12)}
+.team-row.t2{border-color:rgba(203,213,225,.3)}
+.team-row.t3{border-color:rgba(205,127,50,.35)}
+/* 排名 */
+.team-rank{display:flex;align-items:center;gap:9px;min-width:0}
+.team-medal{position:relative;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:900;color:#fff;flex-shrink:0;font-variant-numeric:tabular-nums}
+.t1 .team-medal{background:linear-gradient(135deg,#fce38a,#f5c14c 55%,#d97706);box-shadow:0 0 0 2px rgba(245,193,76,.22),0 6px 18px rgba(245,193,76,.4)}
+.t2 .team-medal{background:linear-gradient(135deg,#f1f5f9,#cbd5e1 55%,#94a3b8);box-shadow:0 0 0 2px rgba(203,213,225,.18),0 6px 16px rgba(203,213,225,.3)}
+.t3 .team-medal{background:linear-gradient(135deg,#f0b283,#cd7f32 60%,#a35a1e);box-shadow:0 0 0 2px rgba(205,127,50,.22),0 6px 16px rgba(205,127,50,.35)}
+.team-crown{position:absolute;top:-14px;left:50%;transform:translateX(-50%);color:#fce38a;filter:drop-shadow(0 2px 6px rgba(245,193,76,.65));animation:crownFloat 3s ease-in-out infinite}
+.team-crown .ic{width:15px;height:15px;fill:currentColor;stroke:none}
+@keyframes crownFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-1.5px)}}
+.team-no{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(245,193,76,.85)}
+.team-no i{font-style:normal;color:rgba(139,147,167,.55);font-weight:600}
+/* 成员信息 */
+.team-who{display:flex;align-items:center;gap:13px;min-width:0}
+.team-avatar{width:37px;height:37px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,SFMono-Regular,monospace;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.94);letter-spacing:.5px;flex-shrink:0;border:1px solid rgba(255,255,255,.2);background:linear-gradient(135deg,hsl(var(--hue,200) 70% 55%),hsl(calc(var(--hue,200) + 42) 70% 36%));box-shadow:0 4px 14px hsla(var(--hue,200),70%,50%,.35)}
+.t1 .team-avatar{border-color:rgba(245,193,76,.75);box-shadow:0 0 0 2px rgba(245,193,76,.28),0 4px 14px rgba(245,193,76,.35)}
+.t2 .team-avatar{border-color:rgba(203,213,225,.6);box-shadow:0 0 0 2px rgba(203,213,225,.2),0 4px 14px rgba(203,213,225,.3)}
+.t3 .team-avatar{border-color:rgba(205,127,50,.6);box-shadow:0 0 0 2px rgba(205,127,50,.22),0 4px 14px rgba(205,127,50,.3)}
+.team-name{min-width:0;display:flex;flex-direction:column;gap:3px}
+.team-addr-main{font-family:ui-monospace,SFMono-Regular,monospace;font-size:13.5px;font-weight:700;color:#c9d7ec;letter-spacing:.3px;white-space:nowrap}
+.team-addr-full{font-family:ui-monospace,SFMono-Regular,monospace;font-size:10px;color:rgba(139,147,167,.6);word-break:break-all;line-height:1.5;letter-spacing:.2px}
+/* 复制按钮 */
+.team-act{display:flex;justify-content:flex-end}
+.team-copy{width:34px;height:34px;border-radius:10px;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.2);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease}
+.team-copy:hover{color:var(--cyan);border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.15);box-shadow:0 0 14px rgba(34,211,238,.28)}
+.team-copy .ic{width:14.5px;height:14.5px}
 /* ---------- 分页器 ---------- */
-.pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:16px;flex-wrap:wrap;row-gap:8px}
+.pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:18px;flex-wrap:wrap;row-gap:8px}
 .pager-btn{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.35);color:var(--cyan);border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;transition:all .2s}
-.pager-btn:hover:not(:disabled){background:rgba(34,211,238,.18)}
+.pager-btn:hover:not(:disabled){background:rgba(34,211,238,.18);box-shadow:0 4px 14px rgba(34,211,238,.2)}
 .pager-btn:disabled{opacity:.35;cursor:not-allowed}
-.pager-info{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700}
+.pager-info{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700;border:1px solid var(--border);border-radius:99px;padding:6px 16px;background:rgba(255,255,255,.03)}
 /* ---------- 推荐奖励金色大奖卡 ---------- */
 .reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12)),linear-gradient(180deg,rgba(26,27,44,.98),rgba(13,14,26,.99));border:1px solid rgba(245,193,76,.5);border-radius:22px;padding:26px 28px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;box-shadow:0 10px 40px rgba(245,193,76,.12)}
 .reward-hero::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);animation:shine 3.6s ease-in-out 1.2s infinite;pointer-events:none}
@@ -319,7 +367,17 @@ body{-webkit-tap-highlight-color:transparent}
 .qty-btn{width:30px;height:30px;font-size:15px}
 .qty-value{font-size:15px;min-width:24px}
 .modal-box{padding:20px;border-radius:16px}
-.team-addr{font-size:12px}
+.team-panel{padding:16px 14px 18px;border-radius:17px}
+.team-table-head{grid-template-columns:64px 1fr 40px;padding:10px 12px 8px;gap:10px}
+.team-row{grid-template-columns:64px 1fr 40px;padding:13px 12px 12px;gap:10px;border-radius:12px}
+.team-medal{width:30px;height:30px;font-size:11px}
+.team-crown{top:-12px}
+.team-crown .ic{width:13px;height:13px}
+.team-no{font-size:10.5px;letter-spacing:1px}
+.team-avatar{width:32px;height:32px;font-size:9px}
+.team-addr-main{font-size:12.5px}
+.team-addr-full{font-size:9px}
+.team-copy{width:31px;height:31px}
 .reward-hero{padding:18px 16px;border-radius:16px;gap:14px;margin-bottom:12px}
 .reward-hero-ic{width:48px;height:48px;border-radius:14px}
 .reward-hero-ic .ic{width:24px;height:24px}
@@ -590,10 +648,24 @@ body{-webkit-tap-highlight-color:transparent}
         <span class="mini-value" id="teamMyReferrer" style="font-size:15px">--</span>
       </div>
     </div>
-    <div class="page-head">
-      <div class="page-title">直属下级列表 · <span id="teamCount">0</span></div>
+    <div class="team-panel">
+      <div class="team-panel-head">
+        <div>
+          <div class="team-panel-title">
+            <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.5"/><path d="M5.5 20c.9-3.6 3.4-5.6 6.5-5.6s5.6 2 6.5 5.6"/><path d="M17 5.5h4M19 3.5v4"/></svg>
+            直属下级
+          </div>
+          <div class="team-panel-sub">Direct Referrals · 实时上链</div>
+        </div>
+        <span class="team-total">共 <b id="teamCount">0</b> 位</span>
+      </div>
+      <div class="team-table-head">
+        <span>排名</span>
+        <span>钱包地址</span>
+        <span class="th-act">操作</span>
+      </div>
+      <div id="teamList"><div class="empty-tip">连接钱包后查看团队</div></div>
     </div>
-    <div id="teamList"><div class="empty-tip">连接钱包后查看团队</div></div>
   </div>
 
   <!-- 邀请绑定确认弹窗 -->
@@ -825,6 +897,7 @@ let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页
 let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
+let teamRenderKey = '';           // 列表渲染签名（未变化则跳过重绘）
 let slowTick = 5;                 // 慢数据刷新计数（首次即刷新，之后每 6 轮 ≈ 60 秒一次）
 
 /* ============================================================
@@ -1155,6 +1228,7 @@ function disconnectWallet() {
   DOM.teamList.innerHTML = '<div class="empty-tip">连接钱包后查看团队</div>';
   teamPageNo = 1;
   teamCache = { count: -1, addrs: [] };
+  teamRenderKey = '';
   DOM.bindModal.style.display = 'none';
   pendingRef = '';
   buyQuantity = 1;
@@ -1395,33 +1469,57 @@ async function loadTeam() {
   const start = (teamPageNo - 1) * TEAM_PAGE_SIZE;
   const pageAddrs = teamCache.addrs.slice(start, start + TEAM_PAGE_SIZE);
 
-  DOM.teamList.innerHTML = pageAddrs.map((a, i) => `
-    <div class="team-row">
-      <span class="team-idx">${start + i + 1}</span>
-      <span class="team-addr">${a}</span>
-      <button class="team-copy" data-addr="${a}">复制</button>
-    </div>`).join('')
-    + `
+  // 渲染缓存：页码与地址列表未变时跳过重绘，避免 15 秒轮询反复触发入场动画与事件重绑
+  const renderKey = teamPageNo + '|' + pageAddrs.join(',');
+  if (teamRenderKey !== renderKey) {
+    teamRenderKey = renderKey;
+
+    const tierOf = (g) => g < 3 ? ['t1', 't2', 't3'][g] : '';
+    const crown = '<span class="team-crown"><svg class="ic" viewBox="0 0 24 24"><path d="M3 8l4 3 5-6 5 6 4-3-1.5 11h-15L3 8z"/></svg></span>';
+    const copyIc = '<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V6a2.5 2.5 0 0 1 2.5-2.5H16"/></svg>';
+
+    DOM.teamList.innerHTML = pageAddrs.map((a, i) => {
+      const g = start + i; // 全局排名（0 起）
+      const tier = tierOf(g);
+      const hue = parseInt(a.slice(2, 8), 16) % 360; // 由地址派生专属头像色相
+      const rankHtml = tier
+        ? `<span class="team-medal">${g === 0 ? crown : ''}${g + 1}</span>`
+        : `<span class="team-no"><i>NO.</i>${String(g + 1).padStart(3, '0')}</span>`;
+      return `
+      <div class="team-row ${tier}" style="--i:${i};--hue:${hue}">
+        <div class="team-rank">${rankHtml}</div>
+        <div class="team-who">
+          <span class="team-avatar">${a.slice(2, 4).toUpperCase()}</span>
+          <div class="team-name">
+            <span class="team-addr-main">${shortAddr(a)}</span>
+            <span class="team-addr-full">${a}</span>
+          </div>
+        </div>
+        <div class="team-act"><button class="team-copy" data-addr="${a}" title="复制地址">${copyIc}</button></div>
+      </div>`;
+    }).join('')
+      + `
     <div class="pager">
       <button class="pager-btn" id="teamPrevBtn" ${teamPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
       <span class="pager-info">${teamPageNo} / ${totalPages}</span>
       <button class="pager-btn" id="teamNextBtn" ${teamPageNo >= totalPages ? 'disabled' : ''}>下一页 ›</button>
     </div>`;
 
-  document.querySelectorAll('.team-copy').forEach(btn => {
-    btn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(btn.dataset.addr);
-        showToast('地址已复制', 'success');
-      } catch (e) {
-        showToast('复制失败', 'error');
-      }
-    };
-  });
-  const prevBtn = document.getElementById('teamPrevBtn');
-  const nextBtn = document.getElementById('teamNextBtn');
-  if (prevBtn) prevBtn.onclick = () => { if (teamPageNo > 1) { teamPageNo--; loadTeam(); } };
-  if (nextBtn) nextBtn.onclick = () => { if (teamPageNo < totalPages) { teamPageNo++; loadTeam(); } };
+    document.querySelectorAll('.team-copy').forEach(btn => {
+      btn.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.addr);
+          showToast('地址已复制', 'success');
+        } catch (e) {
+          showToast('复制失败', 'error');
+        }
+      };
+    });
+    const prevBtn = document.getElementById('teamPrevBtn');
+    const nextBtn = document.getElementById('teamNextBtn');
+    if (prevBtn) prevBtn.onclick = () => { if (teamPageNo > 1) { teamPageNo--; loadTeam(); } };
+    if (nextBtn) nextBtn.onclick = () => { if (teamPageNo < totalPages) { teamPageNo++; loadTeam(); } };
+  }
 }
 
 async function loadCards() {
