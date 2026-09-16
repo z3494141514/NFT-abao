@@ -166,8 +166,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .modal-tip{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:14px}
 .modal-addr{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:13px 15px;font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cyan);word-break:break-all}
 /* ---------- 团队列表 ---------- */
-.team-row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;flex-wrap:wrap}
-.team-idx{font-size:12px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0}
+.team-row{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(23,27,46,.97),rgba(13,16,30,.98));border:1px solid var(--border);border-radius:14px;padding:13px 16px;margin-bottom:10px;flex-wrap:wrap}
+.team-idx{font-size:11px;font-weight:800;color:var(--gold);background:rgba(245,193,76,.1);border:1px solid rgba(245,193,76,.25);border-radius:8px;padding:3px 9px;flex-shrink:0}
 .team-addr{font-family:ui-monospace,monospace;font-size:13px;color:var(--text);word-break:break-all;overflow-wrap:anywhere;flex:1;min-width:0}
 .team-copy{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:9px;padding:5px 12px;font-size:11.5px;transition:all .2s}
 .team-copy:hover{color:var(--cyan);border-color:var(--border-hi)}
@@ -634,15 +634,15 @@ const CONFIG = {
   chainId: 56,                                  // BSC 主网
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
-  rpcUrls: [                                    // RPC 列表（加网络时全部写入钱包，供其自动切换；可换成付费 RPC）
+  rpcUrls: [                                    // 只读数据层：按速度排序，故障自动切换（可换成付费 RPC 放最前）
+    'https://bsc-dataseed1.defibit.io/',
+    'https://bsc-dataseed1.ninicoin.io/',
+    'https://bsc-dataseed2.defibit.io/',
     'https://bsc-dataseed.binance.org/',
     'https://bsc-dataseed1.binance.org/',
     'https://bsc-dataseed2.binance.org/',
     'https://bsc-dataseed3.binance.org/',
-    'https://bsc-dataseed4.binance.org/',
-    'https://bsc-dataseed1.defibit.io/',
-    'https://bsc-dataseed2.defibit.io/',
-    'https://bsc-dataseed1.ninicoin.io/'
+    'https://bsc-dataseed4.binance.org/'
   ],
   rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
@@ -807,6 +807,7 @@ const DOM = {
  * 全局状态
  * ============================================================ */
 let provider = null, signer = null, userAddress = '';
+let readProvider = null; // 只读 RPC 层（公共节点自动切换）
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
@@ -1017,11 +1018,19 @@ async function setupProvider(address) {
   provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
   userAddress = address;
-  tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, provider);
-  nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, provider);
-  saleC = new ethers.Contract(CONFIG.contracts.sale, ABIS.sale, provider);
-  poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, provider);
-  oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, provider);
+
+  // 只读数据层：公共节点自动故障切换（3 秒无响应换下一个），
+  // 链上读取不再走钱包内置 RPC，页面加载明显更快；签名交易仍走 MetaMask
+  readProvider = new ethers.providers.FallbackProvider(
+    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
+  );
+  readProvider.stallTimeout = 3000;
+
+  tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
+  nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
+  saleC = new ethers.Contract(CONFIG.contracts.sale, ABIS.sale, readProvider);
+  poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, readProvider);
+  oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, readProvider);
 
   DOM.connectBtn.style.display = 'none';
   DOM.walletInfo.style.display = 'flex';
@@ -1034,7 +1043,7 @@ async function setupProvider(address) {
     tokenDecimals = td;
     tokenSymbol = ts;
     if (uAddr) {
-      const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
+      const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], readProvider);
       const [us, ud] = await Promise.all([uc.symbol(), uc.decimals()]);
       usdtSymbol = us;
       usdtDecimals = ud;
@@ -1049,7 +1058,7 @@ async function setupProvider(address) {
         'function balanceOf(address) view returns (uint256)',
         'function approve(address, uint256) returns (bool)',
         'function allowance(address, address) view returns (uint256)'
-      ], provider);
+      ], readProvider);
     }
   } catch (e) { usdtContract = null; }
 

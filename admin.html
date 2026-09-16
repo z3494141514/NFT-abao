@@ -253,14 +253,14 @@ const CONFIG = {
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
   rpcUrls: [
+    'https://bsc-dataseed1.defibit.io/',
+    'https://bsc-dataseed1.ninicoin.io/',
+    'https://bsc-dataseed2.defibit.io/',
     'https://bsc-dataseed.binance.org/',
     'https://bsc-dataseed1.binance.org/',
     'https://bsc-dataseed2.binance.org/',
     'https://bsc-dataseed3.binance.org/',
-    'https://bsc-dataseed4.binance.org/',
-    'https://bsc-dataseed1.defibit.io/',
-    'https://bsc-dataseed2.defibit.io/',
-    'https://bsc-dataseed1.ninicoin.io/'
+    'https://bsc-dataseed4.binance.org/'
   ],
   rpcUrl: 'https://bsc-dataseed.binance.org/',
   contracts: {
@@ -424,6 +424,7 @@ const DOM = {
 };
 
 let provider = null, signer = null, userAddress = '';
+let readProvider = null; // 只读 RPC 层（公共节点自动切换）
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
@@ -567,11 +568,18 @@ async function setupProvider(address) {
   provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
   userAddress = address;
-  tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, provider);
-  nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, provider);
-  saleC = new ethers.Contract(CONFIG.contracts.sale, ABIS.sale, provider);
-  poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, provider);
-  oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, provider);
+
+  // 只读数据层：公共节点自动故障切换（3 秒无响应换下一个）；签名交易仍走 MetaMask
+  readProvider = new ethers.providers.FallbackProvider(
+    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
+  );
+  readProvider.stallTimeout = 3000;
+
+  tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
+  nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
+  saleC = new ethers.Contract(CONFIG.contracts.sale, ABIS.sale, readProvider);
+  poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, readProvider);
+  oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, readProvider);
 
   DOM.connectBtn.style.display = 'none';
   DOM.walletInfo.style.display = 'flex';
@@ -585,7 +593,7 @@ async function setupProvider(address) {
   // 分红池兑付资产（USDT）信息
   try {
     const uAddr = await poolC.usdt();
-    const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], provider);
+    const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], readProvider);
     usdtSymbol = await uc.symbol();
     usdtDecimals = await uc.decimals();
   } catch (e) { console.warn('读取 USDT 信息失败', e); }
