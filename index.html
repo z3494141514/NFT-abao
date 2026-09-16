@@ -147,17 +147,34 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .mini-label{display:block;font-size:10.5px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;font-weight:700}
 .mini-value{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
 .mini-kpi.gold .mini-value{color:var(--gold)}
-/* ---------- 收益总览面板（我的卡牌页） ---------- */
-.overview-panel{border:1px solid transparent;border-radius:20px;padding:18px 24px 20px;margin-bottom:22px;background:linear-gradient(180deg,rgba(22,26,44,1),rgba(11,14,26,1)) padding-box,linear-gradient(160deg,rgba(245,193,76,.4),rgba(34,211,238,.22) 50%,rgba(139,92,246,.22)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 50px -22px rgba(0,0,0,.8)}
-.overview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.overview-title{font-size:12.5px;font-weight:800;letter-spacing:2.5px;color:var(--gold);text-transform:uppercase}
-.overview-badge{font-size:10px;letter-spacing:1.5px;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:3px 11px}
-.overview-grid{display:grid;grid-template-columns:repeat(3,1fr)}
-.overview-item{padding:4px 22px;border-left:1px solid rgba(148,163,184,.14)}
-.overview-item:first-child{border-left:none;padding-left:0}
-.overview-label{display:block;font-size:10.5px;letter-spacing:1.8px;color:var(--muted);font-weight:700;margin-bottom:7px;text-transform:uppercase}
-.overview-value{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
-.overview-item.gold .overview-value{color:var(--gold)}
+/* ---------- 收益总览（金库仪表盘） ---------- */
+.overview-panel{position:relative;overflow:hidden;border:1px solid transparent;border-radius:22px;padding:22px 24px 24px;margin-bottom:22px;background:linear-gradient(180deg,rgba(24,26,44,1),rgba(11,13,25,1)) padding-box,linear-gradient(135deg,rgba(245,193,76,.55),rgba(34,211,238,.28) 45%,rgba(139,92,246,.35)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 24px 60px -24px rgba(0,0,0,.85)}
+.overview-panel::before{content:'';position:absolute;top:-70%;left:20%;width:60%;height:140%;background:radial-gradient(ellipse at center,rgba(245,193,76,.13),transparent 60%);pointer-events:none}
+.overview-panel::after{content:'';position:absolute;top:0;left:-60%;width:36%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.06),transparent);animation:shine 7s ease-in-out 2.4s infinite;pointer-events:none}
+.overview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.overview-title-wrap{display:flex;align-items:center;gap:12px}
+.overview-ic{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,193,76,.4);flex-shrink:0}
+.overview-ic .ic{width:21px;height:21px;stroke:#fff;stroke-width:1.7}
+.overview-title{display:block;font-size:15px;font-weight:800;letter-spacing:1px}
+.overview-sub{display:block;font-size:9.5px;letter-spacing:2.4px;color:rgba(139,147,167,.75);text-transform:uppercase;font-weight:700;margin-top:3px}
+.overview-badge{font-size:10px;letter-spacing:2px;color:rgba(245,193,76,.9);border:1px solid rgba(245,193,76,.35);background:rgba(245,193,76,.08);border-radius:99px;padding:4px 13px;font-weight:700}
+.overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.overview-item{position:relative;display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.13);border-radius:16px;padding:16px 18px;overflow:hidden;transition:transform .25s ease,border-color .25s ease,background .25s ease}
+.overview-item.ov-main{background:linear-gradient(135deg,rgba(245,193,76,.12),rgba(245,193,76,.03));border-color:rgba(245,193,76,.4)}
+.overview-item.ov-main::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(245,193,76,.8),transparent)}
+@media (hover:hover){
+.overview-item:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.4);background:rgba(255,255,255,.05)}
+}
+.ov-ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-ic .ic{width:19px;height:19px}
+.ov-ic-gold{background:rgba(245,193,76,.15);border:1px solid rgba(245,193,76,.35);color:var(--gold);box-shadow:0 4px 14px rgba(245,193,76,.25)}
+.ov-ic-cyan{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
+.ov-ic-violet{background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.35);color:#a78bfa;box-shadow:0 4px 14px rgba(139,92,246,.25)}
+.ov-body{min-width:0;display:flex;flex-direction:column;gap:5px}
+.overview-label{font-size:10.5px;letter-spacing:1.8px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.overview-value{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.ov-main .overview-value{background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ov-pending .overview-value{color:#c4b5fd;text-shadow:0 0 18px rgba(139,92,246,.4)}
 /* ---------- 分节标题 ---------- */
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .section-title{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--text);white-space:nowrap}
@@ -238,35 +255,49 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .btn-primary::after{content:'';position:absolute;top:0;left:-80%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);animation:shine 3.4s ease-in-out 1.6s infinite;pointer-events:none}
 /* ---------- 页脚 ---------- */
 .footer{position:relative;z-index:1;text-align:center;padding:18px 16px 104px;font-size:11.5px;color:var(--muted);letter-spacing:1.2px}
-/* ---------- 卡牌 ---------- */
+/* ---------- 卡牌（收藏级卡面） ---------- */
 .page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
 .page-title span{color:var(--cyan)}
-.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.nft-card{position:relative;background:linear-gradient(180deg,rgba(23,27,46,.97),rgba(13,16,30,.98));border:1px solid var(--border);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px}
-.nft-card.exited{opacity:.75}
+.nft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.nft-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(24,28,48,.98),rgba(11,14,28,.99));border:1px solid rgba(148,163,184,.16);border-radius:20px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:15px;transition:transform .3s cubic-bezier(.22,.8,.36,1),border-color .3s,box-shadow .3s}
+.nft-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.75),rgba(139,92,246,.75),transparent)}
+.nft-card::after{content:'';position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.06),transparent);transform:skewX(-12deg);pointer-events:none;opacity:0}
 @media (hover:hover){
-.nft-card:hover{transform:translateY(-3px);border-color:var(--border-hi);background:var(--panel-hi)}
+.nft-card:hover{transform:translateY(-5px);border-color:rgba(34,211,238,.45);box-shadow:0 18px 44px -16px rgba(34,211,238,.3)}
+.nft-card:hover::after{animation:rowshine .9s ease}
 }
-.nft-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.nft-id-wrap{display:flex;flex-direction:column;gap:8px}
-.nft-id-no{font-size:17px;font-weight:900;letter-spacing:2.5px;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
-.nft-entry{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;line-height:1.6}
-.entry-label{font-size:9px;letter-spacing:1.5px;color:rgba(139,147,167,.7);text-transform:uppercase}
-.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 11px;border-radius:99px;width:fit-content}
-.badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4)}
+.nft-card.exited{opacity:.78}
+.nft-card.exited::before{background:linear-gradient(90deg,transparent,rgba(148,163,184,.5),transparent)}
+.nft-glow{position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.17),transparent 65%);pointer-events:none}
+.nft-watermark{position:absolute;right:-4px;bottom:-18px;font-size:92px;font-weight:900;letter-spacing:4px;line-height:1;color:transparent;-webkit-text-stroke:1px rgba(148,163,184,.13);pointer-events:none;font-variant-numeric:tabular-nums;user-select:none}
+.nft-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;position:relative;z-index:1}
+.nft-id-wrap{display:flex;flex-direction:column;gap:7px}
+.nft-id-no{font-size:21px;font-weight:900;letter-spacing:3px;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.nft-id-label{font-size:8.5px;letter-spacing:2.6px;color:rgba(139,147,167,.6);text-transform:uppercase;font-weight:700}
+.nft-entry{font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;line-height:1.7}
+.entry-label{font-size:8.5px;letter-spacing:1.8px;color:rgba(139,147,167,.65);text-transform:uppercase;display:block}
+.entry-time{color:#aeb9d0;font-family:ui-monospace,SFMono-Regular,monospace;font-size:10.5px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;padding:4px 12px;border-radius:99px;width:fit-content;letter-spacing:1px}
+.badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4);box-shadow:0 0 14px rgba(52,211,153,.18)}
+.badge-active::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 .badge-exited{color:var(--red);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35)}
-.nft-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.metric{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.1);border-radius:13px;padding:11px 12px}
-.metric-label{display:block;font-size:10.5px;letter-spacing:1px;color:var(--muted);margin-bottom:5px}
-.metric-value{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
-.metric-gold .metric-value{color:var(--gold)}
-.exit-progress{display:flex;flex-direction:column;gap:7px}
-.exit-track{height:7px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden}
-.exit-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);box-shadow:0 0 12px rgba(139,92,246,.6);transition:width .8s cubic-bezier(.22,.8,.36,1)}
-.exit-fill.done{background:linear-gradient(90deg,#f5c14c,#fb7185)}
+.nft-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;position:relative;z-index:1}
+.metric{background:rgba(255,255,255,.035);border:1px solid rgba(148,163,184,.12);border-radius:13px;padding:11px 12px 10px;transition:border-color .25s,background .25s}
+@media (hover:hover){.metric:hover{border-color:rgba(34,211,238,.35);background:rgba(255,255,255,.055)}}
+.metric-label{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.metric-value{font-size:15.5px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.metric-gold{background:linear-gradient(135deg,rgba(245,193,76,.1),rgba(245,193,76,.02));border-color:rgba(245,193,76,.3)}
+.metric-gold .metric-value{color:var(--gold);text-shadow:0 0 16px rgba(245,193,76,.35)}
+.exit-progress{display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+.exit-track{height:9px;background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.12);border-radius:99px;overflow:hidden}
+.exit-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#22d3ee,#8b5cf6);box-shadow:0 0 14px rgba(139,92,246,.65);transition:width .8s cubic-bezier(.22,.8,.36,1);position:relative;overflow:hidden}
+.exit-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.25) 50%,transparent 75%);background-size:200% 100%;animation:fillSheen 4s linear infinite}
+@keyframes fillSheen{to{background-position:-200% 0}}
+.exit-fill.done{background:linear-gradient(90deg,#f5c14c,#fb7185);box-shadow:0 0 16px rgba(245,193,76,.7)}
 .exit-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.exit-meta .pct{color:var(--cyan);font-weight:800;font-size:13px}
+.exit-meta .pct{font-family:ui-monospace,SFMono-Regular,monospace;font-size:14px;font-weight:900;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.exit-meta .pct.done{background:linear-gradient(90deg,#f5c14c,#fb7185);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .progress-txt{font-size:11px;color:var(--muted)}
 /* ---------- 邀请 ---------- */
 .invite-wrap{max-width:560px;margin:0 auto}
@@ -327,13 +358,15 @@ body{-webkit-tap-highlight-color:transparent}
 .input{padding:11px 13px;font-size:13.5px}
 .page-head{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:14px}
 .page-title{font-size:18px}
-.nft-grid{grid-template-columns:1fr;gap:12px}
-.nft-card{padding:15px;border-radius:16px;gap:12px}
+.nft-grid{grid-template-columns:1fr;gap:13px}
+.nft-card{padding:16px 14px 15px;border-radius:17px;gap:13px}
+.nft-id-no{font-size:18px;letter-spacing:2.5px}
+.nft-watermark{font-size:64px;right:-2px;bottom:-12px}
 .nft-metrics{gap:6px}
 .metric{padding:9px 10px;border-radius:11px}
-.metric-value{font-size:13px}
-.metric-label{font-size:9.5px;margin-bottom:4px}
-.exit-track{height:6px}
+.metric-value{font-size:13.5px}
+.metric-label{font-size:9px;margin-bottom:4px}
+.exit-track{height:8px}
 .exit-meta{font-size:10.5px}
 .bottom-nav{bottom:14px;padding:5px;gap:2px;border-radius:64px;max-width:96vw}
 .nav-item{flex-direction:column;gap:3px;padding:7px 13px;font-size:10.5px;border-radius:26px;min-width:0}
@@ -350,11 +383,13 @@ body{-webkit-tap-highlight-color:transparent}
 .mini-kpi{padding:11px 12px;border-radius:13px}
 .mini-value{font-size:15.5px}
 .mini-label{font-size:9px;margin-bottom:4px}
-.overview-panel{padding:14px 16px 16px;border-radius:16px;margin-bottom:16px}
-.overview-head{margin-bottom:12px}
-.overview-item{padding:2px 12px}
-.overview-value{font-size:18px}
-.overview-label{font-size:9px;letter-spacing:1.2px;margin-bottom:5px}
+.overview-panel{padding:16px 14px 18px;border-radius:17px;margin-bottom:16px}
+.overview-head{margin-bottom:14px}
+.overview-grid{grid-template-columns:1fr;gap:9px}
+.overview-item{padding:13px 14px;border-radius:14px}
+.overview-value{font-size:21px}
+.overview-ic{width:36px;height:36px;border-radius:11px}
+.ov-ic{width:34px;height:34px;border-radius:10px}
 .section-title{font-size:12.5px;letter-spacing:1.5px}
 .live-chip{font-size:10.5px;padding:4px 10px}
 .qty-btn{width:30px;height:30px;font-size:15px}
@@ -551,28 +586,43 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="page-title">我的卡牌 · <span id="myCardCount">0</span></div>
       <div class="flex">
         <span class="live-chip"><span class="live-dot"></span>实时 · 10s 刷新</span>
-        <button id="claimAllBtn" class="btn btn-primary btn-sm">一键领取全部</button>
+        <button id="claimAllBtn" class="btn btn-primary btn-sm">批量领取分红</button>
       </div>
     </div>
 
-    <!-- 收益总览：独立面板，与卡牌明细区明显分离 -->
+    <!-- 收益总览：金库仪表盘 -->
     <div class="overview-panel">
       <div class="overview-head">
-        <span class="overview-title">收益总览</span>
-        <span class="overview-badge">TOTAL</span>
+        <div class="overview-title-wrap">
+          <span class="overview-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M12 22V12"/><path d="M12 12l8-4M12 12L4 8"/></svg></span>
+          <div>
+            <span class="overview-title">收益总览</span>
+            <span class="overview-sub">Earnings Overview · 金本位分红</span>
+          </div>
+        </div>
+        <span class="overview-badge">TOTAL EARNINGS</span>
       </div>
       <div class="overview-grid">
-        <div class="overview-item">
-          <span class="overview-label">总获得分红</span>
-          <span class="overview-value" id="cardsTotalAccrued">0.00 U</span>
+        <div class="overview-item ov-main">
+          <span class="ov-ic ov-ic-gold"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+          <div class="ov-body">
+            <span class="overview-label">总获得分红</span>
+            <span class="overview-value" id="cardsTotalAccrued">0.00 U</span>
+          </div>
         </div>
         <div class="overview-item">
-          <span class="overview-label">已领取</span>
-          <span class="overview-value" id="cardsTotalClaimed">0.00 U</span>
+          <span class="ov-ic ov-ic-cyan"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 5-6"/></svg></span>
+          <div class="ov-body">
+            <span class="overview-label">已领取</span>
+            <span class="overview-value" id="cardsTotalClaimed">0.00 U</span>
+          </div>
         </div>
-        <div class="overview-item gold">
-          <span class="overview-label">待领取</span>
-          <span class="overview-value" id="cardsTotalPending">0.00 U</span>
+        <div class="overview-item ov-pending">
+          <span class="ov-ic ov-ic-violet"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+          <div class="ov-body">
+            <span class="overview-label">待领取</span>
+            <span class="overview-value" id="cardsTotalPending">0.00 U</span>
+          </div>
         </div>
       </div>
     </div>
@@ -887,6 +937,10 @@ let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页
 let teamCache = { count: -1, addrs: [] }; // 下级列表缓存（数量未变时复用）
 let teamRenderKey = '';           // 列表渲染签名（未变化则跳过重绘）
+let cardPageNo = 1;               // 卡牌明细当前页（每页 3 张）
+let cardsAgg = null;              // 全量汇总缓存 {count, accrued, claimed, pending}
+let cardsAggBusy = false;         // 汇总计算在途标记（防并发重复拉全量）
+let cardsAggTick = 0;             // 汇总慢刷新计数（每 4 轮 ≈ 60 秒重算）
 let slowTick = 5;                 // 慢数据刷新计数（首次即刷新，之后每 6 轮 ≈ 60 秒一次）
 
 /* ============================================================
@@ -1248,6 +1302,10 @@ function disconnectWallet() {
   teamPageNo = 1;
   teamCache = { count: -1, addrs: [] };
   teamRenderKey = '';
+  cardPageNo = 1;
+  cardsAgg = null;
+  cardsAggBusy = false;
+  cardsAggTick = 0;
   slowTick = 5; // 重连后首轮立即刷新慢数据（已销毁/流通量），避免等待最长 90 秒的周期
   DOM.bindModal.style.display = 'none';
   pendingRef = '';
@@ -1527,6 +1585,48 @@ async function loadTeam() {
   }
 }
 
+/* 单卡累计应得封顶 300U = 30000 分，超出即异常数据，钳制为 0 */
+const clampCents = (v) => {
+  const n = toNum(v);
+  return (n >= 0 && n <= 30000) ? n : 0;
+};
+
+/* 卡牌页汇总写入（收益总览面板 + 首页待领取 KPI） */
+function applyCardsAgg(agg) {
+  DOM.cardsTotalAccrued.innerText = (agg.accrued / 100).toFixed(2) + ' U';
+  DOM.cardsTotalClaimed.innerText = (agg.claimed / 100).toFixed(2) + ' U';
+  DOM.cardsTotalPending.innerText = (agg.pending / 100).toFixed(2) + ' U';
+  DOM.myTotalPending.innerText = (agg.pending / 100).toFixed(2) + ' U';
+}
+
+/* 全量汇总（慢路径，后台执行）：收益总览需要全卡合计，逐卡读取不阻塞列表渲染。
+   触发时机：缓存缺失 / 卡数量变化 / 每 4 轮（约 60 秒）定期重算 / 领取后强制 */
+async function refreshCardsAgg(count) {
+  if (cardsAggBusy) return;
+  cardsAggBusy = true;
+  try {
+    const idxs = Array.from({ length: count }, (_, i) => i);
+    const tokenIds = await Promise.all(
+      idxs.map(i => nftC.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
+    );
+    const infos = await Promise.all(
+      tokenIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
+    );
+    let totalAccrued = 0, totalClaimed = 0, totalPending = 0;
+    for (let i = 0; i < count; i++) {
+      const info = infos[i];
+      if (tokenIds[i] === null || info === null) continue;
+      totalAccrued += clampCents(info[2]);
+      totalClaimed += clampCents(info[3]);
+      totalPending += clampCents(info[4]);
+    }
+    const agg = { count, accrued: totalAccrued, claimed: totalClaimed, pending: totalPending };
+    cardsAgg = agg;
+    if (userAddress) applyCardsAgg(agg); // 计算期间断开则丢弃
+  } catch (e) { /* 单轮失败，下一轮自动重试 */ }
+  finally { cardsAggBusy = false; }
+}
+
 async function loadCards() {
   const bal = await nftC.balanceOf(userAddress);
   // 防御：合约地址未配置/配错时 balanceOf 可能返回任意存储槽数据（天文数字），
@@ -1541,51 +1641,37 @@ async function loadCards() {
 
   if (count === 0) {
     DOM.cardList.innerHTML = '<div class="empty-tip">暂无卡牌</div>';
-    DOM.myTotalPending.innerText = '0.00 U';
-    DOM.cardsTotalAccrued.innerText = '0.00 U';
-    DOM.cardsTotalClaimed.innerText = '0.00 U';
-    DOM.cardsTotalPending.innerText = '0.00 U';
+    cardsAgg = { count: 0, accrued: 0, claimed: 0, pending: 0 };
+    applyCardsAgg(cardsAgg);
+    cardPageNo = 1;
     return;
   }
 
-  // 并行拉取所有卡牌 ID 与卡牌信息（总耗时 = 最慢的一个请求，而非逐张累加）
-  const idxs = Array.from({ length: count }, (_, i) => i);
-  const tokenIds = await Promise.all(
-    idxs.map(i => nftC.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
+  // 分页：每页最多 3 张（tokenOfOwnerByIndex 枚举顺序即铸造顺序 = 卡号升序，无需全量排序）
+  const CARD_PAGE_SIZE = 3;
+  const totalPages = Math.max(1, Math.ceil(count / CARD_PAGE_SIZE));
+  if (cardPageNo > totalPages) cardPageNo = totalPages;
+  const start = (cardPageNo - 1) * CARD_PAGE_SIZE;
+
+  // ① 快路径：只拉当前页 3 张卡牌（6 个请求），列表秒出
+  const pageIds = await Promise.all(
+    Array.from({ length: Math.min(CARD_PAGE_SIZE, count - start) }, (_, i) =>
+      nftC.tokenOfOwnerByIndex(userAddress, start + i).catch(() => null))
   );
-  const infos = await Promise.all(
-    tokenIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
+  const pageInfos = await Promise.all(
+    pageIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
   );
 
   const rows = [];
-  for (let i = 0; i < count; i++) {
-    const tokenId = tokenIds[i];
-    const info = infos[i];
-    if (tokenId === null || info === null) {
-      rows.push({ tokenId: tokenId === null ? BN.from(0) : tokenId, entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false });
-    } else {
-      rows.push({ tokenId, entryTime: info[1], accrued: info[2], claimed: info[3], pending: info[4], active: info[5] });
-    }
+  for (let i = 0; i < pageIds.length; i++) {
+    const tokenId = pageIds[i];
+    const info = pageInfos[i];
+    rows.push(tokenId === null || info === null
+      ? { tokenId: BN.from(0), entryTime: BN.from(0), accrued: BN.from(0), claimed: BN.from(0), pending: BN.from(0), active: false }
+      : { tokenId, entryTime: info[1], accrued: info[2], claimed: info[3], pending: info[4], active: info[5] });
   }
-  rows.sort((a, b) => a.tokenId.lt(b.tokenId) ? -1 : 1);
 
-  // 汇总模块：总分红 / 已领取 / 待领取（单卡累计应得封顶 300U = 30000 分，超出即异常数据，钳制为 0）
-  const clampCents = (v) => {
-    const n = toNum(v);
-    return (n >= 0 && n <= 30000) ? n : 0;
-  };
-  let totalAccrued = 0, totalClaimed = 0, totalPending = 0;
-  rows.forEach(r => {
-    totalAccrued += clampCents(r.accrued);
-    totalClaimed += clampCents(r.claimed);
-    totalPending += clampCents(r.pending);
-  });
-  DOM.cardsTotalAccrued.innerText = (totalAccrued / 100).toFixed(2) + ' U';
-  DOM.cardsTotalClaimed.innerText = (totalClaimed / 100).toFixed(2) + ' U';
-  DOM.cardsTotalPending.innerText = (totalPending / 100).toFixed(2) + ' U';
-  DOM.myTotalPending.innerText = (totalPending / 100).toFixed(2) + ' U';
-
-  DOM.cardList.innerHTML = rows.map(r => {
+  const cardsHtml = rows.map(r => {
     const pendingZero = r.pending.isZero();
     const accC = clampCents(r.accrued);
     const clmC = clampCents(r.claimed);
@@ -1595,17 +1681,21 @@ async function loadCards() {
     // accC 单位是「分」，先换算成 U 再与 300U 相减
     const remain = Math.max(0, 300 - accC / 100);
     const cardNo = 'NO.' + String(r.tokenId.toString()).padStart(3, '0');
+    const serial = String(r.tokenId.toString()).padStart(3, '0');
     const progressTxt = r.active
       ? (remain > 0 ? `还差 ${remain.toFixed(2)} U` : '即将完成')
       : '已完成 · 待领取可随时提取';
     return `
     <div class="nft-card${r.active ? '' : ' exited'}" data-token="${r.tokenId.toString()}">
+      <span class="nft-glow"></span>
+      <span class="nft-watermark">${serial}</span>
       <div class="nft-top">
         <div class="nft-id-wrap">
           <span class="nft-id-no">${cardNo}</span>
-          ${r.active ? '<span class="badge badge-active">● 计息中</span>' : '<span class="badge badge-exited">✓ 已出局</span>'}
+          <span class="nft-id-label">Collector Card</span>
+          ${r.active ? '<span class="badge badge-active">计息中</span>' : '<span class="badge badge-exited">✓ 已出局</span>'}
         </div>
-        <div class="nft-entry"><span class="entry-label">入场时间</span><br>${fmtTime(r.entryTime)}</div>
+        <div class="nft-entry"><span class="entry-label">入场时间</span><span class="entry-time">${fmtTime(r.entryTime)}</span></div>
       </div>
       <div class="nft-metrics">
         <div class="metric">
@@ -1624,7 +1714,7 @@ async function loadCards() {
       <div class="exit-progress">
         <div class="exit-track"><div class="exit-fill${pct >= 100 ? ' done' : ''}" style="width:${pct.toFixed(2)}%"></div></div>
         <div class="exit-meta">
-          <span class="pct">${pct.toFixed(2)}%</span>
+          <span class="pct${pct >= 100 ? ' done' : ''}">${pct.toFixed(2)}%</span>
           <span class="progress-txt">${progressTxt}</span>
         </div>
       </div>
@@ -1634,9 +1724,36 @@ async function loadCards() {
     </div>`;
   }).join('');
 
+  const pagerHtml = count > CARD_PAGE_SIZE ? `
+    <div class="pager">
+      <button class="pager-btn" id="cardPrevBtn" ${cardPageNo <= 1 ? 'disabled' : ''}>‹ 上一页</button>
+      <span class="pager-info">${cardPageNo} / ${totalPages}</span>
+      <button class="pager-btn" id="cardNextBtn" ${cardPageNo >= totalPages ? 'disabled' : ''}>下一页 ›</button>
+    </div>` : '';
+
+  DOM.cardList.innerHTML = `<div class="nft-grid">${cardsHtml}</div>` + pagerHtml;
+
   document.querySelectorAll('.claim-one-btn').forEach(btn => {
     btn.onclick = throttle(() => claimCard(btn.dataset.token), 1500);
   });
+  const prevBtn = document.getElementById('cardPrevBtn');
+  const nextBtn = document.getElementById('cardNextBtn');
+  if (prevBtn) prevBtn.onclick = () => { if (cardPageNo > 1) { cardPageNo--; loadCards(); } };
+  if (nextBtn) nextBtn.onclick = () => { if (cardPageNo < totalPages) { cardPageNo++; loadCards(); } };
+
+  // ② 慢路径：全量汇总（缓存缺失/数量变化/每 4 轮重算），后台执行不阻塞列表
+  cardsAggTick++;
+  if (!cardsAgg || cardsAgg.count !== count) {
+    DOM.cardsTotalAccrued.innerText = '计算中…';
+    DOM.cardsTotalClaimed.innerText = '计算中…';
+    DOM.cardsTotalPending.innerText = '计算中…';
+    DOM.myTotalPending.innerText = '计算中…';
+  } else {
+    applyCardsAgg(cardsAgg); // 有缓存：沿用缓存值，后台静默重算
+  }
+  if ((!cardsAgg || cardsAgg.count !== count || cardsAggTick % 4 === 1) && !cardsAggBusy) {
+    refreshCardsAgg(count); // 不 await：列表已渲染，汇总后台填充
+  }
 }
 
 /* 管理面板已剥离至 admin.html，普通用户端不再包含管理逻辑 */
@@ -1787,6 +1904,7 @@ async function claimCard(tokenId) {
     const tx = await poolC.connect(signer).claim(tokenId);
     await waitForTx(tx);
     showToast(`#${tokenId} 分红领取成功`, 'success');
+    cardsAgg = null; // 强制下一轮立即重算全量汇总（缓存已过时）
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
@@ -1806,14 +1924,18 @@ async function claimAll() {
       if (!Number.isFinite(count) || count < 0 || count > 10000) count = 0;
     } catch (e) { count = 0; }
 
-    // 收集所有有待领取的卡牌
+    // 收集所有有待领取的卡牌（并行拉取，避免逐张串行等待）
+    const idxs = Array.from({ length: count }, (_, i) => i);
+    const tokenIds = await Promise.all(
+      idxs.map(i => nftC.tokenOfOwnerByIndex(userAddress, i).catch(() => null))
+    );
+    const infos = await Promise.all(
+      tokenIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
+    );
     const ids = [];
     for (let i = 0; i < count; i++) {
-      const tokenId = await nftC.tokenOfOwnerByIndex(userAddress, i);
-      try {
-        const info = await poolC.getCardInfo(tokenId);
-        if (info[4].gt(0)) ids.push(tokenId);
-      } catch (e) { /* 单卡读取失败跳过 */ }
+      const info = infos[i];
+      if (tokenIds[i] !== null && info !== null && info[4].gt(0)) ids.push(tokenIds[i]);
     }
 
     if (ids.length === 0) {
@@ -1830,6 +1952,7 @@ async function claimAll() {
       done += chunk.length;
     }
     showToast(`已领取 ${done} 张卡牌的分红 🎉`, 'success');
+    cardsAgg = null; // 强制下一轮立即重算全量汇总（缓存已过时）
     loadAll();
   } catch (e) {
     showToast(parseError(e), 'error');
