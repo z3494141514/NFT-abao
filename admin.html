@@ -706,10 +706,11 @@ function createReadProvider(providers) {
   });
 }
 
-/* 后台并发探测公共节点速度（2.5s 内谁先回谁记下），结果存 localStorage */
+/* 后台并发探测公共节点速度（2.5s 内谁先回谁记下），结果存 localStorage；
+   只在页面 load 完成后跑一次、且只探测前 6 个节点——绝不在首屏加载期抢带宽 */
 function probeFastRpc() {
   try {
-    const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+    const nodes = CONFIG.rpcUrls.slice(0, 6).map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
     const probe = (n) => Promise.race([
       n.getBlockNumber().then(() => Date.now()),
       new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
@@ -717,9 +718,9 @@ function probeFastRpc() {
     Promise.allSettled(nodes.map(probe)).then(results => {
       let best = null, bestMs = Infinity;
       nodes.forEach((n, i) => {
-        if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n.connection.url; }
+        if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n.connection && n.connection.url; }
       });
-      if (best) localStorage.setItem('fastRpc', best);
+      if (best) { try { localStorage.setItem('fastRpc', best); } catch (e) {} }
     }).catch(() => {});
   } catch (e) { /* 忽略探测失败 */ }
 }
@@ -727,7 +728,8 @@ function probeFastRpc() {
 /* 只读节点排序：记忆的最快公共节点排头，钱包注入节点垫底 */
 function buildReadNodes(walletProvider) {
   const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
-  const cached = localStorage.getItem('fastRpc');
+  let cached = null;
+  try { cached = localStorage.getItem('fastRpc'); } catch (e) {}
   let ordered = nodes.slice();
   if (cached) {
     const idx = ordered.findIndex(u => u === cached);
@@ -1679,7 +1681,7 @@ DOM.adminApplyOracleBtn.addEventListener('click', throttle(adminApplyOracle, 150
 DOM.adminEnableTradingBtn.addEventListener('click', throttle(adminEnableTrading, 2000));
 DOM.adminGrantMinterBtn.addEventListener('click', throttle(adminGrantMinter, 1500));
 
-probeFastRpc(); // 后台探测最快 RPC 节点（不阻塞页面），为下次进入铺路
+window.addEventListener('load', () => setTimeout(probeFastRpc, 1500)); // 首屏渲染完再后台探测最快节点
 
 window.addEventListener('load', async () => {
   if (window.ethereum) {
