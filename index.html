@@ -115,8 +115,14 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero-title span{background:linear-gradient(90deg,#22d3ee,#8b5cf6,#f5c14c,#22d3ee);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldFlow 8s linear .6s infinite}
 @keyframes goldFlow{to{background-position:200% center}}
 .hero-sub{font-size:14px;color:var(--muted);letter-spacing:3px;margin-bottom:22px}
+/* 副标题逐字波浪：JS 渲染每字一个 .w span，七彩 + 错峰上下摆动 */
+.hero-sub .w{display:inline-block;animation:subWave 1.4s ease-in-out infinite;will-change:transform}
+@keyframes subWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .hero-chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:26px}
 .hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:rgba(233,237,245,.85);background:rgba(12,16,30,.22);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(34,211,238,.18);border-radius:99px;padding:9px 17px;box-shadow:0 6px 26px rgba(34,211,238,.1),inset 0 1px 0 rgba(255,255,255,.08);animation:chipFloat 5.5s ease-in-out infinite}
+.hero-chip-ic{font-size:14px;line-height:1;filter:drop-shadow(0 0 6px rgba(245,193,76,.9));animation:chipIconPop 2s ease-in-out infinite}
+.hero-chip:nth-child(2) .hero-chip-ic{animation-delay:-1s}
+@keyframes chipIconPop{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
 .hero-chip:nth-child(2){animation-delay:-1.8s}
 .hero-chip:nth-child(3){animation-delay:-3.6s}
 .hero-chip b{color:#fff;font-weight:800;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(34,211,238,.6)}
@@ -539,11 +545,11 @@ body{-webkit-tap-highlight-color:transparent}
 @media (prefers-reduced-motion: reduce){
 *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
-/* 手机端降载：顶栏模糊减半 + 标题金色流光改为静态渐变 + 极光光斑缩小（少一层持续重绘） */
+/* 手机端降载：顶栏模糊减半 + 极光光斑缩小 + 背景漂浮卡减为 6 张（省 GPU 合成层） */
 @media (max-width:640px){
 .header{backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}
-.hero-title span{animation:none}
 .aurora::before,.aurora::after{filter:blur(80px);opacity:.16}
+.fc7,.fc8,.fc9,.fc10{display:none}
 }
 /* 超窄屏：隐藏链徽章、进一步收紧连接按钮，避免顶栏溢出 */
 @media (max-width:480px){
@@ -608,10 +614,10 @@ body{-webkit-tap-highlight-color:transparent}
       <div class="hero-overlay"></div>
       <div class="hero-badge"><span class="live-dot"></span><span data-i18n="heroBadge">LIVE · 数据实时上链</span></div>
       <h1 class="hero-title"><span data-i18n="heroTitle">卡牌分红 </span><span>PROTOCOL</span></h1>
-      <p class="hero-sub" data-i18n="heroSub">每张卡牌 · 金本位分红 · 三倍出局</p>
+      <p class="hero-sub" id="heroSubLine"></p>
       <div class="hero-chips">
-        <span class="hero-chip"><span data-i18n="chipPreCards">预售卡牌</span> <b>200</b> <span data-i18n="unitCard">张</span></span>
-        <span class="hero-chip"><span data-i18n="chipAirdrop">预售空投</span> <b data-i18n="chipAirdropNum">40万</b> <span data-i18n="unitToken">枚</span></span>
+        <span class="hero-chip"><span class="hero-chip-ic">🔥</span><span data-i18n="chipPreCards">预售卡牌 · 限量</span> <b>200</b> <span data-i18n="unitCard">张</span></span>
+        <span class="hero-chip"><span class="hero-chip-ic">🎁</span><span data-i18n="chipAirdrop">预售空投 · 直送</span> <b data-i18n="chipAirdropNum">40万</b> <span data-i18n="unitToken">枚</span></span>
       </div>
     </div>
 
@@ -1140,7 +1146,7 @@ const I18N = {
   zh: {
     connect:'连接', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
     heroBadge:'LIVE · 数据实时上链', heroTitle:'卡牌分红 ', heroSub:'每张卡牌 · 金本位分红 · 三倍出局',
-    chipPreCards:'预售卡牌', chipAirdrop:'预售空投', chipAirdropNum:'40万', unitCard:'张', unitToken:'枚',
+    chipPreCards:'预售卡牌 · 限量', chipAirdrop:'预售空投 · 直送', chipAirdropNum:'40万', unitCard:'张', unitToken:'枚',
     kpiPool:'分红池', kpiActive:'有效卡牌', kpiMyCards:'我的卡牌', kpiBurned:'已销毁', kpiCirc:'流通量', kpiPending:'待领取分红',
     kpiSoul:'灵魂绑定 · 独立计息', kpiBurnedOf:'占总量', kpiBurnedOut:' · 永久出流通', kpiCap:'上限 1000 万 · 永不增发', kpiAllTotal:'全卡实时合计',
     bindTitle:'上级绑定', bindPh:'推荐人钱包地址 0x…', bindBtn:'绑定', boundOk:'✓ 已绑定',
@@ -1207,7 +1213,7 @@ const I18N = {
   en: {
     connect:'Connect', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
     heroBadge:'LIVE · ON-CHAIN DATA', heroTitle:'CARD DIVIDEND ', heroSub:'Every Card · Gold-Standard Dividends · 3× Exit',
-    chipPreCards:'Pre-sale Cards', chipAirdrop:'Pre-sale Airdrop', chipAirdropNum:'400K', unitCard:'cards', unitToken:'tokens',
+    chipPreCards:'Pre-sale Cards · Only', chipAirdrop:'Pre-sale Airdrop · Get', chipAirdropNum:'400K', unitCard:'cards', unitToken:'tokens',
     kpiPool:'Dividend Pool', kpiActive:'Active Cards', kpiMyCards:'My Cards', kpiBurned:'Burned', kpiCirc:'Circulating', kpiPending:'Pending Rewards',
     kpiSoul:'Soulbound · Independent', kpiBurnedOf:'', kpiBurnedOut:' · out of circulation', kpiCap:'Cap 10M · never more', kpiAllTotal:'All cards total',
     bindTitle:'Referrer', bindPh:'Referrer wallet address 0x…', bindBtn:'Bind', boundOk:'✓ Bound',
@@ -1280,9 +1286,27 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  renderHeroSub(); // 副标题逐字波浪（含颜色/错峰，随语言重渲染）
   const r = document.querySelector('.lang-radio[value="' + LANG + '"]');
   if (r) r.checked = true;
   if (userAddress) { loadAll(); loadSlowData(); } // 动态文案随语言刷新（含「枚」等 JS 渲染单位）
+}
+
+/* 副标题「每张卡牌 · 金本位分红 · 三倍出局」：逐字七彩 + 从左到右错峰上下波浪 */
+function renderHeroSub() {
+  const el = document.getElementById('heroSubLine');
+  if (!el) return;
+  el.innerHTML = '';
+  const chars = Array.from(t('heroSub'));
+  const n = Math.max(1, chars.length);
+  chars.forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.className = 'w';
+    s.textContent = ch;
+    s.style.color = 'hsl(' + Math.round(i * 360 / n) + ' 85% 66%)';
+    s.style.animationDelay = (i * 0.07) + 's';
+    el.appendChild(s);
+  });
 }
 
 /* ============================================================
@@ -2157,6 +2181,20 @@ async function loadCards() {
 
   // ① 渲染路径：有全量缓存直接同步渲染（翻页零等待），冷启动才直读本页 1 张
   let count = 0, fromCache = false;
+  // 性能：停留在首页等非「我的卡牌」页时，每 15s 轮询只刷新卡牌计数，
+  // 跳过列表渲染与全量汇总——长时间挂首页不再重复拉取/重绘隐藏列表（省 RPC 与内存）
+  const cardsActive = document.querySelector('.page.active')?.id === 'cardsPage';
+  if (!cardsActive && cardsAllCache && cardsAllCache.count > 0) {
+    try {
+      const bal = await nftC.balanceOf(userAddress);
+      let c = bal.toNumber();
+      if (!Number.isFinite(c) || c < 0 || c > 10000) c = 0;
+      if (epoch !== connEpoch || userAddress !== addr) return;
+      DOM.myCardCount.innerText = c;
+      DOM.dashCardCount.innerText = c;
+      return;
+    } catch (e) { /* 读不到数量则走完整路径 */ }
+  }
   if (cardsAllCache && cardsAllCache.count > 0 && cardsAllCache.ids.length === cardsAllCache.count) {
     count = cardsAllCache.count;
     fromCache = true;
@@ -2554,6 +2592,10 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     // 团队页：打开时才加载团队数据（逐地址查询较重，避免拖慢整页轮询）
     if (btn.dataset.page === 'teamPage' && userAddress) {
       loadTeam();
+    }
+    // 卡牌页：切入立即加载（避免等下一轮 15s 轮询）
+    if (btn.dataset.page === 'cardsPage' && userAddress) {
+      loadCards();
     }
 
     // 背景视频：离开首页暂停解码（省电降温），回到首页再播放
