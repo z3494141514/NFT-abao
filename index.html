@@ -55,6 +55,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .chain-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 11px;border-radius:99px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
 .chain-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
 .wallet-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);border:none;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;transition:all .25s ease;box-shadow:0 4px 18px rgba(34,211,238,.28)}
+.btn-spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
 .wallet-btn .ic{width:15px;height:15px;stroke:#fff}
 .wallet-btn:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(139,92,246,.4)}
 /* 语言切换按钮 */
@@ -1173,7 +1174,7 @@ const DOM = {
  * ============================================================ */
 const I18N = {
   zh: {
-    connect:'连接', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
+    connect:'连接', connecting:'连接中', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
     heroBadge:'LIVE · 数据实时上链', heroTitle:'卡牌分红 ', heroSub:'每张卡牌 · 金本位分红 · 三倍出局',
     chipPreCards:'预售卡牌 · 限量', chipAirdrop:'预售空投 · 直送', chipAirdropNum:'40万', unitCard:'张', unitToken:'枚',
     kpiPool:'分红池', kpiActive:'有效卡牌', kpiMyCards:'我的卡牌', kpiBurned:'已销毁', kpiCirc:'流通量', kpiPending:'待领取分红',
@@ -1240,7 +1241,7 @@ const I18N = {
     pageTitle:'卡牌分红 · NFT Dividend'
   },
   en: {
-    connect:'Connect', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
+    connect:'Connect', connecting:'Connecting', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
     heroBadge:'LIVE · ON-CHAIN DATA', heroTitle:'CARD DIVIDEND ', heroSub:'Every Card · Gold-Standard Dividends · 3× Exit',
     chipPreCards:'Pre-sale Cards · Only', chipAirdrop:'Pre-sale Airdrop · Get', chipAirdropNum:'400K', unitCard:'cards', unitToken:'tokens',
     kpiPool:'Dividend Pool', kpiActive:'Active Cards', kpiMyCards:'My Cards', kpiBurned:'Burned', kpiCirc:'Circulating', kpiPending:'Pending Rewards',
@@ -1512,10 +1513,16 @@ function updateBuyDisplay() {
 /* ============================================================
  * 钱包连接
  * ============================================================ */
+/* 钱包调用超时护栏：TP/钱包注入 provider 卡住时不再无限等待 */
+const withWalletTimeout = (p, ms, label) => Promise.race([
+  Promise.resolve(p),
+  new Promise((_, rej) => setTimeout(() => rej(new Error('wallet timeout: ' + label)), ms))
+]);
+
 async function switchChain() {
   // 已在目标链则直接放行：避免每次重连都弹一次「切换网络」确认（部分钱包每次都弹，误关就连接失败）
   try {
-    const cid = await window.ethereum.request({ method: 'eth_chainId' });
+    const cid = await withWalletTimeout(window.ethereum.request({ method: 'eth_chainId' }), 8000, 'chainId');
     if (cid === CONFIG.chainIdHex) return;
   } catch (e) { /* 读不到链 ID 就继续走切换流程 */ }
   try {
@@ -1548,7 +1555,12 @@ async function connectWallet() {
     showToast(t('toastNoWallet'), 'error');
     return;
   }
-  // 连接期间不遮页面：页面保持可见，数据在后台加载、到位即填充
+  // 可见的连接过程：按钮内小转圈 + 提示条，不遮页面
+  const btn = DOM.connectBtn;
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spin"></span> ' + t('connecting');
+  showToast(t('connecting') + '…', '');
   try {
     await switchChain();
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -1557,10 +1569,15 @@ async function connectWallet() {
   } catch (e) {
     if (String(e.message || '').includes('User rejected') || (e && e.code === 4001)) {
       showToast(t('toastCanceled'), 'error');
+    } else if (String(e.message || '').includes('wallet timeout')) {
+      showToast(t('toastConnFail'), 'error');
     } else {
       console.warn('连接钱包失败', e);
       showToast(t('toastConnFail'), 'error');
     }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
   }
 }
 
@@ -2819,9 +2836,10 @@ async function checkInviteBindModal() {
 window.addEventListener('load', async () => {
   checkChain();
   if (window.ethereum) {
-    // 已授权时自动恢复连接
+    // 已授权时自动恢复连接（8 秒超时护栏：钱包注入卡住时静默放弃，不阻塞页面）
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const accounts = await withWalletTimeout(
+        window.ethereum.request({ method: 'eth_accounts' }), 8000, 'accounts');
       if (accounts.length > 0) {
         await setupProvider(accounts[0]);
         checkInviteBindModal();
