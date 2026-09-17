@@ -1340,6 +1340,8 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   renderHeroSub(); // 副标题逐字波浪（含颜色/错峰，随语言重渲染）
+  if (tokenSymbol !== 'TOKEN') applyTokenSymbols(); // 「购卡立得 2000 枚…」为 JS 动态文案，随语言刷新
+  checkChain(); // 顶栏链状态文案随语言刷新（异步静默）
   const r = document.querySelector('.lang-radio[value="' + LANG + '"]');
   if (r) r.checked = true;
   if (userAddress) { loadAll(); loadSlowData(); } // 动态文案随语言刷新（含「枚」等 JS 渲染单位）
@@ -1369,9 +1371,9 @@ let provider = null, signer = null, userAddress = '';
 let readProvider = null; // 只读 RPC 层（公共节点自动切换）
 let connEpoch = 0;       // 连接代次：断开/重连时递增，用于作废过期的异步连接收尾
 let lastSetup = { addr: '', ts: 0 }; // 并发去重：同一地址 800ms 内的重复 setup 只执行一次
-applyLang(); // 应用上次保存的语言（本地存储）
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
+applyLang(); // 应用上次保存的语言（本地存储；须在 tokenSymbol 声明之后，applyLang 会读取它）
 let usdtDecimals = 18, usdtSymbol = 'USDT';
 let refreshTimer = null;
 let buyQuantity = 1;              // 购买数量
@@ -1486,8 +1488,10 @@ const showToast = (msg, type = '') => {
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 2600);
 };
-/* 无变化即不写 DOM：15s 轮询数据大多不变，跳过相同写入避免无效布局重排（零视觉变化） */
-const _lastUi = new WeakMap();
+/* 无变化即不写 DOM：15s 轮询数据大多不变，跳过相同写入避免无效布局重排（零视觉变化）。
+   注意：断开钱包/语言切换会用「直接写 DOM」复位界面，因此必须同步作废本缓存，
+   否则重连后 loadStats 算出相同字符串会被误判为「没变化」而跳过写入（数据永久停在 --） */
+let _lastUi = new WeakMap();
 const uiText = (el, text) => {
   if (!el) return;
   const s = String(text);
@@ -1768,6 +1772,8 @@ function disconnectWallet() {
   cardsAggBusy = false;
   cardsAggTick = 0;
   slowTick = 5; // 重连后首轮立即刷新慢数据（已销毁/流通量），避免等待最长 90 秒的周期
+  _lastUi = new WeakMap(); // 作废记忆化写入缓存：上面的直接复位（--/0）不能被重连后的跳过写入误判
+  _cardsRenderKey = '';    // 作废卡牌渲染签名：同地址同卡同页重连也必须强制重绘列表
   DOM.bindModal.style.display = 'none';
   pendingRef = '';
   buyQuantity = 1;
@@ -2647,23 +2653,42 @@ function heroVideoEnsurePlaying() {
   // 部分微信/TP 版本即使静音也要求「真实手势」才放行媒体播放，且极个别版本会把
   // 首次点击当成「媒体解锁手势」吞掉。对策：pointerdown/touchstart 阶段（比 click 更早）
   // 就先解锁视频——等 click 真正到来时媒体已放行，首次点击不再被平台占用。
+  // capture 阶段监听：即使页面元素 stopPropagation 也必定执行；且只有视频真正进入
+  // 播放状态后才移除监听——首次手势未成功放行时，保留到后续点击里继续补救。
   const unlockMedia = () => {
     const hv = document.getElementById('heroVideo');
-    if (hv) { hv.muted = true; try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-    window.removeEventListener('pointerdown', unlockMedia);
-    window.removeEventListener('touchstart', unlockMedia);
-    window.removeEventListener('click', unlockMedia);
+    if (!hv) return;
+    try {
+      hv.muted = true;
+      const p = hv.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+    if (!hv.paused) {
+      window.removeEventListener('pointerdown', unlockMedia, true);
+      window.removeEventListener('touchstart', unlockMedia, true);
+      window.removeEventListener('click', unlockMedia, true);
+    }
   };
-  window.addEventListener('pointerdown', unlockMedia, { passive: true });
-  window.addEventListener('touchstart', unlockMedia, { passive: true });
-  window.addEventListener('click', unlockMedia, { passive: true });
+  window.addEventListener('pointerdown', unlockMedia, { capture: true, passive: true });
+  window.addEventListener('touchstart', unlockMedia, { capture: true, passive: true });
+  window.addEventListener('click', unlockMedia, { capture: true, passive: true });
 })();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     // 先瞬间回顶部再切页：避免「页面高度变化 → 滚动位置被夹紧」造成的跳变，
     // behavior:'instant' 绕过 html{scroll-behavior:smooth} 的平滑滚动（否则会看到页面滑动 = 抖动感）
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } catch (e) {
+      // 旧 WebView（部分微信/TP 内核）不认识 'instant' 枚举会抛 TypeError，
+      // 抛错会中断整个点击处理（首次点击被吞的根源）：回退为临时关闭平滑滚动再普通回顶
+      const html = document.documentElement;
+      const prev = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+      html.style.scrollBehavior = prev;
+    }
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
@@ -2740,6 +2765,7 @@ DOM.langModal.addEventListener('click', (e) => {
 DOM.langConfirmBtn.addEventListener('click', () => {
   const sel = document.querySelector('.lang-radio:checked');
   if (sel) { LANG = sel.value; localStorage.setItem('lang', LANG); }
+  _lastUi = new WeakMap(); // data-i18n 被 applyLang 直接改写，动态文案记忆缓存必须作废
   applyLang();
   DOM.langModal.style.display = 'none';
 });
