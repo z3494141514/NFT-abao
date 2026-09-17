@@ -1356,9 +1356,9 @@ const fmtAmt2 = (bn, dec) => {
   } catch (e) { return '--'; }
 };
 const fmtTime = (ts) => {
-  const t = toNum(ts);
-  if (!t) return '--';
-  const d = new Date(t * 1000);
+  const tsNum = toNum(ts); // ⚠️ 不命名为 t（避免遮蔽全局 i18n 的 t()）
+  if (!tsNum) return '--';
+  const d = new Date(tsNum * 1000);
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
@@ -1403,18 +1403,18 @@ const showToast = (msg, type = '') => {
     wrap.style.cssText = 'position:fixed;top:20px;right:16px;z-index:10001;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:80vw';
     document.body.appendChild(wrap);
   }
-  const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.innerText = msg;
-  wrap.appendChild(t);
-  setTimeout(() => t.remove(), 2600);
+  const el = document.createElement('div'); // ⚠️ 不命名为 t（避免遮蔽全局 i18n 的 t()）
+  el.className = 'toast ' + type;
+  el.innerText = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
 };
 const throttle = (fn, delay = 1000) => {
-  let t = null;
+  let timer = null; // ⚠️ 不能命名为 t：会遮蔽全局 i18n 的 t()（语言切换后引入的命名冲突）
   return function(...a) {
-    if (t) { showToast(t('toastBusy'), 'error'); return; }
+    if (timer) { showToast(t('toastBusy'), 'error'); return; }
     if (!userAddress) { showToast(t('toastConnect'), 'error'); return; }
-    t = setTimeout(() => { t = null; }, delay);
+    timer = setTimeout(() => { timer = null; }, delay);
     return fn.apply(this, a);
   };
 };
@@ -2523,11 +2523,16 @@ function heroVideoEnsurePlaying() {
   // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
   setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
   setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
-  // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play
-  document.addEventListener('WeixinJSBridgeReady', () => heroVideoEnsurePlaying(), false);
+  // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
+  // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
+  const wxAutoPlay = () => heroVideoEnsurePlaying();
+  if (typeof WeixinJSBridge === 'object' && typeof WeixinJSBridge.invoke === 'function') {
+    wxAutoPlay();
+  } else {
+    document.addEventListener('WeixinJSBridgeReady', wxAutoPlay, false);
+  }
   // 部分微信版本即使静音也要求「首个手势」才放行（touchstart 不算激活，
-  // 需要 click/touchend 级别的手势——这正是「切页点一下就能播」的原因）。
-  // 首个手势即补播，任何一次点击/触摸都会触发，播成功后自移除。
+  // 需要 click/touchend 级别的手势）。首个手势即补播，播成功后自移除。
   const onFirstGesture = () => {
     heroVideoEnsurePlaying();
     window.removeEventListener('touchstart', onFirstGesture);
