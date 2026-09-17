@@ -2616,11 +2616,13 @@ function heroVideoEnsurePlaying() {
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
+    // 先瞬间回顶部再切页：避免「页面高度变化 → 滚动位置被夹紧」造成的跳变，
+    // behavior:'instant' 绕过 html{scroll-behavior:smooth} 的平滑滚动（否则会看到页面滑动 = 抖动感）
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     $(btn.dataset.page).classList.add('active');
-    window.scrollTo(0, 0); // 切页回顶部：避免页面高度变化引起滚动位置跳变（抖动感来源）
 
     // 团队页：打开时才加载团队数据（逐地址查询较重，避免拖慢整页轮询）
     if (btn.dataset.page === 'teamPage' && userAddress) {
@@ -2631,22 +2633,25 @@ document.querySelectorAll('.nav-item').forEach(btn => {
       loadCards();
     }
 
-    // 背景视频：离开首页暂停解码（省电降温），回到首页再播放
+    // 背景视频：离开首页暂停解码（省电降温），回到首页再播放（异步，不占本次点击主线程）
     const hv = document.getElementById('heroVideo');
     if (hv) {
-      if (btn.dataset.page === 'homePage') heroVideoEnsurePlaying();
+      if (btn.dataset.page === 'homePage') setTimeout(() => heroVideoEnsurePlaying(), 0);
       else hv.pause();
     }
 
-    // 首页：重算背景飞行距离（绑定态/预售态会改变 Hero 高度），
-    // 并强制重启动画——display:none→block 后部分浏览器把 CSS 动画停住
+    // 首页：重算背景飞行距离，并只对「背景漂浮卡」强制重启动画
+    // （display:none→block 后部分浏览器会停住背景卡动画；数据卡/胶囊的 4~5px 浮动
+    //  与标题流光不再重启——它们正是切页瞬间的细小跳动来源）
     if (btn.dataset.page === 'homePage') {
       setHeroTravel();
-      const home = $(btn.dataset.page);
-      home.classList.add('anim-restart');
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        home.classList.remove('anim-restart');
-      }));
+      const scene = document.querySelector('.hero-scene');
+      if (scene) {
+        scene.classList.add('anim-restart');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          scene.classList.remove('anim-restart');
+        }));
+      }
     }
 
     // 团队页流光动画：display:none→block 时部分浏览器不重启动画，
