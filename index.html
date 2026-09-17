@@ -168,7 +168,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .bind-addr{display:block;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--cyan);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bind-inline{display:flex;align-items:center;gap:10px;flex:1;min-width:280px;justify-content:flex-end}
 .bind-inline .input{flex:1;max-width:340px;padding:10px 15px;font-size:13px}
-.bound-ok{position:absolute;top:10px;right:16px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(9,14,30,.95);padding:3px 11px;border-radius:99px;box-shadow:0 2px 10px rgba(52,211,153,.25);white-space:nowrap}
+.bound-ok{position:absolute;top:50%;right:16px;transform:translateY(-50%);display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(9,14,30,.95);padding:3px 11px;border-radius:99px;box-shadow:0 2px 10px rgba(52,211,153,.25);white-space:nowrap}
 /* 购买卡牌：以一张悬浮的 NFT 卡呈现，全息描边 + 流光 + 悬停微倾 */
 .buy-stage{padding:0;margin-bottom:8px;position:relative}
 .buy-card{position:relative;max-width:760px;margin:0 auto;border-radius:20px;border:1px solid rgba(148,163,184,.14);padding:12px 18px 14px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:0 22px 55px -30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden;transition:transform .35s cubic-bezier(.22,.8,.36,1),box-shadow .35s,border-color .35s}
@@ -2487,16 +2487,32 @@ window.addEventListener('load', setHeroTravel);
 
 /* 主视觉背景视频：CONFIG.heroVideoUrl 填了才启用；加载失败自动回退到代码卡牌动画。
    省电降载：省流量模式 / 系统减少动态效果 时不加载视频（手机端正常播放，离开页面自动暂停） */
+function heroVideoEnsurePlaying() {
+  const hv = document.getElementById('heroVideo');
+  if (!hv || !hv.paused) return;
+  const active = document.querySelector('.page.active');
+  const onHome = active && active.id === 'homePage';
+  if (!onHome || document.visibilityState !== 'visible') return;
+  const pr = hv.play();
+  if (pr && pr.catch) pr.catch(() => { hv.muted = true; hv.play().catch(() => {}); });
+}
+
 (function initHeroVideo() {
   const v = document.getElementById('heroVideo');
   if (!v) return;
   const skip = (navigator.connection && navigator.connection.saveData)
     || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   if (!CONFIG.heroVideoUrl || skip) { v.remove(); return; }
+  v.muted = true;      // 显式静音（部分浏览器只认 property 不认 attribute）
+  v.playsInline = true;
   v.addEventListener('error', () => v.remove(), true);
-  v.addEventListener('loadeddata', () => v.classList.add('video-ready'));
+  const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
+  v.addEventListener('loadeddata', ready);
+  v.addEventListener('canplay', ready);
   v.querySelector('source').src = CONFIG.heroVideoUrl;
   v.load();
+  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
 })();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -2514,7 +2530,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     // 背景视频：离开首页暂停解码（省电降温），回到首页再播放
     const hv = document.getElementById('heroVideo');
     if (hv) {
-      if (btn.dataset.page === 'homePage' && document.visibilityState === 'visible') hv.play().catch(() => {});
+      if (btn.dataset.page === 'homePage') heroVideoEnsurePlaying();
       else hv.pause();
     }
 
@@ -2657,16 +2673,12 @@ window.addEventListener('load', async () => {
 
   // 页面可见性：切到后台暂停轮询与背景视频，回到前台立即刷新并恢复
   document.addEventListener('visibilitychange', () => {
-    const hv = document.getElementById('heroVideo');
-    if (hv) {
-      const active = document.querySelector('.page.active');
-      const onHome = active && active.id === 'homePage';
-      if (document.visibilityState === 'visible' && onHome) hv.play().catch(() => {});
-      else hv.pause();
-    }
     if (document.visibilityState === 'visible') {
+      heroVideoEnsurePlaying();
       if (userAddress) { loadAll(); startRefresh(); }
     } else {
+      const hv = document.getElementById('heroVideo');
+      if (hv) hv.pause();
       stopRefresh();
     }
   });
