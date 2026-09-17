@@ -55,7 +55,6 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .chain-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 11px;border-radius:99px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
 .chain-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
 .wallet-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);border:none;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;transition:all .25s ease;box-shadow:0 4px 18px rgba(34,211,238,.28)}
-.btn-spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
 /* 按下即时反馈：任何被注册的点击都有视觉回应（诊断「吞点击」用） */
 .btn:active:not(:disabled),.qty-btn:active:not(:disabled),.nav-item:active,.wallet-btn:active,.icon-btn:active,.pager-btn:active,.lang-btn:active,.lang-opt:active,.claim-one-btn:active,.team-copy:active{transform:scale(.94)}
 .wallet-btn .ic{width:15px;height:15px;stroke:#fff}
@@ -265,12 +264,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .qty-btn:disabled{opacity:.35;cursor:not-allowed}
 .qty-btn:hover:not(:disabled){transform:scale(1.1);box-shadow:0 4px 12px rgba(34,211,238,.4)}
 .qty-value{min-width:28px;text-align:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
-/* ---------- 卡牌页汇总模块 ---------- */
-.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-.mini-kpi{background:rgba(18,21,36,.9);border:1px solid var(--border);border-radius:16px;padding:14px 17px}
-.mini-label{display:block;font-size:10.5px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;font-weight:700}
-.mini-value{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
-.mini-kpi.gold .mini-value{color:var(--gold)}
 /* ---------- 收益总览（金库仪表盘 · 紧凑版） ---------- */
 .overview-panel{position:relative;overflow:hidden;border:1px solid transparent;border-radius:18px;padding:14px 18px 15px;margin-bottom:14px;background:linear-gradient(180deg,rgba(24,26,44,1),rgba(11,13,25,1)) padding-box,linear-gradient(135deg,rgba(245,193,76,.55),rgba(34,211,238,.28) 45%,rgba(139,92,246,.35)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 50px -24px rgba(0,0,0,.85)}
 .overview-panel::before{content:'';position:absolute;top:-70%;left:20%;width:60%;height:140%;background:radial-gradient(ellipse at center,rgba(245,193,76,.13),transparent 60%);pointer-events:none}
@@ -369,21 +362,22 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .pager-btn:hover:not(:disabled){background:rgba(34,211,238,.18);box-shadow:0 4px 14px rgba(34,211,238,.2)}
 .pager-btn:disabled{opacity:.35;cursor:not-allowed}
 .pager-info{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700;border:1px solid var(--border);border-radius:99px;padding:6px 16px;background:rgba(255,255,255,.03)}
-/* ---------- 推荐奖励金色大奖卡 ---------- */
-.reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12)),linear-gradient(180deg,rgba(26,27,44,.98),rgba(13,14,26,.99));border:1px solid rgba(245,193,76,.5);border-radius:22px;padding:26px 28px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:20px;box-shadow:0 10px 40px rgba(245,193,76,.12)}
+/* ---------- 推荐奖励双卡（并排紧凑陈列，数字优先） ---------- */
+.reward-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12)),linear-gradient(180deg,rgba(26,27,44,.98),rgba(13,14,26,.99));border:1px solid rgba(245,193,76,.5);border-radius:18px;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;box-shadow:0 10px 40px rgba(245,193,76,.12)}
 .reward-hero::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);transform:translateX(-260%);animation:shine 3.6s ease-in-out 1.2s infinite;pointer-events:none}
 .reward-hero.anim-restart::after{animation:none}
 /* 统一扫光：transform 合成层动画（GPU），不触发布局/重绘 */
 @keyframes shine{0%{transform:translateX(-260%)}55%,100%{transform:translateX(430%)}}
-.reward-hero-ic{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(245,193,76,.45);flex-shrink:0}
-.reward-hero-ic .ic{width:32px;height:32px;stroke:#fff;stroke-width:1.6}
-.reward-hero-body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.reward-hero-ic{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,193,76,.4);flex-shrink:0}
+.reward-hero-ic .ic{width:22px;height:22px;stroke:#fff;stroke-width:1.6}
+.reward-hero-body{display:flex;flex-direction:column;gap:4px;min-width:0}
 .reward-hero-violet{background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(245,193,76,.05) 55%,rgba(59,130,246,.12)),linear-gradient(180deg,rgba(22,21,42,.98),rgba(13,14,26,.99));border:1px solid rgba(139,92,246,.45);box-shadow:0 10px 40px rgba(139,92,246,.14)}
-.reward-hero-violet .reward-hero-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 8px 30px rgba(139,92,246,.45)}
-.reward-mini{margin-top:4px;font-size:13px;color:var(--muted)}
+.reward-hero-violet .reward-hero-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 6px 20px rgba(139,92,246,.4)}
+.reward-mini{margin-top:2px;font-size:11.5px;color:var(--muted)}
 .reward-mini b{color:var(--gold);font-weight:700}
-.reward-label{font-size:12px;letter-spacing:2.5px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
-.reward-value{font-size:36px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all}
+.reward-label{font-size:11px;letter-spacing:2px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
+.reward-value{font-size:26px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all}
 .reward-sub{font-size:12.5px;color:var(--muted)}
 /* ---------- 主按钮流光（入场延迟，避免切页瞬间闪光） ---------- */
 .btn-primary{position:relative;overflow:hidden}
@@ -520,10 +514,6 @@ body{-webkit-tap-highlight-color:transparent}
 .nav-item .ic{width:17px;height:17px}
 .toast{font-size:12.5px;padding:11px 18px;border-radius:12px}
 .invite-wrap{max-width:100%}
-.mini-kpis{gap:8px;margin-bottom:12px}
-.mini-kpi{padding:11px 12px;border-radius:13px}
-.mini-value{font-size:15.5px}
-.mini-label{font-size:9px;margin-bottom:4px}
 .overview-panel{padding:12px 12px 13px;border-radius:15px;margin-bottom:12px}
 .overview-head{margin-bottom:9px}
 .overview-grid{grid-template-columns:repeat(3,1fr);gap:7px}
@@ -547,12 +537,13 @@ body{-webkit-tap-highlight-color:transparent}
 .team-no{font-size:10.5px;letter-spacing:1px}
 .team-addr-main{font-size:13px;letter-spacing:.3px}
 .team-copy{width:31px;height:31px}
-.reward-hero{padding:18px 16px;border-radius:16px;gap:14px;margin-bottom:12px}
-.reward-hero-ic{width:48px;height:48px;border-radius:14px}
-.reward-hero-ic .ic{width:24px;height:24px}
-.reward-value{font-size:26px}
-.reward-label{font-size:10.5px;letter-spacing:1.8px}
-.reward-sub{font-size:11px}
+.reward-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.reward-hero{padding:12px 10px;border-radius:15px;gap:10px;flex-direction:column;text-align:center}
+.reward-hero-ic{width:38px;height:38px;border-radius:11px}
+.reward-hero-ic .ic{width:19px;height:19px}
+.reward-value{font-size:20px}
+.reward-label{font-size:10px;letter-spacing:1.5px}
+.reward-mini{font-size:9.5px}
 .hero{padding:34px 16px 30px;border-radius:18px;margin-bottom:12px}
 .hero-title{font-size:30px}
 .hero-sub{font-size:11.5px;letter-spacing:2px;margin-bottom:16px}
@@ -888,33 +879,23 @@ body{-webkit-tap-highlight-color:transparent}
 
   <!-- ================= 团队 ================= -->
   <div id="teamPage" class="page">
-    <!-- 块一：预售直推奖励（开盘前 USDT 购买） -->
-    <div class="reward-hero">
-      <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
-      <div class="reward-hero-body">
-        <span class="reward-label" data-i18n="teamPreLabel">预售直推奖励</span>
-        <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
-        <span class="reward-sub" data-i18n="teamPreSub">下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡</span>
-        <span class="reward-mini"><span data-i18n="teamPreMiniA">直推购买</span> <b id="teamPreReferralCount">0</b> <span data-i18n="teamPreMiniB">张 · 已获奖励卡</span> <b id="teamBonusCards">0</b> <span data-i18n="unitCard">张</span></span>
+    <!-- 两块推荐奖励：并排双卡（紧凑陈列，数字优先） -->
+    <div class="reward-grid">
+      <div class="reward-hero">
+        <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
+        <div class="reward-hero-body">
+          <span class="reward-label" data-i18n="teamPreLabel">预售直推奖励</span>
+          <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
+          <span class="reward-mini"><span data-i18n="teamPreMiniA">直推购买</span> <b id="teamPreReferralCount">0</b> <span data-i18n="teamPreMiniB">张 · 已获奖励卡</span> <b id="teamBonusCards">0</b> <span data-i18n="unitCard">张</span></span>
+        </div>
       </div>
-    </div>
-    <!-- 块二：开盘后推荐奖励（代币购买，30%） -->
-    <div class="reward-hero reward-hero-violet">
-      <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></div>
-      <div class="reward-hero-body">
-        <span class="reward-label" data-i18n="teamPostLabel">开盘后推荐奖励</span>
-        <span class="reward-value" id="teamRewardEarned">0.00</span>
-        <span class="reward-sub" data-i18n="teamPostSub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
-      </div>
-    </div>
-    <div class="mini-kpis" style="grid-template-columns:1fr 1fr">
-      <div class="mini-kpi">
-        <span class="mini-label" data-i18n="miniL1">一级下级</span>
-        <span class="mini-value" id="teamCount2">0</span>
-      </div>
-      <div class="mini-kpi gold">
-        <span class="mini-label" data-i18n="miniMyRef">我的上级</span>
-        <span class="mini-value" id="teamMyReferrer" style="font-size:15px">--</span>
+      <div class="reward-hero reward-hero-violet">
+        <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></div>
+        <div class="reward-hero-body">
+          <span class="reward-label" data-i18n="teamPostLabel">开盘后推荐奖励</span>
+          <span class="reward-value" id="teamRewardEarned">0.00</span>
+          <span class="reward-mini" data-i18n="teamPostMini">直属下级购买实时到账</span>
+        </div>
       </div>
     </div>
     <div class="team-panel">
@@ -1171,7 +1152,7 @@ const DOM = {
   cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
-  teamCount: $('teamCount'), teamCount2: $('teamCount2'), teamMyReferrer: $('teamMyReferrer'), teamList: $('teamList'), teamRewardEarned: $('teamRewardEarned'),
+  teamCount: $('teamCount'), teamList: $('teamList'), teamRewardEarned: $('teamRewardEarned'),
   teamPreReferralUsdt: $('teamPreReferralUsdt'), teamPreReferralCount: $('teamPreReferralCount'), teamBonusCards: $('teamBonusCards'),
   bindModal: $('bindModal'), bindModalAddr: $('bindModalAddr'),
   bindModalConfirm: $('bindModalConfirm'), bindModalCancel: $('bindModalCancel'),
@@ -1183,7 +1164,7 @@ const DOM = {
  * ============================================================ */
 const I18N = {
   zh: {
-    connect:'连接', connecting:'连接中', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
+    connect:'连接', brandTitle:'卡牌分红', dcTitle:'断开钱包', navHome:'首页', navCards:'我的卡牌', navInvite:'邀请', navTeam:'团队',
     heroBadge:'LIVE · 数据实时上链', heroTitle:'卡牌分红 ', heroSub:'每张卡牌 · 金本位分红 · 三倍出局',
     chipPreCards:'预售卡牌 · 限量', chipAirdrop:'预售空投 · 直送', chipAirdropNum:'40万', unitCard:'张', unitToken:'枚',
     kpiPool:'分红池', kpiActive:'有效卡牌', kpiMyCards:'我的卡牌', kpiBurned:'已销毁', kpiCirc:'流通量', kpiPending:'待领取分红',
@@ -1203,16 +1184,16 @@ const I18N = {
     footerKey:'卡牌分红协议 · NFT DIVIDEND PROTOCOL · 数据实时上链',
     statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定',
     preGift1:'购卡立得 2000 枚', preGift2:'空投（价值 20U）· 每满 10 张直推再得 1 张卡',
-    teamPreLabel:'预售直推奖励', teamPreSub:'下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡',
+    teamPreLabel:'预售直推奖励',
     teamPreMiniA:'直推购买', teamPreMiniB:'张 · 已获奖励卡', teamPostLabel:'开盘后推荐奖励',
-    teamPostSub:'直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励',
-    miniL1:'一级下级', miniMyRef:'我的上级', teamPanelTitle:'直属下级', teamPanelSub:'实时上链',
+    teamPostMini:'直属下级购买实时到账',
+    teamPanelTitle:'直属下级', teamPanelSub:'实时上链',
     teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
     bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
     modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
     cardActive:'计息中', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算',
-    cardDone:'已完成 · 待领取可随时提取', cardProgress:'分红进度', cardAccrued:'累计分红', cardClaimed:'已领取',
-    cardPending:'待领取', cardExitP:'出局进度', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
+    cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取',
+    cardPending:'待领取', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
     calc:'计算中…',
     noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
     toastBusy:'操作太频繁，请稍后再试', toastConnect:'请先连接钱包', toastDisconnected:'已断开钱包',
@@ -1250,7 +1231,7 @@ const I18N = {
     pageTitle:'卡牌分红 · NFT Dividend'
   },
   en: {
-    connect:'Connect', connecting:'Connecting', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
+    connect:'Connect', brandTitle:'CARD DIVIDEND', dcTitle:'Disconnect', navHome:'Home', navCards:'My Cards', navInvite:'Invite', navTeam:'Team',
     heroBadge:'LIVE · ON-CHAIN DATA', heroTitle:'CARD DIVIDEND ', heroSub:'Every Card · Gold-Standard Dividends · 3× Exit',
     chipPreCards:'Pre-sale Cards · Only', chipAirdrop:'Pre-sale Airdrop · Get', chipAirdropNum:'400K', unitCard:'cards', unitToken:'tokens',
     kpiPool:'Dividend Pool', kpiActive:'Active Cards', kpiMyCards:'My Cards', kpiBurned:'Burned', kpiCirc:'Circulating', kpiPending:'Pending Rewards',
@@ -1270,16 +1251,16 @@ const I18N = {
     footerKey:'CARD DIVIDEND PROTOCOL · ON-CHAIN DATA',
     statusDiv:'Dividends Active', statusPaused:'Paused', statusPre:'Not Launched', switching:'Launch Switching…', pendingSwap:'To convert ', notBound:'Not bound',
     preGift1:'Get 2,000', preGift2:'airdrop (worth 20U) · every 10 direct cards earns 1 more card',
-    teamPreLabel:'Pre-sale Direct Rewards', teamPreSub:'Earn 20U instantly per downline pre-sale card; every 1,000U (10 cards) of direct sales earns you 1 bonus card',
+    teamPreLabel:'Pre-sale Direct Rewards',
     teamPreMiniA:'Direct buys', teamPreMiniB:'cards · bonus cards earned', teamPostLabel:'Post-launch Referral Rewards',
-    teamPostSub:'Earn 30% of tokens instantly whenever your direct downlines buy a card',
-    miniL1:'Direct Downlines', miniMyRef:'My Referrer', teamPanelTitle:'Direct Referrals', teamPanelSub:'REAL-TIME ON-CHAIN',
+    teamPostMini:'Earned per downline purchase',
+    teamPanelTitle:'Direct Referrals', teamPanelSub:'REAL-TIME ON-CHAIN',
     teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
     bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
     modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
     cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit',
-    cardDone:'Completed · withdraw anytime', cardProgress:'Dividend Progress', cardAccrued:'Total Accrued', cardClaimed:'Claimed',
-    cardPending:'Pending', cardExitP:'Exit Progress', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
+    cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed',
+    cardPending:'Pending', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
     calc:'Calculating…',
     noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
     toastBusy:'Too frequent — try again shortly', toastConnect:'Connect wallet first', toastDisconnected:'Wallet disconnected',
@@ -1472,6 +1453,23 @@ const showToast = (msg, type = '') => {
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 2600);
 };
+/* 无变化即不写 DOM：15s 轮询数据大多不变，跳过相同写入避免无效布局重排（零视觉变化） */
+const _lastUi = new WeakMap();
+const uiText = (el, text) => {
+  if (!el) return;
+  const s = String(text);
+  if (_lastUi.get(el) === s) return;
+  _lastUi.set(el, s);
+  el.innerText = s;
+};
+const uiHtml = (el, html) => {
+  if (!el) return;
+  const s = String(html);
+  if (_lastUi.get(el) === s) return;
+  _lastUi.set(el, s);
+  el.innerHTML = s;
+};
+
 const throttle = (fn, delay = 1000) => {
   let timer = null; // ⚠️ 不能命名为 t：会遮蔽全局 i18n 的 t()（语言切换后引入的命名冲突）
   return function(...a) {
@@ -1493,27 +1491,27 @@ const requireWallet = () => {
 
 /* 购买数量联动展示（开盘前 USDT / 开盘后代币 双模式） */
 function updateBuyDisplay() {
-  DOM.quantity.innerText = buyQuantity;
+  uiText(DOM.quantity, buyQuantity);
   if (isPreLaunch) {
-    DOM.buyQtyHintPre.innerText = buyQuantity;
+    uiText(DOM.buyQtyHintPre, buyQuantity);
     DOM.minusBtn.disabled = buyQuantity <= 1;
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, preLaunchRemain);
-    DOM.preLaunchPay.innerText = (buyQuantity * 100) + ' USDT';
-    DOM.preLaunchBuyBtn.innerText = t('buyPreQty').replace('{n}', buyQuantity);
+    uiText(DOM.preLaunchPay, (buyQuantity * 100) + ' USDT');
+    uiText(DOM.preLaunchBuyBtn, t('buyPreQty').replace('{n}', buyQuantity));
   } else {
-    DOM.buyQtyHint.innerText = buyQuantity;
+    uiText(DOM.buyQtyHint, buyQuantity);
     DOM.minusBtn.disabled = buyQuantity <= 1;
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, remainingSlots);
-    DOM.buyBtn.innerText = t('buyQtyBtn').replace('{n}', buyQuantity);
+    uiText(DOM.buyBtn, t('buyQtyBtn').replace('{n}', buyQuantity));
     if (unitPriceTokens && !unitPriceTokens.isZero()) {
       // 「≈」表示约数：实际扣款以成交时价格为准（授权已留 130% 缓冲）
-      DOM.buyTokensNeeded.innerText = '≈ ' + fmtTokens(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol;
+      uiText(DOM.buyTokensNeeded, '≈ ' + fmtTokens(unitPriceTokens.mul(buyQuantity)) + ' ' + tokenSymbol);
       // 隐含价格 = 100U×1e24 / 单张所需代币（与合约公式互逆，显示为 U/枚）
       const priceBN = BN.from(10000).mul(BN.from(10).pow(24)).div(unitPriceTokens);
-      DOM.buyPriceHint.innerText = fmtPrice(priceBN) + ' / ' + t('unitToken');
+      uiText(DOM.buyPriceHint, fmtPrice(priceBN) + ' / ' + t('unitToken'));
     } else {
-      DOM.buyTokensNeeded.innerText = '--（' + t('priceNotReady') + '）';
-      DOM.buyPriceHint.innerText = '--';
+      uiText(DOM.buyTokensNeeded, '--（' + t('priceNotReady') + '）');
+      uiText(DOM.buyPriceHint, '--');
     }
   }
 }
@@ -1723,8 +1721,6 @@ function disconnectWallet() {
   DOM.inviteMyReferrer.innerText = '--';
   DOM.inviteLink.value = '';
   DOM.teamCount.innerText = '0';
-  DOM.teamCount2.innerText = '0';
-  DOM.teamMyReferrer.innerText = '--';
   DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
   DOM.teamPreReferralUsdt.innerText = '0.00 U';
   DOM.teamPreReferralCount.innerText = '0';
@@ -1818,29 +1814,29 @@ async function loadStats() {
   const poolOk = poolStats !== null;
   const balBN = poolOk ? poolStats[0] : BN.from(0);
   const activeCards = poolOk ? poolStats[3] : BN.from(0);
-  DOM.poolTokenBalance.innerText = poolOk ? fmtAmt(balBN, usdtDecimals) + ' U' : '--';
-  DOM.activeCardsDisplay.innerText = poolOk ? `${activeCards.toString()} / 520` : '-- / 520';
+  uiText(DOM.poolTokenBalance, poolOk ? fmtAmt(balBN, usdtDecimals) + ' U' : '--');
+  uiText(DOM.activeCardsDisplay, poolOk ? `${activeCards.toString()} / 520` : '-- / 520');
   remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
-  DOM.poolBalanceU.innerText = t('pendingSwap') + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol;
-  DOM.buyRemainingSlots.innerText = remainingSlots + ' / 520';
+  uiText(DOM.poolBalanceU, t('pendingSwap') + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol);
+  uiText(DOM.buyRemainingSlots, remainingSlots + ' / 520');
 
   // 开盘状态
   const [launched, paused] = lp;
   if (launched === true) {
-    DOM.launchStatus.innerHTML = paused === true
+    uiHtml(DOM.launchStatus, paused === true
       ? '<span class="chip chip-off">' + t('statusPaused') + '</span>'
-      : '<span class="chip chip-ok">' + t('statusDiv') + '</span>';
+      : '<span class="chip chip-ok">' + t('statusDiv') + '</span>');
   } else if (launched === false) {
-    DOM.launchStatus.innerHTML = '<span class="chip chip-warn">' + t('statusPre') + '</span>';
+    uiHtml(DOM.launchStatus, '<span class="chip chip-warn">' + t('statusPre') + '</span>');
   } else {
-    DOM.launchStatus.innerHTML = '--';
+    uiHtml(DOM.launchStatus, '--');
   }
 
   // 购买模式切换：开盘前 USDT 预售 / 开盘后代币购买。
   // 注意：交易一旦开启（tradingEnabled）预售即终止（合约强校验），即使 launch 尚未执行。
   const gapState = (launched === false && tradingOn === true); // enableTrading→launch 的切换窗口
   isPreLaunch = (launched === false && tradingOn === false);
-  DOM.buyModeBadge.innerText = gapState ? t('switching') : (isPreLaunch ? '100 USDT / ' + t('unitCard') : '100 U / ' + t('unitCard'));
+  uiText(DOM.buyModeBadge, gapState ? t('switching') : (isPreLaunch ? '100 USDT / ' + t('unitCard') : '100 U / ' + t('unitCard')));
   DOM.preLaunchBuyArea.style.display = isPreLaunch ? '' : 'none';
   DOM.tokenBuyArea.style.display = (isPreLaunch || gapState) ? 'none' : '';
   // 暂停态禁用购买/领取按钮（仅靠 revert 兜底不够，UI 应同步）
@@ -1857,12 +1853,12 @@ async function loadStats() {
     if (preLaunchRemain >= 0 && buyQuantity > Math.min(10, preLaunchRemain)) {
       buyQuantity = Math.max(1, Math.min(10, preLaunchRemain));
     }
-    DOM.preLaunchRemainingDisplay.innerText = preLaunchRemain >= 0 ? preLaunchRemain + ' / 220' : '-- / 220';
+    uiText(DOM.preLaunchRemainingDisplay, preLaunchRemain >= 0 ? preLaunchRemain + ' / 220' : '-- / 220');
     if (usdtContract) {
       try {
         const ub = await usdtContract.balanceOf(userAddress);
-        DOM.usdtBalanceHint.innerText = fmtAmt(ub, usdtDecimals) + ' USDT';
-      } catch (e) { DOM.usdtBalanceHint.innerText = '--'; }
+        uiText(DOM.usdtBalanceHint, fmtAmt(ub, usdtDecimals) + ' USDT');
+      } catch (e) { uiText(DOM.usdtBalanceHint, '--'); }
     }
   }
   // 代币路径同理：剩余名额不足时回钳数量
@@ -1875,14 +1871,14 @@ async function loadStats() {
     try {
       const remaining = (await tokenC.launchWindowRemaining()).toNumber();
       DOM.launchWindowBanner.style.display = '';
-      DOM.launchWindowRemaining.innerText = remaining;
+      uiText(DOM.launchWindowRemaining, remaining);
     } catch (e) { DOM.launchWindowBanner.style.display = 'none'; }
   } else {
     DOM.launchWindowBanner.style.display = 'none';
   }
 
   // 我的代币余额（购买模块内展示）
-  DOM.buyBalanceHint.innerText = myBal !== null ? fmtTokens(myBal) + ' ' + tokenSymbol : '--';
+  uiText(DOM.buyBalanceHint, myBal !== null ? fmtTokens(myBal) + ' ' + tokenSymbol : '--');
 
   // 购买所需代币（单价 × 数量实时联动）
   unitPriceTokens = unitPrice !== null ? unitPrice : null;
@@ -1902,11 +1898,11 @@ async function loadSlowData() {
     // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
     const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
     const burned = MAXSUP.sub(circ);
-    DOM.burnedSupply.innerHTML = fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>';
-    DOM.circulatingSupply.innerHTML = fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>';
-    DOM.burnedPercent.innerText = MAXSUP.isZero() || burned.isZero()
+    uiHtml(DOM.burnedSupply, fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
+    uiHtml(DOM.circulatingSupply, fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
+    uiText(DOM.burnedPercent, MAXSUP.isZero() || burned.isZero()
       ? '0%'
-      : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%';
+      : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%');
   } catch (e) { /* ignore */ }
 }
 
@@ -1922,13 +1918,11 @@ async function loadUser() {
     DOM.myReferrerAddress.innerText = shortAddr(ref);
     DOM.myReferrerAddress.style.display = '';
     DOM.inviteMyReferrer.innerText = shortAddr(ref);
-    DOM.teamMyReferrer.innerText = shortAddr(ref);
   } else {
     DOM.bindArea.style.display = '';
     DOM.boundArea.style.display = 'none';
     DOM.myReferrerAddress.style.display = 'none';
     DOM.inviteMyReferrer.innerText = t('notBound');
-    DOM.teamMyReferrer.innerText = t('notBound');
   }
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
@@ -1971,7 +1965,6 @@ async function loadTeam() {
     if (!Number.isFinite(cnt) || cnt < 0 || cnt > 10000000) cnt = 0;
   } catch (e) { cnt = 0; }
   DOM.teamCount.innerText = cnt;
-  DOM.teamCount2.innerText = cnt;
 
   if (cnt === 0) {
     DOM.teamList.innerHTML = '<div class="empty-tip">' + t('noTeam') + '</div>';
@@ -2049,10 +2042,10 @@ const clampCents = (v) => {
 
 /* 卡牌页汇总写入（收益总览面板 + 首页待领取 KPI） */
 function applyCardsAgg(agg) {
-  DOM.cardsTotalAccrued.innerText = (agg.accrued / 100).toFixed(2) + ' U';
-  DOM.cardsTotalClaimed.innerText = (agg.claimed / 100).toFixed(2) + ' U';
-  DOM.cardsTotalPending.innerText = (agg.pending / 100).toFixed(2) + ' U';
-  DOM.myTotalPending.innerText = (agg.pending / 100).toFixed(2) + ' U';
+  uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
+  uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
+  uiText(DOM.cardsTotalPending, (agg.pending / 100).toFixed(2) + ' U');
+  uiText(DOM.myTotalPending, (agg.pending / 100).toFixed(2) + ' U');
 }
 
 /* 全量汇总（慢路径，后台执行）：收益总览需要全卡合计，逐卡读取不阻塞列表渲染。
@@ -2186,6 +2179,7 @@ function patchCardDom(r) {
 }
 
 /* 渲染卡牌视图 + 分页器 + 事件绑定（含翻页动效类） */
+let _cardsRenderKey = '';
 function renderCardsView(rows, totalPages, count) {
   const cardsHtml = rows.map(cardRowHtml).join('');
   // 翻页动效：仅页码变化时触发（15 秒自动刷新重渲染不播动画，避免闪动/视觉疲劳）
@@ -2193,6 +2187,10 @@ function renderCardsView(rows, totalPages, count) {
   if (lastRenderedPage !== -1 && cardPageNo !== lastRenderedPage) {
     flipClass = cardPageNo > lastRenderedPage ? ' flip-next' : ' flip-prev';
   }
+  // 内容与页码完全一致且非翻页：跳过整卡 innerHTML 重建（15s 轮询零重绘，零视觉变化）
+  const renderKey = cardsHtml + '#' + cardPageNo + '#' + totalPages + '#' + flipClass;
+  if (renderKey === _cardsRenderKey) return;
+  _cardsRenderKey = renderKey;
   lastRenderedPage = cardPageNo;
 
   const pagerHtml = count > 1 ? `
@@ -2246,11 +2244,11 @@ async function loadCards() {
     } catch (e) { count = 0; }
   }
   cardsAggTargetCount = count;
-  DOM.myCardCount.innerText = count;
-  DOM.dashCardCount.innerText = count;
+  uiText(DOM.myCardCount, count);
+  uiText(DOM.dashCardCount, count);
 
   if (count === 0) {
-    DOM.cardList.innerHTML = '<div class="empty-tip">' + t('noCards') + '</div>';
+    uiHtml(DOM.cardList, '<div class="empty-tip">' + t('noCards') + '</div>');
     cardsAgg = { count: 0, accrued: 0, claimed: 0, pending: 0 };
     applyCardsAgg(cardsAgg);
     cardPageNo = 1;
@@ -2312,10 +2310,10 @@ async function refreshCardsAfterRender(count, start) {
   // 全量汇总触发（缓存缺失/数量变化/每 4 轮重算），后台执行
   cardsAggTick++;
   if (!cardsAgg || cardsAgg.count !== count) {
-    DOM.cardsTotalAccrued.innerText = t('calc');
-    DOM.cardsTotalClaimed.innerText = t('calc');
-    DOM.cardsTotalPending.innerText = t('calc');
-    DOM.myTotalPending.innerText = t('calc');
+    uiText(DOM.cardsTotalAccrued, t('calc'));
+    uiText(DOM.cardsTotalClaimed, t('calc'));
+    uiText(DOM.cardsTotalPending, t('calc'));
+    uiText(DOM.myTotalPending, t('calc'));
   } else {
     applyCardsAgg(cardsAgg); // 有缓存：沿用缓存值，后台静默重算
   }
@@ -2547,12 +2545,17 @@ async function claimAll() {
 /* ============================================================
  * 页面导航 / 粒子 / 事件绑定
  * ============================================================ */
-/* 卡牌背景飞行距离：按 Hero 实际高度自适应（顶到顶），窗口变化/切页/数据刷新时重算 */
+/* 卡牌背景飞行距离：按 Hero 实际高度自适应（顶到顶），窗口变化/切页/数据刷新时重算。
+   高度未变则跳过写入（避免每 15s 轮询都触发一次样式失效重算，零视觉变化） */
+let _lastTravel = -1;
 function setHeroTravel() {
   const hero = document.querySelector('.hero');
   const scene = document.querySelector('.hero-scene');
   if (!hero || !scene) return;
-  scene.style.setProperty('--travel', Math.max(hero.offsetHeight + 360, 1100) + 'px');
+  const travel = Math.max(hero.offsetHeight + 360, 1100);
+  if (travel === _lastTravel) return;
+  _lastTravel = travel;
+  scene.style.setProperty('--travel', travel + 'px');
 }
 setHeroTravel();
 let heroResizeTimer = null, heroLastWidth = window.innerWidth;
