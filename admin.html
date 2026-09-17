@@ -953,7 +953,12 @@ async function runConfigSelfCheck() {
     if (!eq(await saleC.nft(), CONFIG.contracts.nft)) issues.push('销售合约的 nft ≠ CONFIG.nft');
     if (!eq(await saleC.pool(), CONFIG.contracts.pool)) issues.push('销售合约的 pool ≠ CONFIG.pool');
     if (!eq(await saleC.router(), CONFIG.router)) issues.push('销售合约的 router ≠ Pancake 路由');
-    if (!eq(await saleC.usdt(), CONFIG.usdt)) issues.push('销售合约的 usdt ≠ BSC USDT');
+    const saleUsdt = await saleC.usdt();
+    if (saleUsdt && saleUsdt !== ZERO_ADDR) {
+      if (!eq(saleUsdt, CONFIG.usdt)) issues.push('销售合约的 usdt ≠ BSC USDT');
+    } else {
+      warnings.push('销售合约的预售 USDT 未配置（请点「预售配置」按钮设置后再卖卡）');
+    }
     if (!eq(await saleC.oracle(), CONFIG.contracts.oracle)) {
       // 开盘后卡价预言机可合法更换：仅提示，不禁用按钮
       warnings.push('销售合约的卡价预言机 ≠ CONFIG.oracle（若经后台「卡价预言机」按钮更换属正常）');
@@ -961,7 +966,11 @@ async function runConfigSelfCheck() {
   } catch (e) { issues.push('读不到销售合约核心配置（sale 地址可能有误）'); }
   try {
     const lpPartner = await tokenC.launchPartner();
-    if (!eq(lpPartner, CONFIG.contracts.sale)) issues.push('代币的预售伙伴 ≠ CONFIG.sale（预售加池将被 TradingNotEnabled 回滚）');
+    if (lpPartner && lpPartner !== ZERO_ADDR) {
+      if (!eq(lpPartner, CONFIG.contracts.sale)) issues.push('代币的预售伙伴 ≠ CONFIG.sale（预售加池将被 TradingNotEnabled 回滚）');
+    } else {
+      warnings.push('代币的预售伙伴未设置（请点「设置预售伙伴」按钮设置后再卖卡）');
+    }
   } catch (e) { issues.push('读不到代币预售伙伴'); }
   try {
     const ml = await oracleC.minLiquidityWei();
