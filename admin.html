@@ -282,11 +282,11 @@ const CONFIG = {
   usdt:   '0x55d398326f99059fF775485246999027B3197955',
   contracts: {
     // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
-    token:  '0xF0Beea551108E1Ab250f4252cBF667347EF5A23e', // TODO: 替换为新 OfficialToken
-    nft:    '0x1dfb87c663327cAc05CCf9CB05a426B469cCc0A6', // TODO: 替换为新 OfficialNFT
-    sale:   '0xA3588A5d7966b59fAe62bCC4e172F16979aB2ff4', // TODO: 替换为新 OfficialNFTSale
-    pool:   '0x3f379b80DdC9186858C39a413d7Cc47D9f10d353', // TODO: 替换为新 CardDividendPool
-    oracle: '0xA5c54695a7A4e72bF216e167a65Fa02dB7eDA158'  // TODO: 替换为新 PriceOracle
+    token:  '0x8a41c95F24D49216784e2fA5933335383aeece25', // 新 OfficialToken（已部署）
+    nft:    '0xCbb206119A200dEE8A438F84702082759638a270', // 新 OfficialNFT（已部署）
+    sale:   '0xE1A108cC9D6200cfE05795f08ecB5AEC3B67a416', // 新 OfficialNFTSale（已部署）
+    pool:   '0x9d9C434e18A053E7DB93cABC5700bA82886aec76', // 新 CardDividendPool（已部署）
+    oracle: '0xa0D116E9Acf42aB5d5F52281dA8cCCbd8911E980'  // 新 PriceOracle（已部署）
   },
   refreshInterval: 10000
 };
@@ -344,6 +344,7 @@ const ABIS = {
     'function grantRole(bytes32 role, address account)',
     'function revokeRole(bytes32 role, address account)',
     'function hasRole(bytes32, address) view returns (bool)',
+    'function getRoleMemberCount(bytes32) view returns (uint256)',
     'function adminBurn(uint256)'
   ],
   sale: [
@@ -986,6 +987,9 @@ async function runConfigSelfCheck() {
     const role = await nftC.MINTER_ROLE();
     const has = await nftC.hasRole(role, CONFIG.contracts.sale);
     if (!has) minterMissing = true;
+    // 铸币权唯一性：成员数必须恰为 1（= 销售合约），残留临时 minter 即可绕过 520 校验直接铸卡
+    const cnt = await nftC.getRoleMemberCount(role);
+    if (!cnt.eq(1)) warnings.push(`NFT 铸币权持有者数量 = ${cnt.toString()}（应恰为 1，请撤销残留临时 minter）`);
   } catch (e) { issues.push('读不到 NFT 铸币权（nft 地址可能有误）'); }
 
   const warnEl = DOM.adminSelfCheckWarn;
