@@ -6,10 +6,10 @@
 <title>卡牌分红 · NFT Dividend</title>
 <script src="./ethers.umd.min.js"></script>
 <script>window.ethers||document.write('<script src="https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
 <script>window.ethers||document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
 <script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
 <script>window.addEventListener('DOMContentLoaded',function(){if(!window.ethers){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';b.textContent='⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';document.body.appendChild(b)}})</script>
 <style>
 :root{
@@ -988,20 +988,20 @@ const CONFIG = {
   chainId: 56,                                  // BSC 主网
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
-  rpcUrls: [                                    // 只读数据层：串行轮换（国内可直连节点优先，被墙节点垫底）
-    'https://rpc.ankr.com/bsc',
-    'https://1rpc.io/bnb',
-    'https://bsc-rpc.publicnode.com',
+  rpcUrls: [                                    // 只读数据层：串行轮换（一次只问一个节点，失败/超时换下一个）
     'https://bsc-dataseed1.defibit.io/',
     'https://bsc-dataseed1.ninicoin.io/',
     'https://bsc-dataseed2.defibit.io/',
+    'https://rpc.ankr.com/bsc',
+    'https://bsc-rpc.publicnode.com',
+    'https://1rpc.io/bnb',
     'https://bsc-dataseed.binance.org/',
     'https://bsc-dataseed1.binance.org/',
     'https://bsc-dataseed2.binance.org/',
     'https://bsc-dataseed3.binance.org/',
     'https://bsc-dataseed4.binance.org/'
   ],
-  rpcUrl: 'https://rpc.ankr.com/bsc',
+  rpcUrl: 'https://bsc-dataseed1.defibit.io/',
   contracts: {
     // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
     token:  '0x8a41c95F24D49216784e2fA5933335383aeece25', // 新 OfficialToken（已部署）
@@ -1512,16 +1512,10 @@ function updateBuyDisplay() {
 /* ============================================================
  * 钱包连接
  * ============================================================ */
-/* 钱包调用超时护栏：TP/钱包注入 provider 卡住时不再无限等待 */
-const withWalletTimeout = (p, ms, label) => Promise.race([
-  Promise.resolve(p),
-  new Promise((_, rej) => setTimeout(() => rej(new Error('wallet timeout: ' + label)), ms))
-]);
-
 async function switchChain() {
   // 已在目标链则直接放行：避免每次重连都弹一次「切换网络」确认（部分钱包每次都弹，误关就连接失败）
   try {
-    const cid = await withWalletTimeout(window.ethereum.request({ method: 'eth_chainId' }), 8000, 'chainId');
+    const cid = await window.ethereum.request({ method: 'eth_chainId' });
     if (cid === CONFIG.chainIdHex) return;
   } catch (e) { /* 读不到链 ID 就继续走切换流程 */ }
   try {
@@ -1554,12 +1548,7 @@ async function connectWallet() {
     showToast(t('toastNoWallet'), 'error');
     return;
   }
-  // 可见的连接过程：按钮内小转圈 + 提示条，不遮页面
-  const btn = DOM.connectBtn;
-  const origText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-spin"></span> ' + t('connecting');
-  showToast(t('connecting') + '…', '');
+  showLoading();
   try {
     await switchChain();
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -1568,15 +1557,12 @@ async function connectWallet() {
   } catch (e) {
     if (String(e.message || '').includes('User rejected') || (e && e.code === 4001)) {
       showToast(t('toastCanceled'), 'error');
-    } else if (String(e.message || '').includes('wallet timeout')) {
-      showToast(t('toastConnFail'), 'error');
     } else {
       console.warn('连接钱包失败', e);
       showToast(t('toastConnFail'), 'error');
     }
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = origText;
+    hideLoading();
   }
 }
 
@@ -1587,18 +1573,13 @@ async function connectWallet() {
 function createReadProvider(providers) {
   let idx = 0;
   let current = providers[0];
-  const bad = new Set(); // 本次会话内已超时/失败的节点：后续读取直接跳过（快速收敛到好节点）
   const rotate = () => {
     idx = (idx + 1) % providers.length;
     current = providers[idx];
   };
-  const skipBad = () => {
-    let guard = 0;
-    while (bad.has(current) && guard < providers.length) { rotate(); guard++; }
-  };
   const withTimeout = (p) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 4000))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 8000))
   ]);
   return new Proxy(current, {
     get(target, prop) {
@@ -1608,16 +1589,13 @@ function createReadProvider(providers) {
             try {
               return await withTimeout(prov[prop].apply(prov, args));
             } catch (e) {
-              bad.add(current);
-              rotate();
-              skipBad();
               if (left > 1) {
+                rotate();
                 return tryOne(current, left - 1);
               }
               throw e;
             }
           };
-          skipBad();
           return tryOne(current, Math.min(providers.length, 5));
         };
       }
@@ -1626,55 +1604,10 @@ function createReadProvider(providers) {
   });
 }
 
-/* 并发探测候选节点（2s 超时），返回最快者。只测 4 个候选公共节点 + 钱包节点——
-   目的不是比出冠军，而是快速找到一个「现在能用」的节点（探测本身不再制造请求洪峰） */
-async function probeFastRpcOnce(walletProvider) {
-  const nodes = CONFIG.rpcUrls.slice(0, 4).map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
-  const all = walletProvider ? nodes.concat(walletProvider) : nodes;
-  const probe = (n) => Promise.race([
-    n.getBlockNumber().then(() => Date.now()),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2000))
-  ]);
-  let results;
-  try { results = await Promise.allSettled(all.map(probe)); } catch (e) { return null; }
-  let best = null, bestMs = Infinity;
-  all.forEach((n, i) => {
-    if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n; }
-  });
-  return best;
-}
-
-/* 只读节点排序：记忆的最快节点（含 'wallet' 哨兵）排头；
-   首次连接（无缓存）先并发探测一次（≤2s）——保证第一笔读取就命中可用节点，不再挨个超时 */
-async function ensureReadNodes(walletProvider) {
-  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
-  let cached = null;
-  try { cached = localStorage.getItem('fastRpc'); } catch (e) {}
-  let ordered = nodes.slice();
-  let walletFirst = false;
-  if (cached === 'wallet') {
-    walletFirst = true;
-  } else if (cached) {
-    const idx = ordered.findIndex(u => u === cached);
-    if (idx > 0) { const f = ordered.splice(idx, 1)[0]; ordered.unshift(f); }
-  } else {
-    const best = await probeFastRpcOnce(walletProvider);
-    if (best) {
-      try {
-        if (best === walletProvider) { localStorage.setItem('fastRpc', 'wallet'); walletFirst = true; }
-        else { localStorage.setItem('fastRpc', best.connection.url); }
-      } catch (e) {}
-    }
-  }
-  return walletFirst ? [walletProvider].concat(ordered) : ordered.concat(walletProvider);
-}
-
 /* 把静态文案中的代币符号替换为链上真实符号 */
 function applyTokenSymbols() {
   DOM.preLaunchRewardText.innerText = '🎁 ' + t('preGift1') + ' ' + tokenSymbol + ' ' + t('preGift2');
 }
-
-let heroVideoBoot = null; // 视频启动函数（initHeroVideo 中赋值；数据加载完成后调用）
 
 async function setupProvider(address) {
   // 并发去重：钱包 accountsChanged 与手动「连接钱包」可能同时为同一地址触发 setup，
@@ -1689,13 +1622,11 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // ① 先连接钱包：立刻把顶栏切到「已连接」状态（不等任何网络探测/数据读取）
-  DOM.connectBtn.style.display = 'none';
-  DOM.walletInfo.style.display = 'flex';
-  DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
-
-  // ② 再响应数据：只读数据层（记忆的最快节点排头；首次连接先并发探测 ≤2.5s）
-  const readNodes = await ensureReadNodes(provider);
+  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，8 秒超时/失败自动换）
+  // 签名交易仍走钱包注入的 signer
+  const readNodes = [provider].concat(
+    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
+  );
   readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
@@ -1704,40 +1635,41 @@ async function setupProvider(address) {
   poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, readProvider);
   oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, readProvider);
 
-  // 代币与 USDT 元信息：全部并行（一次往返，不再串行等待）
+  DOM.connectBtn.style.display = 'none';
+  DOM.walletInfo.style.display = 'flex';
+  DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
+
+  // 代币与 USDT 元信息：并行拉取（一次连接只做一次）
   try {
-    const [uAddr, meta, preUsdt] = await Promise.all([
-      poolC.usdt().catch(() => null),
-      Promise.all([tokenC.decimals(), tokenC.symbol()]).catch(() => null),
-      saleC.usdt().catch(() => null)
-    ]);
-    if (meta) {
-      tokenDecimals = meta[0];
-      tokenSymbol = meta[1];
-      applyTokenSymbols(); // 页面文案动态显示真实代币符号
-    }
+    const uAddr = await poolC.usdt().catch(() => null);
+    const [td, ts] = await Promise.all([tokenC.decimals(), tokenC.symbol()]);
+    tokenDecimals = td;
+    tokenSymbol = ts;
+    applyTokenSymbols(); // 页面文案动态显示真实代币符号
     if (uAddr) {
       const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], readProvider);
       const [us, ud] = await Promise.all([uc.symbol(), uc.decimals()]);
       usdtSymbol = us;
       usdtDecimals = ud;
     }
+  } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
+
+  // 预售支付资产（USDT）合约实例
+  try {
+    const preUsdt = await saleC.usdt().catch(() => null);
     if (preUsdt) {
       usdtContract = new ethers.Contract(preUsdt, [
         'function balanceOf(address) view returns (uint256)',
         'function approve(address, uint256) returns (bool)',
         'function allowance(address, address) view returns (uint256)'
       ], readProvider);
-    } else {
-      usdtContract = null;
     }
-  } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
+  } catch (e) { usdtContract = null; }
 
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
   if (epoch !== connEpoch || userAddress !== address) return;
 
-  loadAll(); // 后台加载（不阻塞连接流程），数据字段到位即逐个填充
-  if (heroVideoBoot) heroVideoBoot();
+  loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
   // 团队数据是「进页才加载」：若重连时正停留在团队页，主动补拉一次，
   // 避免断开→重连后下级列表空着、必须切页才出现
@@ -1845,21 +1777,14 @@ async function checkChain() {
 /* ============================================================
  * 数据加载
  * ============================================================ */
-let loadAllBusy = false; // 单飞锁：慢网络下防止多轮加载叠加、请求互相挤占
-
-async function loadAll(retryLeft = 2) {
-  if (!userAddress || loadAllBusy) return;
-  loadAllBusy = true;
+async function loadAll() {
+  if (!userAddress) return;
   try {
     // 团队数据量大（逐地址查询），改为「打开团队页时才加载」，不再随 10 秒轮询
     await Promise.all([loadStats(), loadUser(), loadCards()]);
     setHeroTravel(); // 绑定态/预售态切换会改变 Hero 高度，重算背景卡牌飞行距离
   } catch (e) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
-    // 网络抖动自愈：4 秒后自动重试（最多 2 次），不必等下一轮 15 秒轮询
-    if (retryLeft > 0 && userAddress) setTimeout(() => loadAll(retryLeft - 1), 4000);
-  } finally {
-    loadAllBusy = false;
   }
 }
 
@@ -2286,10 +2211,10 @@ async function loadCards() {
 
   // ① 渲染路径：有全量缓存直接同步渲染（翻页零等待），冷启动才直读本页 1 张
   let count = 0, fromCache = false;
-  // 性能：停留在首页等非「我的卡牌」页时，只刷卡牌计数（1 次链上查询），
-  // 列表渲染/全量汇总一律不做——首次进入不再为隐藏列表发一堆请求
+  // 性能：停留在首页等非「我的卡牌」页时，每 15s 轮询只刷新卡牌计数，
+  // 跳过列表渲染与全量汇总——长时间挂首页不再重复拉取/重绘隐藏列表（省 RPC 与内存）
   const cardsActive = document.querySelector('.page.active')?.id === 'cardsPage';
-  if (!cardsActive) {
+  if (!cardsActive && cardsAllCache && cardsAllCache.count > 0) {
     try {
       const bal = await nftC.balanceOf(userAddress);
       let c = bal.toNumber();
@@ -2661,19 +2586,11 @@ function heroVideoEnsurePlaying() {
   const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
   v.addEventListener('loadeddata', ready);
   v.addEventListener('canplay', ready);
-  let booted = false;
-  // 启动视频（幂等）：立即加载 src 与数据并行进行，互不等待
-  heroVideoBoot = () => {
-    if (booted) return;
-    booted = true;
-    v.querySelector('source').src = CONFIG.heroVideoUrl;
-    v.load();
-    // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
-    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1500);
-    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
-  };
-  // 立即启动视频（与数据加载并行，互不等待）——恢复早期在 TP 中已验证可用的行为
-  heroVideoBoot();
+  v.querySelector('source').src = CONFIG.heroVideoUrl;
+  v.load();
+  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
@@ -2833,10 +2750,9 @@ async function checkInviteBindModal() {
 window.addEventListener('load', async () => {
   checkChain();
   if (window.ethereum) {
-    // 已授权时自动恢复连接（8 秒超时护栏：钱包注入卡住时静默放弃，不阻塞页面）
+    // 已授权时自动恢复连接
     try {
-      const accounts = await withWalletTimeout(
-        window.ethereum.request({ method: 'eth_accounts' }), 8000, 'accounts');
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
         await setupProvider(accounts[0]);
         checkInviteBindModal();
