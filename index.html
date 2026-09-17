@@ -125,7 +125,17 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 @keyframes chipIconPop{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
 .hero-chip:nth-child(2){animation-delay:-1.8s}
 .hero-chip:nth-child(3){animation-delay:-3.6s}
-.hero-chip b{color:#fff;font-weight:800;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(34,211,238,.6)}
+/* 胶囊文字层次：渐变描边标签 + 大号渐变数字 + 金色单位，双胶囊差异化配色 */
+.hc-label{font-weight:800;letter-spacing:1px;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-chip b{font-size:17px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hc-unit{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--gold)}
+.hc-fire{border-color:rgba(245,193,76,.45);background:rgba(245,193,76,.08);box-shadow:0 6px 26px rgba(245,193,76,.18),inset 0 1px 0 rgba(255,255,255,.1)}
+.hc-fire .hc-label{background-image:linear-gradient(90deg,#ffe9b0,#f5c14c,#ffb86b)}
+.hc-fire b{background-image:linear-gradient(180deg,#ffffff,#ffe08a);filter:drop-shadow(0 0 9px rgba(245,193,76,.75))}
+.hc-gift{border-color:rgba(251,113,133,.4);background:rgba(251,113,133,.07);box-shadow:0 6px 26px rgba(251,113,133,.16),inset 0 1px 0 rgba(255,255,255,.1)}
+.hc-gift .hc-label{background-image:linear-gradient(90deg,#ffd7dd,#fb7185,#fda4af)}
+.hc-gift b{background-image:linear-gradient(180deg,#ffffff,#ffb3c0);filter:drop-shadow(0 0 9px rgba(251,113,133,.65))}
+.hc-gift .hc-unit{color:#fda4af}
 @keyframes chipFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 /* 数据胶囊随场景悬浮，与浮动卡牌同频呼吸 */
 /* ---------- 六项核心数据：独立微光小卡（已剥离浮岛） ---------- */
@@ -616,8 +626,8 @@ body{-webkit-tap-highlight-color:transparent}
       <h1 class="hero-title"><span data-i18n="heroTitle">卡牌分红 </span><span>PROTOCOL</span></h1>
       <p class="hero-sub" id="heroSubLine"></p>
       <div class="hero-chips">
-        <span class="hero-chip"><span class="hero-chip-ic">🔥</span><span data-i18n="chipPreCards">预售卡牌 · 限量</span> <b>200</b> <span data-i18n="unitCard">张</span></span>
-        <span class="hero-chip"><span class="hero-chip-ic">🎁</span><span data-i18n="chipAirdrop">预售空投 · 直送</span> <b data-i18n="chipAirdropNum">40万</b> <span data-i18n="unitToken">枚</span></span>
+        <span class="hero-chip hc-fire"><span class="hero-chip-ic">🔥</span><span class="hc-label" data-i18n="chipPreCards">预售卡牌 · 限量</span> <b>200</b> <span class="hc-unit" data-i18n="unitCard">张</span></span>
+        <span class="hero-chip hc-gift"><span class="hero-chip-ic">🎁</span><span class="hc-label" data-i18n="chipAirdrop">预售空投 · 直送</span> <b data-i18n="chipAirdropNum">40万</b> <span class="hc-unit" data-i18n="unitToken">枚</span></span>
       </div>
     </div>
 
