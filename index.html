@@ -271,34 +271,34 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .mini-label{display:block;font-size:10.5px;letter-spacing:1.6px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;font-weight:700}
 .mini-value{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
 .mini-kpi.gold .mini-value{color:var(--gold)}
-/* ---------- 收益总览（金库仪表盘） ---------- */
-.overview-panel{position:relative;overflow:hidden;border:1px solid transparent;border-radius:22px;padding:22px 24px 24px;margin-bottom:22px;background:linear-gradient(180deg,rgba(24,26,44,1),rgba(11,13,25,1)) padding-box,linear-gradient(135deg,rgba(245,193,76,.55),rgba(34,211,238,.28) 45%,rgba(139,92,246,.35)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 24px 60px -24px rgba(0,0,0,.85)}
+/* ---------- 收益总览（金库仪表盘 · 紧凑版） ---------- */
+.overview-panel{position:relative;overflow:hidden;border:1px solid transparent;border-radius:18px;padding:14px 18px 15px;margin-bottom:14px;background:linear-gradient(180deg,rgba(24,26,44,1),rgba(11,13,25,1)) padding-box,linear-gradient(135deg,rgba(245,193,76,.55),rgba(34,211,238,.28) 45%,rgba(139,92,246,.35)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 50px -24px rgba(0,0,0,.85)}
 .overview-panel::before{content:'';position:absolute;top:-70%;left:20%;width:60%;height:140%;background:radial-gradient(ellipse at center,rgba(245,193,76,.13),transparent 60%);pointer-events:none}
 .overview-panel::after{content:'';position:absolute;top:0;left:0;width:36%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-260%);animation:shine 7s ease-in-out 2.4s infinite;pointer-events:none}
-.overview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.overview-title-wrap{display:flex;align-items:center;gap:12px}
-.overview-ic{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,193,76,.4);flex-shrink:0}
-.overview-ic .ic{width:21px;height:21px;stroke:#fff;stroke-width:1.7}
-.overview-title{display:block;font-size:15px;font-weight:800;letter-spacing:1px}
-.overview-sub{display:block;font-size:9.5px;letter-spacing:2.4px;color:rgba(139,147,167,.75);text-transform:uppercase;font-weight:700;margin-top:3px}
-.overview-badge{font-size:10px;letter-spacing:2px;color:rgba(245,193,76,.9);border:1px solid rgba(245,193,76,.35);background:rgba(245,193,76,.08);border-radius:99px;padding:4px 13px;font-weight:700}
-.overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.overview-item{position:relative;display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.13);border-radius:16px;padding:16px 18px;overflow:hidden;transition:transform .25s ease,border-color .25s ease,background .25s ease}
+.overview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.overview-title-wrap{display:flex;align-items:center;gap:10px}
+.overview-ic{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(245,193,76,.35);flex-shrink:0}
+.overview-ic .ic{width:16px;height:16px;stroke:#fff;stroke-width:1.7}
+.overview-title{display:block;font-size:13.5px;font-weight:800;letter-spacing:1px}
+.overview-sub{display:none}
+.overview-badge{font-size:9px;letter-spacing:1.6px;color:rgba(245,193,76,.9);border:1px solid rgba(245,193,76,.35);background:rgba(245,193,76,.08);border-radius:99px;padding:3px 11px;font-weight:700}
+.overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.overview-item{position:relative;display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.13);border-radius:13px;padding:11px 14px;overflow:hidden;transition:transform .25s ease,border-color .25s ease,background .25s ease}
 .overview-item.ov-main{background:linear-gradient(135deg,rgba(245,193,76,.12),rgba(245,193,76,.03));border-color:rgba(245,193,76,.4)}
 .overview-item.ov-main::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(245,193,76,.8),transparent)}
 @media (hover:hover){
 .overview-item:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.4);background:rgba(255,255,255,.05)}
 }
-.ov-ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ov-ic .ic{width:19px;height:19px}
-.ov-ic-gold{background:rgba(245,193,76,.15);border:1px solid rgba(245,193,76,.35);color:var(--gold);box-shadow:0 4px 14px rgba(245,193,76,.25)}
+.ov-ic{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-ic .ic{width:15px;height:15px}
+.ov-ic-gold{background:rgba(245,193,76,.15);border:1px solid rgba(245,193,76,.35);color:var(--gold);box-shadow:0 4px 12px rgba(245,193,76,.22)}
 .ov-ic-cyan{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
-.ov-ic-violet{background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.35);color:#a78bfa;box-shadow:0 4px 14px rgba(139,92,246,.25)}
-.ov-body{min-width:0;display:flex;flex-direction:column;gap:5px}
-.overview-label{font-size:10.5px;letter-spacing:1.8px;color:var(--muted);font-weight:700;text-transform:uppercase}
-.overview-value{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.ov-ic-violet{background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.35);color:#a78bfa;box-shadow:0 4px 12px rgba(139,92,246,.22)}
+.ov-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+.overview-label{font-size:9.5px;letter-spacing:1.4px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.overview-value{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
 .ov-main .overview-value{background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ov-pending .overview-value{color:#c4b5fd;text-shadow:0 0 18px rgba(139,92,246,.4)}
+.ov-pending .overview-value{color:#c4b5fd;text-shadow:0 0 14px rgba(139,92,246,.4)}
 /* ---------- 分节标题 ---------- */
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .section-title{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--text);white-space:nowrap}
@@ -391,16 +391,19 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 /* ---------- 页脚 ---------- */
 .footer{position:relative;z-index:1;text-align:center;padding:18px 16px 104px;font-size:11.5px;color:var(--muted);letter-spacing:1.2px}
 /* ---------- 卡牌（收藏级卡面） ---------- */
-.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.page-title{font-size:21px;font-weight:800;letter-spacing:.4px}
+.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.page-title{font-size:18px;font-weight:800;letter-spacing:.4px}
 .page-title span{color:var(--cyan)}
 .nft-grid{display:grid;grid-template-columns:1fr;gap:18px;max-width:560px;margin:0 auto}
+/* 卡牌展台：聚光灯氛围（中央紫青光晕 + 展台投影），收藏卡居中陈列 */
+#cardList{position:relative;padding:8px 0 4px}
+#cardList::before{content:'';position:absolute;left:50%;top:26px;transform:translateX(-50%);width:min(440px,94%);height:62%;background:radial-gradient(ellipse at center,rgba(139,92,246,.17),rgba(34,211,238,.08) 52%,transparent 76%);filter:blur(12px);pointer-events:none}
 /* 翻页动效：仅在切换页码时由 JS 挂类触发，方向感知（下一页右入/上一页左入） */
 .nft-grid.flip-next .nft-card{animation:cardInRight .45s cubic-bezier(.22,.8,.36,1)}
 .nft-grid.flip-prev .nft-card{animation:cardInLeft .45s cubic-bezier(.22,.8,.36,1)}
 @keyframes cardInRight{from{opacity:0;transform:translateX(46px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
 @keyframes cardInLeft{from{opacity:0;transform:translateX(-46px) scale(.98)}to{opacity:1;transform:translateX(0) scale(1)}}
-.nft-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(24,28,48,.98),rgba(11,14,28,.99));border:1px solid rgba(148,163,184,.16);border-radius:20px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:15px;transition:transform .3s cubic-bezier(.22,.8,.36,1),border-color .3s,box-shadow .3s}
+.nft-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(24,28,48,.98),rgba(11,14,28,.99));border:1px solid rgba(148,163,184,.16);border-radius:20px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:15px;box-shadow:0 30px 70px -34px rgba(0,0,0,.9),0 0 46px rgba(34,211,238,.1);transition:transform .3s cubic-bezier(.22,.8,.36,1),border-color .3s,box-shadow .3s}
 .nft-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.75),rgba(139,92,246,.75),transparent)}
 .nft-card::after{content:'';position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-230%) skewX(-12deg);pointer-events:none;opacity:0}
 @media (hover:hover){
@@ -521,12 +524,14 @@ body{-webkit-tap-highlight-color:transparent}
 .mini-kpi{padding:11px 12px;border-radius:13px}
 .mini-value{font-size:15.5px}
 .mini-label{font-size:9px;margin-bottom:4px}
-.overview-panel{padding:16px 14px 18px;border-radius:17px;margin-bottom:16px}
-.overview-head{margin-bottom:14px}
-.overview-grid{grid-template-columns:1fr;gap:9px}
-.overview-item{padding:13px 14px;border-radius:14px}
-.overview-value{font-size:21px}
-.overview-ic{width:36px;height:36px;border-radius:11px}
+.overview-panel{padding:12px 12px 13px;border-radius:15px;margin-bottom:12px}
+.overview-head{margin-bottom:9px}
+.overview-grid{grid-template-columns:repeat(3,1fr);gap:7px}
+.overview-item{flex-direction:column;align-items:center;text-align:center;gap:6px;padding:10px 6px;border-radius:12px}
+.ov-ic{width:28px;height:28px;border-radius:8px}
+.ov-ic .ic{width:13px;height:13px}
+.overview-value{font-size:14px}
+.overview-label{font-size:8.5px;letter-spacing:.8px}
 .ov-ic{width:34px;height:34px;border-radius:10px}
 .section-title{font-size:12.5px;letter-spacing:1.5px}
 .live-chip{font-size:10.5px;padding:4px 10px}
