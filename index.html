@@ -1548,7 +1548,7 @@ async function connectWallet() {
     showToast(t('toastNoWallet'), 'error');
     return;
   }
-  showLoading();
+  // 连接期间不遮页面：页面保持可见，数据在后台加载、到位即填充
   try {
     await switchChain();
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -1561,8 +1561,6 @@ async function connectWallet() {
       console.warn('连接钱包失败', e);
       showToast(t('toastConnFail'), 'error');
     }
-  } finally {
-    hideLoading();
   }
 }
 
@@ -1692,7 +1690,7 @@ async function setupProvider(address) {
   DOM.connectBtn.style.display = 'none';
   DOM.walletInfo.style.display = 'flex';
   DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
-  showLoading(); // 连接后首次数据加载期间显示全局加载圈（TP 自动恢复连接没有可见过程，防「卡死」错觉）
+  // 连接后不遮页面：页面保持可见，数据后台加载、到位即填充
 
   // 代币与 USDT 元信息：全部并行（一次往返，不再串行等待）
   try {
@@ -1724,7 +1722,7 @@ async function setupProvider(address) {
   } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
 
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
-  if (epoch !== connEpoch || userAddress !== address) { hideLoading(); return; }
+  if (epoch !== connEpoch || userAddress !== address) return;
 
   await loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
@@ -1734,7 +1732,6 @@ async function setupProvider(address) {
   if (activePage && activePage.id === 'teamPage') loadTeam();
   startRefresh();
   checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
-  hideLoading();
 }
 
 function disconnectWallet() {
@@ -2658,11 +2655,11 @@ function heroVideoEnsurePlaying() {
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
   };
   let booted = false;
-  // 数据优先：首屏渲染 + 首次数据加载完后再拉视频，避免 mp4 与 RPC 抢带宽
-  if (document.readyState === 'complete') setTimeout(boot, 2500);
-  else window.addEventListener('load', () => setTimeout(boot, 2500));
-  // 保险：万一 load 事件迟迟不来，4 秒后照样启动视频
-  setTimeout(() => { if (!booted) boot(); }, 4000);
+  // 页面与 MP4 一起出：load 后 300ms 即启动视频；数据不遮页面、后台填充
+  if (document.readyState === 'complete') setTimeout(boot, 300);
+  else window.addEventListener('load', () => setTimeout(boot, 300));
+  // 保险：万一 load 事件迟迟不来，2 秒后照样启动视频
+  setTimeout(() => { if (!booted) boot(); }, 2000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
