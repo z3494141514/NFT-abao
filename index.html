@@ -454,6 +454,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4);box-shadow:0 0 14px rgba(52,211,153,.18)}
 .badge-active::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 .badge-exited{color:var(--red);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35)}
+.badge-wait{color:#f5c14c;background:rgba(245,193,76,.12);border:1px solid rgba(245,193,76,.4);box-shadow:0 0 14px rgba(245,193,76,.16)}
+.badge-wait::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);animation:pulse 2s infinite}
 .nft-badge-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .nft-cycle{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;letter-spacing:1.2px;color:rgba(148,163,184,.68);font-weight:600;white-space:nowrap}
 .nft-cycle .ic{width:10px;height:10px;color:var(--cyan);opacity:.75}
@@ -1314,7 +1316,7 @@ const I18N = {
     teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
     bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
     modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
-    cardActive:'分红持续分发中…', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算', cardProgress:'分红进度', cardCycle:'三倍出局 · 循环补位',
+    cardActive:'分红持续分发中…', cardWaiting:'等待开盘中…', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算', cardProgress:'分红进度', cardCycle:'三倍出局 · 循环补位',
     cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取', cardCollector:'您的专属卡牌',
     cardPending:'待领取', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
     calc:'计算中…',
@@ -1390,7 +1392,7 @@ const I18N = {
     teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
     bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
     modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
-    cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit', cardProgress:'Dividend Progress', cardCycle:'3× Exit · Seat Renewed',
+    cardActive:'Earning', cardWaiting:'Awaiting Launch…', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit', cardProgress:'Dividend Progress', cardCycle:'3× Exit · Seat Renewed',
     cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed', cardCollector:'Your Exclusive Card',
     cardPending:'Pending', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
     calc:'Calculating…',
@@ -1479,6 +1481,7 @@ let buyQuantity = 1;              // 购买数量
 let unitPriceTokens = null;       // 单卡所需代币（BigNumber）
 let remainingSlots = 520;         // 剩余可购买名额
 let isPreLaunch = false;          // 是否开盘前（USDT 预售模式）
+let launchedNow = false;          // 是否已开盘（卡面徽标：等待开盘中… 黄色 / 分红持续分发中… 绿色）
 let usdtContract = null;          // USDT 合约实例
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
@@ -1960,6 +1963,11 @@ async function loadStats() {
 
   // 开盘状态
   const [launched, paused] = lp;
+  // 开盘状态变化：卡面徽标（等待开盘中…/分红持续分发中…）随之切换并立即重渲染
+  if (launchedNow !== (launched === true)) {
+    launchedNow = (launched === true);
+    loadCards();
+  }
   if (launched === true) {
     uiHtml(DOM.launchStatus, paused === true
       ? '<span class="chip chip-off">' + t('statusPaused') + '</span>'
@@ -2250,7 +2258,7 @@ function cardRowHtml(r) {
         <div class="nft-id-wrap">
           <span class="nft-id-no">${cardNo}</span>
           <span class="nft-id-label">${t('cardCollector')}</span>
-          <div class="nft-badge-row">${r.active ? '<span class="badge badge-active">' + t('cardActive') + '</span>' : '<span class="badge badge-exited">' + t('cardExited') + '</span>'}<span class="nft-cycle"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>${t('cardCycle')}</span></div>
+          <div class="nft-badge-row">${!r.active ? '<span class="badge badge-exited">' + t('cardExited') + '</span>' : (launchedNow ? '<span class="badge badge-active">' + t('cardActive') + '</span>' : '<span class="badge badge-wait">' + t('cardWaiting') + '</span>')}<span class="nft-cycle"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>${t('cardCycle')}</span></div>
         </div>
         <div class="nft-entry"><span class="entry-label">${t('cardEntry')}</span><span class="entry-time">${fmtTime(r.entryTime)}</span></div>
       </div>
@@ -2293,8 +2301,9 @@ function patchCardDom(r) {
   card.classList.toggle('exited', !r.active);
   const badge = card.querySelector('.badge');
   if (badge) {
-    if (r.active) { badge.className = 'badge badge-active'; badge.innerText = t('cardActive'); }
-    else { badge.className = 'badge badge-exited'; badge.innerText = t('cardExited'); }
+    if (!r.active) { badge.className = 'badge badge-exited'; badge.innerText = t('cardExited'); }
+    else if (launchedNow) { badge.className = 'badge badge-active'; badge.innerText = t('cardActive'); }
+    else { badge.className = 'badge badge-wait'; badge.innerText = t('cardWaiting'); }
   }
   const mvs = card.querySelectorAll('.metric-value');
   if (mvs.length === 3) {
