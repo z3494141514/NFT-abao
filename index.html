@@ -1664,6 +1664,8 @@ function applyTokenSymbols() {
   DOM.preLaunchRewardText.innerText = '🎁 ' + t('preGift1') + ' ' + tokenSymbol + ' ' + t('preGift2');
 }
 
+let heroVideoBoot = null; // 视频启动函数（initHeroVideo 中赋值；数据加载完成后调用）
+
 async function setupProvider(address) {
   // 并发去重：钱包 accountsChanged 与手动「连接钱包」可能同时为同一地址触发 setup，
   // 800ms 内的重复调用直接跳过，避免两套只读层交错覆盖
@@ -1677,7 +1679,12 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：记忆的最快节点排头；首次连接先并发探测（≤2.5s）再建层，签名交易仍走钱包 signer
+  // ① 先连接钱包：立刻把顶栏切到「已连接」状态（不等任何网络探测/数据读取）
+  DOM.connectBtn.style.display = 'none';
+  DOM.walletInfo.style.display = 'flex';
+  DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
+
+  // ② 再响应数据：只读数据层（记忆的最快节点排头；首次连接先并发探测 ≤2.5s）
   const readNodes = await ensureReadNodes(provider);
   readProvider = createReadProvider(readNodes);
 
@@ -1686,11 +1693,6 @@ async function setupProvider(address) {
   saleC = new ethers.Contract(CONFIG.contracts.sale, ABIS.sale, readProvider);
   poolC = new ethers.Contract(CONFIG.contracts.pool, ABIS.pool, readProvider);
   oracleC = new ethers.Contract(CONFIG.contracts.oracle, ABIS.oracle, readProvider);
-
-  DOM.connectBtn.style.display = 'none';
-  DOM.walletInfo.style.display = 'flex';
-  DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
-  // 连接后不遮页面：页面保持可见，数据后台加载、到位即填充
 
   // 代币与 USDT 元信息：全部并行（一次往返，不再串行等待）
   try {
@@ -1725,6 +1727,8 @@ async function setupProvider(address) {
   if (epoch !== connEpoch || userAddress !== address) return;
 
   await loadAll();
+  // 顺序：先连钱包 → 数据到位 → 最后启动背景视频（与数据同步呈现）
+  if (heroVideoBoot) heroVideoBoot();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
   // 团队数据是「进页才加载」：若重连时正停留在团队页，主动补拉一次，
   // 避免断开→重连后下级列表空着、必须切页才出现
@@ -2643,9 +2647,9 @@ function heroVideoEnsurePlaying() {
   const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
   v.addEventListener('loadeddata', ready);
   v.addEventListener('canplay', ready);
-  // 首次进入卡顿主因 = 首屏渲染与 mp4 下载抢带宽/CPU：等页面 load 完成后再拉视频，
-  // 首屏秒出，视频淡入（后续访问视频已在缓存，不再卡）
-  const boot = () => {
+  let booted = false;
+  // 启动视频：数据加载完成后再播（先连钱包 → 数据出来 → 最后视频同步出现）
+  heroVideoBoot = () => {
     if (booted) return;
     booted = true;
     v.querySelector('source').src = CONFIG.heroVideoUrl;
@@ -2654,12 +2658,8 @@ function heroVideoEnsurePlaying() {
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1500);
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
   };
-  let booted = false;
-  // 页面与 MP4 一起出：load 后 300ms 即启动视频；数据不遮页面、后台填充
-  if (document.readyState === 'complete') setTimeout(boot, 300);
-  else window.addEventListener('load', () => setTimeout(boot, 300));
-  // 保险：万一 load 事件迟迟不来，2 秒后照样启动视频
-  setTimeout(() => { if (!booted) boot(); }, 2000);
+  // 未连接钱包的兜底：6 秒后也启动视频（页面可见、无数据流程时仍要有背景动画）
+  setTimeout(() => { if (!booted) heroVideoBoot(); }, 6000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
