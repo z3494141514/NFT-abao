@@ -587,7 +587,9 @@ body{-webkit-tap-highlight-color:transparent}
     <!-- 品牌主视觉 -->
     <div class="hero">
       <!-- mp4 背景动画：CONFIG.heroVideoUrl 留空时自动移除，回退到代码卡牌动画 -->
-      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto"
+             webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"
+             aria-hidden="true">
         <source src="" type="video/mp4">
       </video>
       <!-- AI 卡牌动画背景（代码实时渲染，无需视频文件） -->
@@ -2489,12 +2491,19 @@ window.addEventListener('load', setHeroTravel);
    省电降载：省流量模式 / 系统减少动态效果 时不加载视频（手机端正常播放，离开页面自动暂停） */
 function heroVideoEnsurePlaying() {
   const hv = document.getElementById('heroVideo');
-  if (!hv || !hv.paused) return;
+  if (!hv) return;
   const active = document.querySelector('.page.active');
   const onHome = active && active.id === 'homePage';
   if (!onHome || document.visibilityState !== 'visible') return;
-  const pr = hv.play();
-  if (pr && pr.catch) pr.catch(() => { hv.muted = true; hv.play().catch(() => {}); });
+  // 不检查 paused：WebView 切后台时解码器可能被系统冻结但元素仍报「播放中」，
+  // 回前台必须无条件再 play() 一次（对已播放元素是安全 no-op）
+  try {
+    const pr = hv.play();
+    if (pr && pr.catch) pr.catch(() => { hv.muted = true; hv.play().catch(() => {}); });
+  } catch (e) {
+    hv.muted = true;
+    try { hv.play(); } catch (e2) { /* 策略拦截：等下次手势/事件再试 */ }
+  }
 }
 
 (function initHeroVideo() {
@@ -2513,6 +2522,21 @@ function heroVideoEnsurePlaying() {
   v.load();
   // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
   setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
+  // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play
+  document.addEventListener('WeixinJSBridgeReady', () => heroVideoEnsurePlaying(), false);
+  // 部分微信版本即使静音也要求「首个手势」才放行（touchstart 不算激活，
+  // 需要 click/touchend 级别的手势——这正是「切页点一下就能播」的原因）。
+  // 首个手势即补播，任何一次点击/触摸都会触发，播成功后自移除。
+  const onFirstGesture = () => {
+    heroVideoEnsurePlaying();
+    window.removeEventListener('touchstart', onFirstGesture);
+    window.removeEventListener('touchend', onFirstGesture);
+    window.removeEventListener('click', onFirstGesture);
+  };
+  window.addEventListener('touchstart', onFirstGesture, { passive: true });
+  window.addEventListener('touchend', onFirstGesture, { passive: true });
+  window.addEventListener('click', onFirstGesture, { passive: true });
 })();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -2682,6 +2706,9 @@ window.addEventListener('load', async () => {
       stopRefresh();
     }
   });
+  // 部分 WebView（微信/App 内嵌）不触发 visibilitychange 而触发 pageshow：
+  // 返回前台时同样强制恢复播放
+  window.addEventListener('pageshow', () => heroVideoEnsurePlaying());
 });
 })();
 </script>
