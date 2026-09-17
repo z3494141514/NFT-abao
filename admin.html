@@ -706,6 +706,36 @@ function createReadProvider(providers) {
   });
 }
 
+/* 后台并发探测公共节点速度（2.5s 内谁先回谁记下），结果存 localStorage */
+function probeFastRpc() {
+  try {
+    const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+    const probe = (n) => Promise.race([
+      n.getBlockNumber().then(() => Date.now()),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
+    ]);
+    Promise.allSettled(nodes.map(probe)).then(results => {
+      let best = null, bestMs = Infinity;
+      nodes.forEach((n, i) => {
+        if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n.connection.url; }
+      });
+      if (best) localStorage.setItem('fastRpc', best);
+    }).catch(() => {});
+  } catch (e) { /* 忽略探测失败 */ }
+}
+
+/* 只读节点排序：记忆的最快公共节点排头，钱包注入节点垫底 */
+function buildReadNodes(walletProvider) {
+  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+  const cached = localStorage.getItem('fastRpc');
+  let ordered = nodes.slice();
+  if (cached) {
+    const idx = ordered.findIndex(u => u === cached);
+    if (idx > 0) { const f = ordered.splice(idx, 1)[0]; ordered.unshift(f); }
+  }
+  return ordered.concat(walletProvider);
+}
+
 async function setupProvider(address) {
   // 并发去重：钱包 accountsChanged 与手动「连接钱包」可能同时为同一地址触发 setup，
   // 800ms 内的重复调用直接跳过，避免两套只读层交错覆盖
@@ -719,10 +749,8 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：国内可直连公共节点优先，钱包注入节点垫底；签名交易仍走钱包注入的 signer
-  const readNodes = CONFIG.rpcUrls
-    .map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
-    .concat(provider);
+  // 只读数据层：记忆的最快公共节点排头 + 钱包注入节点垫底；签名交易仍走钱包 signer
+  const readNodes = buildReadNodes(provider);
   readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
@@ -1650,6 +1678,8 @@ DOM.adminProposeOracleBtn.addEventListener('click', throttle(adminProposeOracle,
 DOM.adminApplyOracleBtn.addEventListener('click', throttle(adminApplyOracle, 1500));
 DOM.adminEnableTradingBtn.addEventListener('click', throttle(adminEnableTrading, 2000));
 DOM.adminGrantMinterBtn.addEventListener('click', throttle(adminGrantMinter, 1500));
+
+probeFastRpc(); // 后台探测最快 RPC 节点（不阻塞页面），为下次进入铺路
 
 window.addEventListener('load', async () => {
   if (window.ethereum) {

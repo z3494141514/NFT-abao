@@ -1346,6 +1346,7 @@ let readProvider = null; // 只读 RPC 层（公共节点自动切换）
 let connEpoch = 0;       // 连接代次：断开/重连时递增，用于作废过期的异步连接收尾
 let lastSetup = { addr: '', ts: 0 }; // 并发去重：同一地址 800ms 内的重复 setup 只执行一次
 applyLang(); // 应用上次保存的语言（本地存储）
+probeFastRpc(); // 后台探测最快 RPC 节点（不阻塞页面），为下次进入铺路
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
@@ -1603,6 +1604,37 @@ function createReadProvider(providers) {
   });
 }
 
+/* 后台并发探测公共节点速度（2.5s 内谁先回谁记下），结果存 localStorage；
+   下次进入直接用最快节点排头——第一次访问也不再挨个等超时 */
+function probeFastRpc() {
+  try {
+    const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+    const probe = (n) => Promise.race([
+      n.getBlockNumber().then(() => Date.now()),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
+    ]);
+    Promise.allSettled(nodes.map(probe)).then(results => {
+      let best = null, bestMs = Infinity;
+      nodes.forEach((n, i) => {
+        if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n.connection.url; }
+      });
+      if (best) localStorage.setItem('fastRpc', best);
+    }).catch(() => {});
+  } catch (e) { /* 忽略探测失败 */ }
+}
+
+/* 只读节点排序：localStorage 记住的最快公共节点排头，钱包注入节点垫底 */
+function buildReadNodes(walletProvider) {
+  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+  const cached = localStorage.getItem('fastRpc');
+  let ordered = nodes.slice();
+  if (cached) {
+    const idx = ordered.findIndex(u => u === cached);
+    if (idx > 0) { const f = ordered.splice(idx, 1)[0]; ordered.unshift(f); }
+  }
+  return ordered.concat(walletProvider);
+}
+
 /* 把静态文案中的代币符号替换为链上真实符号 */
 function applyTokenSymbols() {
   DOM.preLaunchRewardText.innerText = '🎁 ' + t('preGift1') + ' ' + tokenSymbol + ' ' + t('preGift2');
@@ -1621,11 +1653,8 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：国内可直连公共节点优先，钱包注入节点垫底（国内钱包 RPC 常被墙/极慢，
-  // 优先公共节点可让「连接钱包」秒出数据）；签名交易仍走钱包注入的 signer
-  const readNodes = CONFIG.rpcUrls
-    .map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
-    .concat(provider);
+  // 只读数据层：记忆的最快公共节点排头 + 钱包注入节点垫底；签名交易仍走钱包 signer
+  const readNodes = buildReadNodes(provider);
   readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
@@ -2585,11 +2614,17 @@ function heroVideoEnsurePlaying() {
   const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
   v.addEventListener('loadeddata', ready);
   v.addEventListener('canplay', ready);
-  v.querySelector('source').src = CONFIG.heroVideoUrl;
-  v.load();
-  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
-  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
-  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
+  // 首次进入卡顿主因 = 首屏渲染与 mp4 下载抢带宽/CPU：等页面 load 完成后再拉视频，
+  // 首屏秒出，视频淡入（后续访问视频已在缓存，不再卡）
+  const boot = () => {
+    v.querySelector('source').src = CONFIG.heroVideoUrl;
+    v.load();
+    // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
+    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1500);
+    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
+  };
+  if (document.readyState === 'complete') setTimeout(boot, 300);
+  else window.addEventListener('load', () => setTimeout(boot, 300));
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
