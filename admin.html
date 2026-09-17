@@ -675,9 +675,14 @@ function applyTokenSymbols() {
 function createReadProvider(providers) {
   let idx = 0;
   let current = providers[0];
+  const bad = new Set(); // 本次会话内已超时/失败的节点：后续读取直接跳过（快速收敛到好节点）
   const rotate = () => {
     idx = (idx + 1) % providers.length;
     current = providers[idx];
+  };
+  const skipBad = () => {
+    let guard = 0;
+    while (bad.has(current) && guard < providers.length) { rotate(); guard++; }
   };
   const withTimeout = (p) => Promise.race([
     p,
@@ -691,13 +696,16 @@ function createReadProvider(providers) {
             try {
               return await withTimeout(prov[prop].apply(prov, args));
             } catch (e) {
+              bad.add(current);
+              rotate();
+              skipBad();
               if (left > 1) {
-                rotate();
                 return tryOne(current, left - 1);
               }
               throw e;
             }
           };
+          skipBad();
           return tryOne(current, Math.min(providers.length, 5));
         };
       }
@@ -807,12 +815,14 @@ function disconnectWallet() {
   showToast('已断开钱包', 'success');
 }
 
-async function loadAll() {
+async function loadAll(retryLeft = 2) {
   if (!userAddress) return;
   try {
     await loadAdminData();
   } catch (e) {
     console.warn('管理面板加载失败', e);
+    // 网络抖动自愈：4 秒后自动重试（最多 2 次）
+    if (retryLeft > 0 && userAddress) setTimeout(() => loadAll(retryLeft - 1), 4000);
   }
 }
 

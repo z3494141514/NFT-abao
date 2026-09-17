@@ -1573,9 +1573,14 @@ async function connectWallet() {
 function createReadProvider(providers) {
   let idx = 0;
   let current = providers[0];
+  const bad = new Set(); // 本次会话内已超时/失败的节点：后续读取直接跳过（快速收敛到好节点）
   const rotate = () => {
     idx = (idx + 1) % providers.length;
     current = providers[idx];
+  };
+  const skipBad = () => {
+    let guard = 0;
+    while (bad.has(current) && guard < providers.length) { rotate(); guard++; }
   };
   const withTimeout = (p) => Promise.race([
     p,
@@ -1589,13 +1594,16 @@ function createReadProvider(providers) {
             try {
               return await withTimeout(prov[prop].apply(prov, args));
             } catch (e) {
+              bad.add(current);
+              rotate();
+              skipBad();
               if (left > 1) {
-                rotate();
                 return tryOne(current, left - 1);
               }
               throw e;
             }
           };
+          skipBad();
           return tryOne(current, Math.min(providers.length, 5));
         };
       }
@@ -1667,38 +1675,41 @@ async function setupProvider(address) {
   DOM.connectBtn.style.display = 'none';
   DOM.walletInfo.style.display = 'flex';
   DOM.walletAddressDisplay.innerText = shortAddr(userAddress);
+  showLoading(); // 连接后首次数据加载期间显示全局加载圈（TP 自动恢复连接没有可见过程，防「卡死」错觉）
 
-  // 代币与 USDT 元信息：并行拉取（一次连接只做一次）
+  // 代币与 USDT 元信息：全部并行（一次往返，不再串行等待）
   try {
-    const uAddr = await poolC.usdt().catch(() => null);
-    const [td, ts] = await Promise.all([tokenC.decimals(), tokenC.symbol()]);
-    tokenDecimals = td;
-    tokenSymbol = ts;
-    applyTokenSymbols(); // 页面文案动态显示真实代币符号
+    const [uAddr, meta, preUsdt] = await Promise.all([
+      poolC.usdt().catch(() => null),
+      Promise.all([tokenC.decimals(), tokenC.symbol()]).catch(() => null),
+      saleC.usdt().catch(() => null)
+    ]);
+    if (meta) {
+      tokenDecimals = meta[0];
+      tokenSymbol = meta[1];
+      applyTokenSymbols(); // 页面文案动态显示真实代币符号
+    }
     if (uAddr) {
       const uc = new ethers.Contract(uAddr, ['function symbol() view returns (string)', 'function decimals() view returns (uint8)'], readProvider);
       const [us, ud] = await Promise.all([uc.symbol(), uc.decimals()]);
       usdtSymbol = us;
       usdtDecimals = ud;
     }
-  } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
-
-  // 预售支付资产（USDT）合约实例
-  try {
-    const preUsdt = await saleC.usdt().catch(() => null);
     if (preUsdt) {
       usdtContract = new ethers.Contract(preUsdt, [
         'function balanceOf(address) view returns (uint256)',
         'function approve(address, uint256) returns (bool)',
         'function allowance(address, address) view returns (uint256)'
       ], readProvider);
+    } else {
+      usdtContract = null;
     }
-  } catch (e) { usdtContract = null; }
+  } catch (e) { console.warn('读取代币/USDT 信息失败', e); }
 
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
-  if (epoch !== connEpoch || userAddress !== address) return;
+  if (epoch !== connEpoch || userAddress !== address) { hideLoading(); return; }
 
-  loadAll();
+  await loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
   // 团队数据是「进页才加载」：若重连时正停留在团队页，主动补拉一次，
   // 避免断开→重连后下级列表空着、必须切页才出现
@@ -1706,6 +1717,7 @@ async function setupProvider(address) {
   if (activePage && activePage.id === 'teamPage') loadTeam();
   startRefresh();
   checkInviteBindModal(); // 手动连接钱包同样触发邀请绑定确认
+  hideLoading();
 }
 
 function disconnectWallet() {
@@ -1806,7 +1818,7 @@ async function checkChain() {
 /* ============================================================
  * 数据加载
  * ============================================================ */
-async function loadAll() {
+async function loadAll(retryLeft = 2) {
   if (!userAddress) return;
   try {
     // 团队数据量大（逐地址查询），改为「打开团队页时才加载」，不再随 10 秒轮询
@@ -1814,6 +1826,8 @@ async function loadAll() {
     setHeroTravel(); // 绑定态/预售态切换会改变 Hero 高度，重算背景卡牌飞行距离
   } catch (e) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
+    // 网络抖动自愈：4 秒后自动重试（最多 2 次），不必等下一轮 15 秒轮询
+    if (retryLeft > 0 && userAddress) setTimeout(() => loadAll(retryLeft - 1), 4000);
   }
 }
 
@@ -2627,10 +2641,11 @@ function heroVideoEnsurePlaying() {
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
   };
   let booted = false;
-  if (document.readyState === 'complete') setTimeout(boot, 300);
-  else window.addEventListener('load', () => setTimeout(boot, 300));
-  // 保险：万一 load 事件迟迟不来（网络差/资源卡住），2.5 秒后照样启动视频
-  setTimeout(() => { if (!booted) boot(); }, 2500);
+  // 数据优先：首屏渲染 + 首次数据加载完后再拉视频，避免 mp4 与 RPC 抢带宽
+  if (document.readyState === 'complete') setTimeout(boot, 2500);
+  else window.addEventListener('load', () => setTimeout(boot, 2500));
+  // 保险：万一 load 事件迟迟不来，4 秒后照样启动视频
+  setTimeout(() => { if (!booted) boot(); }, 4000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
