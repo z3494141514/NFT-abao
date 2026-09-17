@@ -274,7 +274,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .overview-ic .ic{width:16px;height:16px;stroke:#fff;stroke-width:1.7}
 .overview-title{display:block;font-size:13.5px;font-weight:800;letter-spacing:1px}
 .overview-sub{display:none}
-.overview-badge{font-size:9px;letter-spacing:1.6px;color:rgba(245,193,76,.9);border:1px solid rgba(245,193,76,.35);background:rgba(245,193,76,.08);border-radius:99px;padding:3px 11px;font-weight:700}
+.overview-badge{font-size:10px;letter-spacing:1.2px;color:rgba(245,193,76,.9);border:1px solid rgba(245,193,76,.35);background:rgba(245,193,76,.08);border-radius:99px;padding:3px 11px;font-weight:700}
 .overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .overview-item{position:relative;display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.13);border-radius:13px;padding:11px 14px;overflow:hidden;transition:transform .25s ease,border-color .25s ease,background .25s ease}
 .overview-item.ov-main{background:linear-gradient(135deg,rgba(245,193,76,.12),rgba(245,193,76,.03));border-color:rgba(245,193,76,.4)}
@@ -292,6 +292,35 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .overview-value{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
 .ov-main .overview-value{background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .ov-pending .overview-value{color:#c4b5fd;text-shadow:0 0 14px rgba(139,92,246,.4)}
+/* ---------- 分红来源详解（流向四步 + 规则要点） ---------- */
+.div-flow{position:relative;overflow:hidden;border:1px solid transparent;border-radius:18px;padding:14px 18px 16px;margin-bottom:14px;background:linear-gradient(180deg,rgba(17,20,37,1),rgba(11,13,25,1)) padding-box,linear-gradient(135deg,rgba(34,211,238,.42),rgba(139,92,246,.34)) border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.div-flow-head{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+.div-flow-ic{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 16px rgba(34,211,238,.3);flex-shrink:0}
+.div-flow-ic .ic{width:16px;height:16px;stroke:#fff;stroke-width:1.7}
+.div-flow-title{display:block;font-size:13.5px;font-weight:800;letter-spacing:1px}
+.div-flow-sub{display:block;font-size:9px;letter-spacing:1.8px;color:var(--muted);margin-top:2px;font-weight:700}
+.div-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:13px}
+.div-step{position:relative;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.14);border-radius:13px;padding:11px 12px}
+.div-step::after{content:'→';position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:rgba(34,211,238,.45);font-size:15px;font-weight:700;pointer-events:none}
+.div-step:last-child::after{display:none}
+.div-step-no{position:absolute;top:7px;right:8px;font-size:20px;font-weight:900;line-height:1;background:linear-gradient(135deg,rgba(34,211,238,.55),rgba(139,92,246,.55));-webkit-background-clip:text;-webkit-text-fill-color:transparent;opacity:.5}
+.div-step-title{display:block;font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--text);margin-bottom:5px;padding-right:20px}
+.div-step-desc{display:block;font-size:10px;line-height:1.68;color:var(--muted)}
+.div-rules{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+.div-rule{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.035);border:1px solid rgba(148,163,184,.14);border-radius:12px;padding:10px 12px}
+.div-rule-ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.div-rule-ic .ic{width:13px;height:13px;stroke-width:1.7}
+.div-rule-gold .div-rule-ic{background:rgba(245,193,76,.14);border:1px solid rgba(245,193,76,.38);color:var(--gold);box-shadow:0 3px 10px rgba(245,193,76,.2)}
+.div-rule-cyan .div-rule-ic{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.32);color:var(--cyan)}
+.div-rule-violet .div-rule-ic{background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.36);color:#c4b5fd;box-shadow:0 3px 10px rgba(139,92,246,.2)}
+.div-rule-green .div-rule-ic{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.32);color:var(--green)}
+.div-rule-title{display:block;font-size:11px;font-weight:800;letter-spacing:.4px;margin-bottom:2px}
+.div-rule-gold .div-rule-title{color:#ffe08a}
+.div-rule-cyan .div-rule-title{color:#7dd3fc}
+.div-rule-violet .div-rule-title{color:#c4b5fd}
+.div-rule-green .div-rule-title{color:#6ee7b7}
+.div-rule-desc{display:block;font-size:9.5px;line-height:1.62;color:var(--muted)}
+.div-flow-note{font-size:9.5px;line-height:1.7;color:rgba(148,163,184,.72);border-top:1px dashed rgba(148,163,184,.16);padding-top:10px;letter-spacing:.2px}
 /* ---------- 分节标题 ---------- */
 .section-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .section-title{font-size:14px;font-weight:800;letter-spacing:2px;color:var(--text);white-space:nowrap}
@@ -431,6 +460,9 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .badge-active{color:var(--green);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.4);box-shadow:0 0 14px rgba(52,211,153,.18)}
 .badge-active::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
 .badge-exited{color:var(--red);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35)}
+.nft-badge-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.nft-cycle{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;letter-spacing:1.2px;color:rgba(148,163,184,.68);font-weight:600;white-space:nowrap}
+.nft-cycle .ic{width:10px;height:10px;color:var(--cyan);opacity:.75}
 .nft-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;position:relative;z-index:1}
 .metric{background:rgba(255,255,255,.035);border:1px solid rgba(148,163,184,.12);border-radius:13px;padding:11px 12px 10px;transition:border-color .25s,background .25s}
 @media (hover:hover){.metric:hover{border-color:rgba(34,211,238,.35);background:rgba(255,255,255,.055)}}
@@ -446,6 +478,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .exit-fill.done{background:linear-gradient(90deg,#f5c14c,#fb7185);box-shadow:0 0 16px rgba(245,193,76,.7)}
 .exit-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .exit-meta .pct{font-family:ui-monospace,SFMono-Regular,monospace;font-size:14px;font-weight:900;background:linear-gradient(90deg,#22d3ee,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.progress-l{display:inline-flex;align-items:center;gap:6px}
+.progress-label{font-size:10px;letter-spacing:1px;color:var(--muted);font-weight:700}
 .exit-meta .pct.done{background:linear-gradient(90deg,#f5c14c,#fb7185);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .progress-txt{font-size:11px;color:var(--muted)}
 /* ---------- 邀请 ---------- */
@@ -564,6 +598,10 @@ body{-webkit-tap-highlight-color:transparent}
 .hero-chips{gap:8px;margin-top:20px}
 .footer{padding:12px 16px 4px;font-size:10.5px}
 .footer-disclaimer{padding:0 16px 96px;font-size:9.5px}
+.div-flow{padding:12px 13px 14px;border-radius:16px}
+.div-steps{grid-template-columns:1fr;gap:9px}
+.div-step::after{display:none}
+.div-rules{grid-template-columns:1fr;gap:8px}
 }
 /* 系统开启「减少动态效果」：一键关闭所有动画，省电省性能 */
 @media (prefers-reduced-motion: reduce){
@@ -837,7 +875,7 @@ body{-webkit-tap-highlight-color:transparent}
             <span class="overview-sub" data-i18n="ovSub">Earnings Overview · 金本位分红</span>
           </div>
         </div>
-        <span class="overview-badge">TOTAL EARNINGS</span>
+        <span class="overview-badge" data-i18n="ovBadge">卡牌汇总分红情况</span>
       </div>
       <div class="overview-grid">
         <div class="overview-item ov-main">
@@ -862,6 +900,70 @@ body{-webkit-tap-highlight-color:transparent}
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 分红来源详解：流向四步 + 规则要点 -->
+    <div class="div-flow">
+      <div class="div-flow-head">
+        <span class="div-flow-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3s6 6.7 6 11a6 6 0 0 1-12 0c0-4.3 6-11 6-11z"/><path d="M9.2 14.2a2.8 2.8 0 0 0 2.8 2.8"/></svg></span>
+        <div>
+          <span class="div-flow-title" data-i18n="divTitle">分红来源</span>
+          <span class="div-flow-sub" data-i18n="divSub">DIVIDEND FLOW · 全程链上自动</span>
+        </div>
+      </div>
+      <div class="div-steps">
+        <div class="div-step">
+          <span class="div-step-no">1</span>
+          <span class="div-step-title" data-i18n="divS1T">交易手续费 3%</span>
+          <span class="div-step-desc" data-i18n="divS1D">CC 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大</span>
+        </div>
+        <div class="div-step">
+          <span class="div-step-no">2</span>
+          <span class="div-step-title" data-i18n="divS2T">100% 自动入池</span>
+          <span class="div-step-desc" data-i18n="divS2D">手续费全额转入分红池合约，零抽成、零中间环节</span>
+        </div>
+        <div class="div-step">
+          <span class="div-step-no">3</span>
+          <span class="div-step-title" data-i18n="divS3T">自动兑换 USDT</span>
+          <span class="div-step-desc" data-i18n="divS3D">池内手续费自动换成 USDT，链上 TWAP 护航、兑换免税，收益不缩水</span>
+        </div>
+        <div class="div-step">
+          <span class="div-step-no">4</span>
+          <span class="div-step-title" data-i18n="divS4T">按卡均分到账</span>
+          <span class="div-step-desc" data-i18n="divS4D">每批 USDT 按有效卡牌数等额分配，每张卡各得一份</span>
+        </div>
+      </div>
+      <div class="div-rules">
+        <div class="div-rule div-rule-gold">
+          <span class="div-rule-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
+          <div>
+            <span class="div-rule-title" data-i18n="divR1T">多持多得</span>
+            <span class="div-rule-desc" data-i18n="divR1D">分红按持卡张数分配，3 张卡 = 3 份，持卡越多份额越多</span>
+          </div>
+        </div>
+        <div class="div-rule div-rule-cyan">
+          <span class="div-rule-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v9M15.2 9.2c-.7-1.1-2-1.7-3.2-1.7-1.8 0-3.2 1-3.2 2.3s1.4 2.3 3.2 2.3 3.2 1 3.2 2.3-1.4 2.3-3.2 2.3c-1.2 0-2.5-.6-3.2-1.7"/></svg></span>
+          <div>
+            <span class="div-rule-title" data-i18n="divR2T">金本位兑付</span>
+            <span class="div-rule-desc" data-i18n="divR2D">分红以 USDT 直发钱包，入池即锁定，代币价格波动不影响</span>
+          </div>
+        </div>
+        <div class="div-rule div-rule-violet">
+          <span class="div-rule-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M6 4h12v3a6 6 0 0 1-12 0V4z"/><path d="M6 5H3.5v1.5A4.5 4.5 0 0 0 8 11M18 5h2.5v1.5A4.5 4.5 0 0 1 16 11M12 14v6M8.5 20h7"/></svg></span>
+          <div>
+            <span class="div-rule-title" data-i18n="divR3T">三倍出局</span>
+            <span class="div-rule-desc" data-i18n="divR3D">单卡累计满 300U 自动出局，同时释放 1 个新铸造名额</span>
+          </div>
+        </div>
+        <div class="div-rule div-rule-green">
+          <span class="div-rule-ic"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4.5 19.5h15"/></svg></span>
+          <div>
+            <span class="div-rule-title" data-i18n="divR4T">随时领取</span>
+            <span class="div-rule-desc" data-i18n="divR4D">待领取分红随时提现，批量领取仅需一次签名</span>
+          </div>
+        </div>
+      </div>
+      <div class="div-flow-note" data-i18n="divNote">每张卡自铸造时刻起开始计分红，不继承入场前收益——早买早分红，晚买不吃亏，全程链上公平。</div>
     </div>
 
     <!-- 卡牌明细 -->
@@ -1209,7 +1311,17 @@ const I18N = {
     buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
-    ovTitle:'收益总览', ovSub:'Earnings Overview · 金本位分红', ovTotal:'总获得分红', ovClaimed:'已领取', ovPending:'待领取',
+    ovTitle:'收益总览', ovSub:'Earnings Overview · 金本位分红', ovTotal:'总获得分红', ovClaimed:'已领取', ovPending:'待领取', ovBadge:'卡牌汇总分红情况',
+    divTitle:'分红来源', divSub:'DIVIDEND FLOW · 全程链上自动',
+    divS1T:'交易手续费 3%', divS1D:'CC 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大',
+    divS2T:'100% 自动入池', divS2D:'手续费全额转入分红池合约，零抽成、零中间环节',
+    divS3T:'自动兑换 USDT', divS3D:'池内手续费自动换成 USDT，链上 TWAP 护航、兑换免税，收益不缩水',
+    divS4T:'按卡均分到账', divS4D:'每批 USDT 按有效卡牌数等额分配，每张卡各得一份',
+    divR1T:'多持多得', divR1D:'分红按持卡张数分配，3 张卡 = 3 份，持卡越多份额越多',
+    divR2T:'金本位兑付', divR2D:'分红以 USDT 直发钱包，入池即锁定，代币价格波动不影响',
+    divR3T:'三倍出局', divR3D:'单卡累计满 300U 自动出局，同时释放 1 个新铸造名额',
+    divR4T:'随时领取', divR4D:'待领取分红随时提现，批量领取仅需一次签名',
+    divNote:'每张卡自铸造时刻起开始计分红，不继承入场前收益——早买早分红，晚买不吃亏，全程链上公平。',
     secCards:'卡牌明细', emptyTip:'连接钱包后查看',
     inviteTitle:'邀请', inviteRef:'我的上级', copyLink:'复制邀请链接', gotoTeam:'查看团队收益 →',
     langTitle:'选择语言', langOk:'确定',
@@ -1226,8 +1338,8 @@ const I18N = {
     teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
     bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
     modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
-    cardActive:'计息中', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算',
-    cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取',
+    cardActive:'分红持续分发中…', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算', cardProgress:'分红进度', cardCycle:'三倍出局 · 循环补位',
+    cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取', cardCollector:'您的专属卡牌',
     cardPending:'待领取', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取',
     calc:'计算中…',
     noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
@@ -1279,7 +1391,17 @@ const I18N = {
     buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
     launchProtect:'Launch Shield · ', sec:'s left',
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
-    ovTitle:'Earnings', ovSub:'Earnings Overview · Gold-Standard', ovTotal:'Total Earned', ovClaimed:'Claimed', ovPending:'Pending',
+    ovTitle:'Earnings', ovSub:'Earnings Overview · Gold-Standard', ovTotal:'Total Earned', ovClaimed:'Claimed', ovPending:'Pending', ovBadge:'TOTAL EARNINGS',
+    divTitle:'Dividend Sources', divSub:'DIVIDEND FLOW · FULLY ON-CHAIN',
+    divS1T:'3% Trading Fee', divS1D:'Every CC buy & sell auto-collects a 3% fee — more trading, bigger pool',
+    divS2T:'100% Into The Pool', divS2D:'All fees flow straight into the dividend pool — zero cuts, zero middlemen',
+    divS3T:'Auto-Swap To USDT', divS3D:'Pooled fees auto-swap into USDT — TWAP-protected & tax-free, no value leakage',
+    divS4T:'Equal Share Per Card', divS4D:'Each USDT batch is split equally among all active cards — one share per card',
+    divR1T:'More Cards, More Share', divR1D:'Dividends scale with card count — 3 cards = 3 shares',
+    divR2T:'Gold-Standard Payout', divR2D:'Paid directly in USDT and locked once pooled — token swings never affect payouts',
+    divR3T:'3× Exit', divR3D:'A card auto-exits at 300U total and frees 1 new mint slot',
+    divR4T:'Claim Anytime', divR4D:'Claim pending dividends anytime — batch claim needs just one signature',
+    divNote:'Each card starts earning from its mint moment and inherits nothing from earlier fees — early birds earn more, latecomers lose nothing. Fully on-chain and fair.',
     secCards:'Card Details', emptyTip:'Connect wallet to view',
     inviteTitle:'Invite', inviteRef:'My Referrer', copyLink:'Copy Invite Link', gotoTeam:'View Team Rewards →',
     langTitle:'Language', langOk:'OK',
@@ -1296,8 +1418,8 @@ const I18N = {
     teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
     bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
     modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
-    cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit',
-    cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed',
+    cardActive:'Earning', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit', cardProgress:'Dividend Progress', cardCycle:'3× Exit · Seat Renewed',
+    cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed', cardCollector:'Your Exclusive Card',
     cardPending:'Pending', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim',
     calc:'Calculating…',
     noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
@@ -2155,8 +2277,8 @@ function cardRowHtml(r) {
       <div class="nft-top">
         <div class="nft-id-wrap">
           <span class="nft-id-no">${cardNo}</span>
-          <span class="nft-id-label">Collector Card</span>
-          ${r.active ? '<span class="badge badge-active">' + t('cardActive') + '</span>' : '<span class="badge badge-exited">' + t('cardExited') + '</span>'}
+          <span class="nft-id-label">${t('cardCollector')}</span>
+          <div class="nft-badge-row">${r.active ? '<span class="badge badge-active">' + t('cardActive') + '</span>' : '<span class="badge badge-exited">' + t('cardExited') + '</span>'}<span class="nft-cycle"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>${t('cardCycle')}</span></div>
         </div>
         <div class="nft-entry"><span class="entry-label">${t('cardEntry')}</span><span class="entry-time">${fmtTime(r.entryTime)}</span></div>
       </div>
@@ -2177,7 +2299,7 @@ function cardRowHtml(r) {
       <div class="exit-progress">
         <div class="exit-track"><div class="exit-fill${pct >= 100 ? ' done' : ''}" style="width:${pct.toFixed(2)}%"></div></div>
         <div class="exit-meta">
-          <span class="pct${pct >= 100 ? ' done' : ''}">${pct.toFixed(2)}%</span>
+          <span class="progress-l"><span class="progress-label">${t('cardProgress')}</span><span class="pct${pct >= 100 ? ' done' : ''}">${pct.toFixed(2)}%</span></span>
           <span class="progress-txt">${progressTxt}</span>
         </div>
       </div>
@@ -2715,15 +2837,16 @@ document.querySelectorAll('.nav-item').forEach(btn => {
       else hv.pause();
     }
 
-    // 首页：重算背景飞行距离，并对「背景漂浮卡 + 标题渐变 + 副标题波浪」强制重启动画
-    // （display:none→block 后部分浏览器会冻结这些 infinite 动画——渐变消失/波浪不动的根源）
+    // 首页：重算背景飞行距离，并对「背景漂浮卡 + 标题渐变 + 副标题波浪 + 数据胶囊 +
+    // KPI 小卡 + 徽标呼吸点」强制重启动画（display:none→block 后部分浏览器会冻结这些
+    // infinite 动画——渐变消失/波浪不动/胶囊定格在半空·图标忽大忽小的根源）
     if (btn.dataset.page === 'homePage') {
       setHeroTravel();
-      document.querySelectorAll('.hero-scene, .hero-title, .hero-sub').forEach(el => {
+      document.querySelectorAll('.hero-scene, .hero-title, .hero-sub, .hero-chips, .hero-badge, .kpi-strip').forEach(el => {
         el.classList.add('anim-restart');
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          el.classList.remove('anim-restart');
-        }));
+        const done = () => el.classList.remove('anim-restart');
+        requestAnimationFrame(() => requestAnimationFrame(done));
+        setTimeout(done, 120); // 兜底：后台切走 rAF 不触发时，保证重启类必定移除
       });
     }
 
@@ -2735,6 +2858,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         heroes.forEach(h => h.classList.remove('anim-restart'));
       }));
+      setTimeout(() => heroes.forEach(h => h.classList.remove('anim-restart')), 120); // 同上：后台 rAF 不触发的兜底
     }
   });
 });
