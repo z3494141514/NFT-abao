@@ -824,14 +824,19 @@ function disconnectWallet() {
   showToast('已断开钱包', 'success');
 }
 
+let loadAllBusy = false; // 单飞锁：慢网络下防止多轮加载叠加
+
 async function loadAll(retryLeft = 2) {
-  if (!userAddress) return;
+  if (!userAddress || loadAllBusy) return;
+  loadAllBusy = true;
   try {
     await loadAdminData();
   } catch (e) {
     console.warn('管理面板加载失败', e);
     // 网络抖动自愈：4 秒后自动重试（最多 2 次）
     if (retryLeft > 0 && userAddress) setTimeout(() => loadAll(retryLeft - 1), 4000);
+  } finally {
+    loadAllBusy = false;
   }
 }
 

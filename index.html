@@ -1846,8 +1846,11 @@ async function checkChain() {
 /* ============================================================
  * 数据加载
  * ============================================================ */
+let loadAllBusy = false; // 单飞锁：慢网络下防止多轮加载叠加、请求互相挤占
+
 async function loadAll(retryLeft = 2) {
-  if (!userAddress) return;
+  if (!userAddress || loadAllBusy) return;
+  loadAllBusy = true;
   try {
     // 团队数据量大（逐地址查询），改为「打开团队页时才加载」，不再随 10 秒轮询
     await Promise.all([loadStats(), loadUser(), loadCards()]);
@@ -1856,6 +1859,8 @@ async function loadAll(retryLeft = 2) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
     // 网络抖动自愈：4 秒后自动重试（最多 2 次），不必等下一轮 15 秒轮询
     if (retryLeft > 0 && userAddress) setTimeout(() => loadAll(retryLeft - 1), 4000);
+  } finally {
+    loadAllBusy = false;
   }
 }
 
@@ -2658,7 +2663,7 @@ function heroVideoEnsurePlaying() {
   v.addEventListener('loadeddata', ready);
   v.addEventListener('canplay', ready);
   let booted = false;
-  // 启动视频：数据加载完成后再播（先连钱包 → 数据出来 → 最后视频同步出现）
+  // 启动视频（幂等）：立即加载 src 与数据并行进行，互不等待
   heroVideoBoot = () => {
     if (booted) return;
     booted = true;
@@ -2668,8 +2673,8 @@ function heroVideoEnsurePlaying() {
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1500);
     setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3500);
   };
-  // 未连接钱包的兜底：6 秒后也启动视频（页面可见、无数据流程时仍要有背景动画）
-  setTimeout(() => { if (!booted) heroVideoBoot(); }, 6000);
+  // 立即启动视频（与数据加载并行，互不等待）——恢复早期在 TP 中已验证可用的行为
+  heroVideoBoot();
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
