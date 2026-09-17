@@ -1612,36 +1612,53 @@ function createReadProvider(providers) {
   });
 }
 
-/* 后台并发探测公共节点速度（2.5s 内谁先回谁记下），结果存 localStorage；
-   只在页面 load 完成后跑一次、且只探测前 6 个节点——绝不在首屏加载期抢带宽 */
-function probeFastRpc() {
-  try {
-    const nodes = CONFIG.rpcUrls.slice(0, 6).map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
-    const probe = (n) => Promise.race([
-      n.getBlockNumber().then(() => Date.now()),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
-    ]);
-    Promise.allSettled(nodes.map(probe)).then(results => {
-      let best = null, bestMs = Infinity;
-      nodes.forEach((n, i) => {
-        if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n.connection && n.connection.url; }
-      });
-      if (best) { try { localStorage.setItem('fastRpc', best); } catch (e) {} }
-    }).catch(() => {});
-  } catch (e) { /* 忽略探测失败 */ }
+/* 并发探测公共节点 + 钱包节点（2.5s 超时），返回最快者（provider 对象） */
+async function probeFastRpcOnce(walletProvider) {
+  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+  const all = walletProvider ? nodes.concat(walletProvider) : nodes;
+  const probe = (n) => Promise.race([
+    n.getBlockNumber().then(() => Date.now()),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
+  ]);
+  let results;
+  try { results = await Promise.allSettled(all.map(probe)); } catch (e) { return null; }
+  let best = null, bestMs = Infinity;
+  all.forEach((n, i) => {
+    if (results[i].status === 'fulfilled' && results[i].value < bestMs) { bestMs = results[i].value; best = n; }
+  });
+  return best;
 }
 
-/* 只读节点排序：记忆的最快公共节点排头，钱包注入节点垫底 */
-function buildReadNodes(walletProvider) {
+/* 只读节点排序：记忆的最快节点（含 'wallet' 哨兵）排头；
+   首次连接（无缓存）先并发探测一次（≤2.5s）——保证第一笔读取就命中可用节点，不再挨个超时 */
+async function ensureReadNodes(walletProvider) {
   const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
   let cached = null;
   try { cached = localStorage.getItem('fastRpc'); } catch (e) {}
   let ordered = nodes.slice();
-  if (cached) {
+  let walletFirst = false;
+  if (cached === 'wallet') {
+    walletFirst = true;
+  } else if (cached) {
     const idx = ordered.findIndex(u => u === cached);
     if (idx > 0) { const f = ordered.splice(idx, 1)[0]; ordered.unshift(f); }
+  } else {
+    const best = await probeFastRpcOnce(walletProvider);
+    if (best) {
+      try {
+        if (best === walletProvider) { localStorage.setItem('fastRpc', 'wallet'); walletFirst = true; }
+        else { localStorage.setItem('fastRpc', best.connection.url); }
+      } catch (e) {}
+    }
   }
-  return ordered.concat(walletProvider);
+  return walletFirst ? [walletProvider].concat(ordered) : ordered.concat(walletProvider);
+}
+
+/* 后台刷新探测（load 后跑，只更新缓存，不阻塞页面） */
+function probeFastRpc() {
+  probeFastRpcOnce(null).then(best => {
+    if (best && best.connection && best.connection.url) { try { localStorage.setItem('fastRpc', best.connection.url); } catch (e) {} }
+  }).catch(() => {});
 }
 
 /* 把静态文案中的代币符号替换为链上真实符号 */
@@ -1662,8 +1679,8 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：记忆的最快公共节点排头 + 钱包注入节点垫底；签名交易仍走钱包 signer
-  const readNodes = buildReadNodes(provider);
+  // 只读数据层：记忆的最快节点排头；首次连接先并发探测（≤2.5s）再建层，签名交易仍走钱包 signer
+  const readNodes = await ensureReadNodes(provider);
   readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
