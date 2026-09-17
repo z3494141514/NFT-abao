@@ -1736,8 +1736,7 @@ async function setupProvider(address) {
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
   if (epoch !== connEpoch || userAddress !== address) return;
 
-  await loadAll();
-  // 顺序：先连钱包 → 数据到位 → 最后启动背景视频（与数据同步呈现）
+  loadAll(); // 后台加载（不阻塞连接流程），数据字段到位即逐个填充
   if (heroVideoBoot) heroVideoBoot();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
   // 团队数据是「进页才加载」：若重连时正停留在团队页，主动补拉一次，
@@ -2287,10 +2286,10 @@ async function loadCards() {
 
   // ① 渲染路径：有全量缓存直接同步渲染（翻页零等待），冷启动才直读本页 1 张
   let count = 0, fromCache = false;
-  // 性能：停留在首页等非「我的卡牌」页时，每 15s 轮询只刷新卡牌计数，
-  // 跳过列表渲染与全量汇总——长时间挂首页不再重复拉取/重绘隐藏列表（省 RPC 与内存）
+  // 性能：停留在首页等非「我的卡牌」页时，只刷卡牌计数（1 次链上查询），
+  // 列表渲染/全量汇总一律不做——首次进入不再为隐藏列表发一堆请求
   const cardsActive = document.querySelector('.page.active')?.id === 'cardsPage';
-  if (!cardsActive && cardsAllCache && cardsAllCache.count > 0) {
+  if (!cardsActive) {
     try {
       const bal = await nftC.balanceOf(userAddress);
       let c = bal.toNumber();
