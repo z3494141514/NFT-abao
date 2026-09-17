@@ -379,6 +379,13 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .reward-label{font-size:11px;letter-spacing:2px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
 .reward-value{font-size:26px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all}
 .reward-sub{font-size:12.5px;color:var(--muted)}
+/* 规则细则条：挂在双卡下方（一金一紫呼应卡色），细磨砂玻璃、轻体量不抢数字 */
+.reward-notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.reward-note{display:flex;align-items:flex-start;gap:9px;background:rgba(255,255,255,.03);border:1px solid rgba(245,193,76,.22);border-radius:12px;padding:10px 12px}
+.reward-note-violet{border-color:rgba(139,92,246,.28)}
+.rn-ic{font-size:13px;line-height:1.6;flex-shrink:0;filter:drop-shadow(0 0 5px rgba(245,193,76,.6))}
+.reward-note-violet .rn-ic{filter:drop-shadow(0 0 5px rgba(139,92,246,.6))}
+.rn-txt{font-size:11px;color:rgba(139,147,167,.9);line-height:1.7;letter-spacing:.3px}
 /* ---------- 主按钮流光（入场延迟，避免切页瞬间闪光） ---------- */
 .btn-primary{position:relative;overflow:hidden}
 .btn-primary::after{content:'';position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);transform:translateX(-260%);animation:shine 3.4s ease-in-out 1.6s infinite;pointer-events:none}
@@ -538,6 +545,7 @@ body{-webkit-tap-highlight-color:transparent}
 .team-addr-main{font-size:13px;letter-spacing:.3px}
 .team-copy{width:31px;height:31px}
 .reward-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.reward-notes{grid-template-columns:1fr;gap:8px;margin-bottom:12px}
 .reward-hero{padding:12px 10px;border-radius:15px;gap:10px;flex-direction:column;text-align:center}
 .reward-hero-ic{width:38px;height:38px;border-radius:11px}
 .reward-hero-ic .ic{width:19px;height:19px}
@@ -898,6 +906,17 @@ body{-webkit-tap-highlight-color:transparent}
         </div>
       </div>
     </div>
+    <!-- 规则细则：两张卡的完整说明，独立成条挂在卡下方（一金一紫，与卡配色呼应） -->
+    <div class="reward-notes">
+      <div class="reward-note">
+        <span class="rn-ic">⚡</span>
+        <span class="rn-txt" data-i18n="teamPreSub">下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡</span>
+      </div>
+      <div class="reward-note reward-note-violet">
+        <span class="rn-ic">🚀</span>
+        <span class="rn-txt" data-i18n="teamPostSub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
+      </div>
+    </div>
     <div class="team-panel">
       <div class="team-panel-head">
         <div>
@@ -1185,8 +1204,10 @@ const I18N = {
     statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定',
     preGift1:'购卡立得 2000 枚', preGift2:'空投（价值 20U）· 每满 10 张直推再得 1 张卡',
     teamPreLabel:'预售直推奖励',
+    teamPreSub:'下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡',
     teamPreMiniA:'直推购买', teamPreMiniB:'张 · 已获奖励卡', teamPostLabel:'开盘后推荐奖励',
     teamPostMini:'直属下级购买实时到账',
+    teamPostSub:'直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励',
     teamPanelTitle:'直属下级', teamPanelSub:'实时上链',
     teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
     bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
@@ -1252,8 +1273,10 @@ const I18N = {
     statusDiv:'Dividends Active', statusPaused:'Paused', statusPre:'Not Launched', switching:'Launch Switching…', pendingSwap:'To convert ', notBound:'Not bound',
     preGift1:'Get 2,000', preGift2:'airdrop (worth 20U) · every 10 direct cards earns 1 more card',
     teamPreLabel:'Pre-sale Direct Rewards',
+    teamPreSub:'Earn 20U instantly per downline pre-sale card; every 1,000U (10 cards) of direct sales earns you 1 bonus card',
     teamPreMiniA:'Direct buys', teamPreMiniB:'cards · bonus cards earned', teamPostLabel:'Post-launch Referral Rewards',
     teamPostMini:'Earned per downline purchase',
+    teamPostSub:'Earn 30% of tokens instantly whenever your direct downlines buy a card',
     teamPanelTitle:'Direct Referrals', teamPanelSub:'REAL-TIME ON-CHAIN',
     teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
     bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
