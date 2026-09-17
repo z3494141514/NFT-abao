@@ -47,9 +47,8 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 /* ---------- 顶栏（半透明毛玻璃） ---------- */
 .header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 28px;background:rgba(8,10,20,.24);backdrop-filter:blur(34px) saturate(1.8);-webkit-backdrop-filter:blur(34px) saturate(1.8);border-bottom:1px solid rgba(148,163,184,.14);position:sticky;top:0;z-index:100}
 .brand{display:flex;align-items:center;gap:13px}
-.brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#fde68a,#f5c14c 42%,#b45309);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(245,193,76,.45),inset 0 1px 0 rgba(255,255,255,.55);position:relative;overflow:hidden;flex-shrink:0}
-.brand-mark::after{content:'';position:absolute;top:0;left:0;right:0;height:46%;background:linear-gradient(180deg,rgba(255,255,255,.55),transparent);pointer-events:none}
-.brand-mark .ic{width:20px;height:20px;stroke:#7c2d12;stroke-width:1.7;position:relative;z-index:1}
+.brand-mark{width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-mark svg{width:40px;height:40px;filter:drop-shadow(0 2px 8px rgba(245,193,76,.4))}
 .brand-text{display:flex;flex-direction:column;line-height:1.15}
 .brand-title{font-size:17px;font-weight:800;letter-spacing:.5px}
 .brand-sub{font-size:10px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase}
@@ -119,7 +118,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero-sub .w{display:inline-block;animation:subWave 1.4s ease-in-out infinite;will-change:transform}
 @keyframes subWave{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .hero-chips{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:26px}
-.hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:rgba(233,237,245,.85);background:rgba(10,14,28,.1);backdrop-filter:blur(10px) saturate(1.4);-webkit-backdrop-filter:blur(10px) saturate(1.4);border:1px solid rgba(148,163,184,.22);border-radius:99px;padding:9px 17px;box-shadow:0 4px 18px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.08);animation:chipFloat 7s ease-in-out infinite}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:rgba(233,237,245,.85);background:rgba(10,14,28,.05);backdrop-filter:blur(8px) saturate(1.5);-webkit-backdrop-filter:blur(8px) saturate(1.5);border:1px solid rgba(148,163,184,.16);border-radius:99px;padding:9px 17px;box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.06);animation:chipFloat 7s ease-in-out infinite}
 .hero-chip-ic{font-size:14px;line-height:1;filter:drop-shadow(0 0 6px rgba(245,193,76,.9));animation:chipIconPop 2s ease-in-out infinite}
 .hero-chip:nth-child(2) .hero-chip-ic{animation-delay:-1s}
 @keyframes chipIconPop{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
@@ -129,10 +128,10 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hc-label{font-weight:800;letter-spacing:1px;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-chip b{font-size:17px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hc-unit{font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--gold)}
-.hc-fire{border-color:rgba(245,193,76,.3);background:rgba(245,193,76,.04);box-shadow:0 4px 22px rgba(245,193,76,.1),inset 0 1px 0 rgba(255,255,255,.08)}
+.hc-fire{border-color:rgba(245,193,76,.22);background:rgba(245,193,76,.02);box-shadow:0 4px 16px rgba(245,193,76,.07),inset 0 1px 0 rgba(255,255,255,.06)}
 .hc-fire .hc-label{background-image:linear-gradient(90deg,#ffe9b0,#f5c14c,#ffb86b)}
 .hc-fire b{background-image:linear-gradient(180deg,#ffffff,#ffe08a);filter:drop-shadow(0 0 9px rgba(245,193,76,.75))}
-.hc-gift{border-color:rgba(251,113,133,.28);background:rgba(251,113,133,.04);box-shadow:0 4px 22px rgba(251,113,133,.1),inset 0 1px 0 rgba(255,255,255,.08)}
+.hc-gift{border-color:rgba(251,113,133,.2);background:rgba(251,113,133,.02);box-shadow:0 4px 16px rgba(251,113,133,.07),inset 0 1px 0 rgba(255,255,255,.06)}
 .hc-gift .hc-label{background-image:linear-gradient(90deg,#ffd7dd,#fb7185,#fda4af)}
 .hc-gift b{background-image:linear-gradient(180deg,#ffffff,#ffb3c0);filter:drop-shadow(0 0 9px rgba(251,113,133,.65))}
 .hc-gift .hc-unit{color:#fda4af}
@@ -459,8 +458,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 body{-webkit-tap-highlight-color:transparent}
 .header{padding:10px 12px;gap:8px;flex-wrap:nowrap}
 .brand{gap:9px}
-.brand-mark{width:36px;height:36px;border-radius:11px;box-shadow:0 3px 14px rgba(245,193,76,.4)}
-.brand-mark .ic{width:18px;height:18px}
+.brand-mark{width:36px;height:36px}
+.brand-mark svg{width:34px;height:34px}
 .brand-title{font-size:15px}
 .brand-sub{display:none}
 .chain-chip{font-size:10px;padding:3px 8px;gap:4px}
@@ -578,7 +577,27 @@ body{-webkit-tap-highlight-color:transparent}
   <!-- ================= 顶栏 ================= -->
   <div class="header">
     <div class="brand">
-      <div class="brand-mark"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="13" rx="2.2"/><path d="M12 9.4 13.5 12l2.6 1.3-2.6 1.3L12 17.2l-1.5-2.6L7.9 13.3l2.6-1.3L12 9.4z"/></svg></div>
+      <div class="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true">
+        <defs>
+          <linearGradient id="bgCard" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fde68a"/>
+            <stop offset=".45" stop-color="#f5c14c"/>
+            <stop offset=".72" stop-color="#d97706"/>
+            <stop offset="1" stop-color="#92400e"/>
+          </linearGradient>
+          <linearGradient id="bgGem" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff9e6"/>
+            <stop offset=".5" stop-color="#f5c14c"/>
+            <stop offset="1" stop-color="#b45309"/>
+          </linearGradient>
+        </defs>
+        <rect x="6.5" y="9" width="35" height="29" rx="6.5" fill="url(#bgCard)" stroke="rgba(255,255,255,.6)" stroke-width="1"/>
+        <rect x="9.2" y="11.7" width="29.6" height="23.6" rx="4.5" fill="none" stroke="rgba(120,53,15,.4)" stroke-width="1"/>
+        <path d="M6.5 15a6.5 6.5 0 0 1 6.5-6h22a6.5 6.5 0 0 1 6.5 6v4c-11-2.5-24-2.5-35 0z" fill="rgba(255,255,255,.34)"/>
+        <path d="M24 17.2 27.6 22.5 24 27.8 20.4 22.5Z" fill="url(#bgGem)" stroke="rgba(255,255,255,.75)" stroke-width=".9"/>
+        <path d="M24 17.2v10.6M20.4 22.5h7.2" stroke="rgba(120,53,15,.45)" stroke-width=".8"/>
+        <circle cx="29.5" cy="15.8" r="1.3" fill="#fff" opacity=".95"/>
+      </svg></div>
       <div class="brand-text">
         <span class="brand-title" data-i18n="brandTitle">卡牌分红</span>
         <span class="brand-sub">NFT Dividend Protocol</span>
