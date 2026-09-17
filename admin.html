@@ -719,11 +719,10 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，8 秒超时/失败自动换）
-  // 签名交易仍走钱包注入的 signer
-  const readNodes = [provider].concat(
-    CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
-  );
+  // 只读数据层：国内可直连公共节点优先，钱包注入节点垫底；签名交易仍走钱包注入的 signer
+  const readNodes = CONFIG.rpcUrls
+    .map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
+    .concat(provider);
   readProvider = createReadProvider(readNodes);
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
