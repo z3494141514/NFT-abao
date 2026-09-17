@@ -686,7 +686,7 @@ function createReadProvider(providers) {
   };
   const withTimeout = (p) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 5000))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 4000))
   ]);
   return new Proxy(current, {
     get(target, prop) {
@@ -714,13 +714,13 @@ function createReadProvider(providers) {
   });
 }
 
-/* 并发探测公共节点 + 钱包节点（2.5s 超时），返回最快者（provider 对象） */
+/* 并发探测候选节点（2s 超时），返回最快者。只测 4 个候选公共节点 + 钱包节点 */
 async function probeFastRpcOnce(walletProvider) {
-  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+  const nodes = CONFIG.rpcUrls.slice(0, 4).map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
   const all = walletProvider ? nodes.concat(walletProvider) : nodes;
   const probe = (n) => Promise.race([
     n.getBlockNumber().then(() => Date.now()),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2000))
   ]);
   let results;
   try { results = await Promise.allSettled(all.map(probe)); } catch (e) { return null; }
@@ -731,7 +731,7 @@ async function probeFastRpcOnce(walletProvider) {
   return best;
 }
 
-/* 只读节点排序：记忆的最快节点（含 'wallet' 哨兵）排头；首次连接先探测一次（≤2.5s） */
+/* 只读节点排序：记忆的最快节点（含 'wallet' 哨兵）排头；首次连接先探测一次（≤2s） */
 async function ensureReadNodes(walletProvider) {
   const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
   let cached = null;
@@ -753,13 +753,6 @@ async function ensureReadNodes(walletProvider) {
     }
   }
   return walletFirst ? [walletProvider].concat(ordered) : ordered.concat(walletProvider);
-}
-
-/* 后台刷新探测（load 后跑，只更新缓存，不阻塞页面） */
-function probeFastRpc() {
-  probeFastRpcOnce(null).then(best => {
-    if (best && best.connection && best.connection.url) { try { localStorage.setItem('fastRpc', best.connection.url); } catch (e) {} }
-  }).catch(() => {});
 }
 
 async function setupProvider(address) {
@@ -1706,8 +1699,6 @@ DOM.adminProposeOracleBtn.addEventListener('click', throttle(adminProposeOracle,
 DOM.adminApplyOracleBtn.addEventListener('click', throttle(adminApplyOracle, 1500));
 DOM.adminEnableTradingBtn.addEventListener('click', throttle(adminEnableTrading, 2000));
 DOM.adminGrantMinterBtn.addEventListener('click', throttle(adminGrantMinter, 1500));
-
-window.addEventListener('load', () => setTimeout(probeFastRpc, 1500)); // 首屏渲染完再后台探测最快节点
 
 window.addEventListener('load', async () => {
   if (window.ethereum) {

@@ -1347,7 +1347,6 @@ let readProvider = null; // 只读 RPC 层（公共节点自动切换）
 let connEpoch = 0;       // 连接代次：断开/重连时递增，用于作废过期的异步连接收尾
 let lastSetup = { addr: '', ts: 0 }; // 并发去重：同一地址 800ms 内的重复 setup 只执行一次
 applyLang(); // 应用上次保存的语言（本地存储）
-window.addEventListener('load', () => setTimeout(probeFastRpc, 1500)); // 首屏渲染完再后台探测最快节点
 let tokenC = null, nftC = null, saleC = null, poolC = null, oracleC = null;
 let tokenDecimals = 18, tokenSymbol = 'TOKEN';
 let usdtDecimals = 18, usdtSymbol = 'USDT';
@@ -1599,7 +1598,7 @@ function createReadProvider(providers) {
   };
   const withTimeout = (p) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 5000))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 4000))
   ]);
   return new Proxy(current, {
     get(target, prop) {
@@ -1627,13 +1626,14 @@ function createReadProvider(providers) {
   });
 }
 
-/* 并发探测公共节点 + 钱包节点（2.5s 超时），返回最快者（provider 对象） */
+/* 并发探测候选节点（2s 超时），返回最快者。只测 4 个候选公共节点 + 钱包节点——
+   目的不是比出冠军，而是快速找到一个「现在能用」的节点（探测本身不再制造请求洪峰） */
 async function probeFastRpcOnce(walletProvider) {
-  const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
+  const nodes = CONFIG.rpcUrls.slice(0, 4).map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
   const all = walletProvider ? nodes.concat(walletProvider) : nodes;
   const probe = (n) => Promise.race([
     n.getBlockNumber().then(() => Date.now()),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2500))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('probe timeout')), 2000))
   ]);
   let results;
   try { results = await Promise.allSettled(all.map(probe)); } catch (e) { return null; }
@@ -1645,7 +1645,7 @@ async function probeFastRpcOnce(walletProvider) {
 }
 
 /* 只读节点排序：记忆的最快节点（含 'wallet' 哨兵）排头；
-   首次连接（无缓存）先并发探测一次（≤2.5s）——保证第一笔读取就命中可用节点，不再挨个超时 */
+   首次连接（无缓存）先并发探测一次（≤2s）——保证第一笔读取就命中可用节点，不再挨个超时 */
 async function ensureReadNodes(walletProvider) {
   const nodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId));
   let cached = null;
@@ -1667,13 +1667,6 @@ async function ensureReadNodes(walletProvider) {
     }
   }
   return walletFirst ? [walletProvider].concat(ordered) : ordered.concat(walletProvider);
-}
-
-/* 后台刷新探测（load 后跑，只更新缓存，不阻塞页面） */
-function probeFastRpc() {
-  probeFastRpcOnce(null).then(best => {
-    if (best && best.connection && best.connection.url) { try { localStorage.setItem('fastRpc', best.connection.url); } catch (e) {} }
-  }).catch(() => {});
 }
 
 /* 把静态文案中的代币符号替换为链上真实符号 */
