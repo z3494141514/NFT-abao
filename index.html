@@ -56,6 +56,8 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .chain-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
 .wallet-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#22d3ee,#8b5cf6);border:none;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;transition:all .25s ease;box-shadow:0 4px 18px rgba(34,211,238,.28)}
 .btn-spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .8s linear infinite}
+/* 按下即时反馈：任何被注册的点击都有视觉回应（诊断「吞点击」用） */
+.btn:active:not(:disabled),.qty-btn:active:not(:disabled),.nav-item:active,.wallet-btn:active,.icon-btn:active,.pager-btn:active,.lang-btn:active,.lang-opt:active,.claim-one-btn:active,.team-copy:active{transform:scale(.94)}
 .wallet-btn .ic{width:15px;height:15px;stroke:#fff}
 .wallet-btn:hover{transform:translateY(-2px);box-shadow:0 8px 26px rgba(139,92,246,.4)}
 /* 语言切换按钮 */
@@ -2601,17 +2603,19 @@ function heroVideoEnsurePlaying() {
   } else {
     document.addEventListener('WeixinJSBridgeReady', wxAutoPlay, false);
   }
-  // 部分微信版本即使静音也要求「首个手势」才放行（touchstart 不算激活，
-  // 需要 click/touchend 级别的手势）。首个手势即补播，播成功后自移除。
-  const onFirstGesture = () => {
-    setTimeout(() => heroVideoEnsurePlaying(), 0); // 异步补播：不占用本次点击的主线程
-    window.removeEventListener('touchstart', onFirstGesture);
-    window.removeEventListener('touchend', onFirstGesture);
-    window.removeEventListener('click', onFirstGesture);
+  // 部分微信/TP 版本即使静音也要求「真实手势」才放行媒体播放，且极个别版本会把
+  // 首次点击当成「媒体解锁手势」吞掉。对策：pointerdown/touchstart 阶段（比 click 更早）
+  // 就先解锁视频——等 click 真正到来时媒体已放行，首次点击不再被平台占用。
+  const unlockMedia = () => {
+    const hv = document.getElementById('heroVideo');
+    if (hv) { hv.muted = true; try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+    window.removeEventListener('pointerdown', unlockMedia);
+    window.removeEventListener('touchstart', unlockMedia);
+    window.removeEventListener('click', unlockMedia);
   };
-  window.addEventListener('touchstart', onFirstGesture, { passive: true });
-  window.addEventListener('touchend', onFirstGesture, { passive: true });
-  window.addEventListener('click', onFirstGesture, { passive: true });
+  window.addEventListener('pointerdown', unlockMedia, { passive: true });
+  window.addEventListener('touchstart', unlockMedia, { passive: true });
+  window.addEventListener('click', unlockMedia, { passive: true });
 })();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
