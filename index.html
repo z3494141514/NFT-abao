@@ -622,7 +622,7 @@ body{-webkit-tap-highlight-color:transparent}
     <!-- 品牌主视觉 -->
     <div class="hero">
       <!-- mp4 背景动画：CONFIG.heroVideoUrl 留空时自动移除，回退到代码卡牌动画 -->
-      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto"
+      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"
              aria-hidden="true">
         <source src="" type="video/mp4">
@@ -987,20 +987,20 @@ const CONFIG = {
   chainId: 56,                                  // BSC 主网
   chainIdHex: '0x38',
   chainName: 'BSC Mainnet',
-  rpcUrls: [                                    // 只读数据层：串行轮换（一次只问一个节点，失败/超时换下一个）
+  rpcUrls: [                                    // 只读数据层：串行轮换（国内可直连节点优先，被墙节点垫底）
+    'https://rpc.ankr.com/bsc',
+    'https://1rpc.io/bnb',
+    'https://bsc-rpc.publicnode.com',
     'https://bsc-dataseed1.defibit.io/',
     'https://bsc-dataseed1.ninicoin.io/',
     'https://bsc-dataseed2.defibit.io/',
-    'https://rpc.ankr.com/bsc',
-    'https://bsc-rpc.publicnode.com',
-    'https://1rpc.io/bnb',
     'https://bsc-dataseed.binance.org/',
     'https://bsc-dataseed1.binance.org/',
     'https://bsc-dataseed2.binance.org/',
     'https://bsc-dataseed3.binance.org/',
     'https://bsc-dataseed4.binance.org/'
   ],
-  rpcUrl: 'https://bsc-dataseed1.defibit.io/',
+  rpcUrl: 'https://rpc.ankr.com/bsc',
   contracts: {
     // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
     token:  '0x8a41c95F24D49216784e2fA5933335383aeece25', // 新 OfficialToken（已部署）
