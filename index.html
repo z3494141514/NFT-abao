@@ -106,8 +106,10 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
   94%{opacity:var(--o)}
   100%{transform:translateY(calc(var(--travel,1200px) * -1)) rotate(-7deg) rotateY(360deg);opacity:0}
 }
-/* 切页后强制重启动画：display:none→block 部分浏览器不动画，挂/摘该类即重启 */
+/* 切页后强制重启动画：display:none→block 部分浏览器不动画，挂/摘该类即重启；
+   重启瞬间漂浮卡强制透明（避免 2 帧全亮闪屏造成页面抖动） */
 .anim-restart,.anim-restart *,.anim-restart::before,.anim-restart::after{animation:none!important}
+.anim-restart .float-card{opacity:0!important}
 .hero::before{content:'';position:absolute;inset:-40%;z-index:1;background:radial-gradient(circle at 50% 0%,rgba(34,211,238,.16),transparent 55%);pointer-events:none;animation:pulse 5s ease-in-out infinite}
 .hero-badge,.hero-title,.hero-sub,.hero-chips{position:relative;z-index:2}
 .hero-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:2.5px;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);padding:5px 14px;border-radius:99px;margin-bottom:16px}
@@ -2618,6 +2620,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     $(btn.dataset.page).classList.add('active');
+    window.scrollTo(0, 0); // 切页回顶部：避免页面高度变化引起滚动位置跳变（抖动感来源）
 
     // 团队页：打开时才加载团队数据（逐地址查询较重，避免拖慢整页轮询）
     if (btn.dataset.page === 'teamPage' && userAddress) {
