@@ -98,6 +98,16 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .btn-sm{padding:8px 13px;font-size:12px}
 .toast{font-size:12.5px;padding:11px 18px;border-radius:12px}
 }
+/* ---------- 开盘向导 ---------- */
+.wiz-check{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12px;line-height:1.55}
+.wiz-check .wiz-ic{flex-shrink:0;width:14px;height:14px;margin-top:1px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900}
+.wiz-check.ok{color:#34d399}
+.wiz-check.ok .wiz-ic{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.5)}
+.wiz-check.bad{color:#fb7185}
+.wiz-check.bad .wiz-ic{background:rgba(251,113,133,.15);border:1px solid rgba(251,113,133,.5)}
+.wiz-check.warn{color:#f5c14c}
+.wiz-check.warn .wiz-ic{background:rgba(245,193,76,.15);border:1px solid rgba(245,193,76,.5)}
+.wiz-check span b{color:#e2e8f0}
 </style>
 </head>
 <body>
@@ -130,6 +140,21 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
     <div id="adminPanels" style="display:none">
       <div id="adminSelfCheckWarn" style="display:none;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.7"></div>
       <div class="admin-grid">
+        <div class="admin-grid-item" id="adminWizardBlock" style="display:none">
+          <div class="admin-title">🚀 开盘向导 · LAUNCH WIZARD</div>
+          <div class="data-row"><span class="data-label">交易状态</span><span class="data-value" id="adminWizardTrading"></span></div>
+          <div class="data-row"><span class="data-label">开盘状态</span><span class="data-value" id="adminWizardLaunched"></span></div>
+          <div class="data-row"><span class="data-label">开盘保护窗口</span><span class="data-value" id="adminWizardWindow"></span></div>
+          <div id="adminWizardChecks" class="mt12"></div>
+          <div class="flex mt12">
+            <button id="adminWizardPokeBtn" class="btn btn-ghost btn-sm">补打预言机观测点</button>
+            <button id="adminWizardLaunchBtn" class="btn btn-primary btn-sm">🚀 一键开盘</button>
+          </div>
+          <div class="flex mt8">
+            <button id="adminWizardLockBtn" class="btn btn-danger btn-sm">🔒 锁定核心（销售 + 分红池 + 预言机）</button>
+          </div>
+          <div class="data-tip mt12">一键开盘 = 依次执行「补打预言机观测点（如报价过期）→ 开启交易 → 开盘」，两步背靠背、不可撤销。开盘后请立即点「锁定核心」。</div>
+        </div>
         <div class="admin-grid-item" id="adminSaleBlock" style="display:none">
           <div class="admin-title">销售合约</div>
           <div class="data-row"><span class="data-label">开盘状态</span><span class="data-value" id="adminLaunched"></span></div>
@@ -247,6 +272,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 
         <div class="admin-grid-item" id="adminNftBlock" style="display:none">
           <div class="admin-title">卡牌 NFT</div>
+          <div class="data-row"><span class="data-label">正常铸卡 / 分发铸卡 / 全部铸卡</span><span class="data-value" id="adminNftCounts">--</span></div>
           <div class="mt12"><input type="number" min="1" id="adminBurnInput" class="input" placeholder="tokenId 销毁异常卡牌"><button id="adminBurnBtn" class="btn btn-danger btn-sm mt8">销毁卡牌</button></div>
           <div class="mt12"><input type="text" id="adminRevokeMinterInput" class="input" placeholder="要撤销铸币权的地址（如部署时的临时 minter）"><button id="adminRevokeMinterBtn" class="btn btn-danger btn-sm mt8">撤销铸币权</button></div>
         </div>
@@ -336,6 +362,7 @@ const ABIS = {
     'function addLpPair(address)',
     'function setLpPair(address)',
     'function lpPairs(address) view returns (bool)',
+    'function getLpPairInfo() view returns (address, bool, uint256)',
     'function launchPartner() view returns (address)',
     'function setLaunchPartner(address)'
   ],
@@ -345,7 +372,10 @@ const ABIS = {
     'function revokeRole(bytes32 role, address account)',
     'function hasRole(bytes32, address) view returns (bool)',
     'function getRoleMemberCount(bytes32) view returns (uint256)',
-    'function adminBurn(uint256)'
+    'function adminBurn(uint256)',
+    'function totalMinted() view returns (uint256)',
+    'function totalExemptMinted() view returns (uint256)',
+    'function totalAllMinted() view returns (uint256)'
   ],
   sale: [
     'function launched() view returns (bool)',
@@ -430,6 +460,9 @@ const DOM = {
   walletAddressDisplay: $('walletAddressDisplay'), disconnectBtn: $('disconnectBtn'),
   adminEmpty: $('adminEmpty'), adminPanels: $('adminPanels'), adminSelfCheckWarn: $('adminSelfCheckWarn'),
   adminSaleBlock: $('adminSaleBlock'), adminLaunched: $('adminLaunched'), adminPaused: $('adminPaused'), adminActiveCards: $('adminActiveCards'),
+  adminWizardBlock: $('adminWizardBlock'), adminWizardTrading: $('adminWizardTrading'), adminWizardLaunched: $('adminWizardLaunched'),
+  adminWizardWindow: $('adminWizardWindow'), adminWizardChecks: $('adminWizardChecks'),
+  adminWizardPokeBtn: $('adminWizardPokeBtn'), adminWizardLaunchBtn: $('adminWizardLaunchBtn'), adminWizardLockBtn: $('adminWizardLockBtn'),
   adminSaleCoreLocked: $('adminSaleCoreLocked'), adminSaleLockCoreBtn: $('adminSaleLockCoreBtn'),
   adminLaunchBtn: $('adminLaunchBtn'), adminPauseBtn: $('adminPauseBtn'), adminUnpauseBtn: $('adminUnpauseBtn'),
   adminMintList: $('adminMintList'), adminMintBtn: $('adminMintBtn'),
@@ -462,6 +495,7 @@ const DOM = {
   adminReleaseBurnedInput: $('adminReleaseBurnedInput'), adminReleaseBurnedBtn: $('adminReleaseBurnedBtn'),
   adminSweepBtn: $('adminSweepBtn'), adminWithdrawExcessBtn: $('adminWithdrawExcessBtn'), adminWithdrawExcessToInput: $('adminWithdrawExcessToInput'),
   adminNftBlock: $('adminNftBlock'), adminBurnInput: $('adminBurnInput'), adminBurnBtn: $('adminBurnBtn'),
+  adminNftCounts: $('adminNftCounts'),
   adminRevokeMinterInput: $('adminRevokeMinterInput'), adminRevokeMinterBtn: $('adminRevokeMinterBtn'),
   adminTokenBlock: $('adminTokenBlock'), adminTradingEnabled: $('adminTradingEnabled'), adminDividendPool: $('adminDividendPool'),
   adminOracleAddr: $('adminOracleAddr'), adminLaunchWindow: $('adminLaunchWindow'),
@@ -898,6 +932,12 @@ async function loadAdminData() {
 
   // NFT 管理
   DOM.adminNftBlock.style.display = isNftAdmin ? '' : 'none';
+  if (isNftAdmin) {
+    try {
+      const [tm, te, ta] = await Promise.all([nftC.totalMinted(), nftC.totalExemptMinted(), nftC.totalAllMinted()]);
+      DOM.adminNftCounts.innerText = `${tm.toString()} / ${te.toString()} / ${ta.toString()}`;
+    } catch (e) { DOM.adminNftCounts.innerText = '--（旧版 NFT 无此口径）'; }
+  }
 
   // 代币
   DOM.adminTokenBlock.style.display = isTokenAdmin ? '' : 'none';
@@ -927,6 +967,9 @@ async function loadAdminData() {
       DOM.adminLaunchWindow.innerText = trading ? '✅ 已结束（常规税率 3%/3% · 不限购）' : '-- 未开盘';
     }
   }
+
+  // 开盘向导（含检查清单，供一键开盘前核对）
+  await refreshWizard(isTokenAdmin);
 
   // CONFIG ↔ 链上关系交叉自检（防地址配置错误导致误授权/误操作）
   runConfigSelfCheck();
@@ -1054,6 +1097,191 @@ async function adminLaunch() {
     const tx = await saleC.connect(signer).launch();
     await waitForTx(tx);
     showToast('已开盘', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+/* ==================== 开盘向导 ==================== */
+
+// 读取并渲染开盘检查清单；返回清单项数组（非代币管理员返回 null）
+async function refreshWizard(isTokenAdmin) {
+  DOM.adminWizardBlock.style.display = isTokenAdmin ? '' : 'none';
+  if (!isTokenAdmin) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const items = [];
+  const add = (label, st, hint) => items.push({ label, st, hint });
+
+  // 交易 / 开盘 / 保护窗口状态
+  let trading = false, launched = false;
+  try { trading = await tokenC.tradingEnabled(); } catch (e) {}
+  try { launched = await saleC.launched(); } catch (e) {}
+  DOM.adminWizardTrading.innerText = trading ? '✅ 已开启（买卖税自动进分红池）' : '❌ 未开启';
+  DOM.adminWizardLaunched.innerText = launched ? '✅ 已开盘（公开购买开放）'
+    : (trading ? '⏳ 未开盘（点「一键开盘」背靠背执行）' : '❌ 未开盘');
+  if (trading) {
+    try {
+      const win = await tokenC.launchWindowActive();
+      if (win) {
+        const left = (await tokenC.launchWindowRemaining()).toNumber();
+        DOM.adminWizardWindow.innerText = `⏱ 剩 ${left} 秒（卖出税 18% · 限购 50U 防机器人）`;
+      } else DOM.adminWizardWindow.innerText = '✅ 已结束（税率 3%/3% · 不限购）';
+    } catch (e) { DOM.adminWizardWindow.innerText = '--'; }
+  } else DOM.adminWizardWindow.innerText = '--（开启交易后自动进入 180 秒）';
+
+  // 交易对白名单 + LP 时间锁
+  let pair = ZERO_ADDR, pairSet = false, pairEff = 0;
+  try {
+    const info = await tokenC.getLpPairInfo();
+    pair = info[0]; pairSet = info[1]; pairEff = info[2].toNumber();
+  } catch (e) {}
+  if (!pairSet || pair === ZERO_ADDR) {
+    add('主交易对已设置（setLpPair）', 'bad', '请在「代币」区块设置主 LP');
+  } else {
+    let wl = false;
+    try { wl = await tokenC.lpPairs(pair); } catch (e) {}
+    add('交易对已登记征税白名单', wl ? 'ok' : 'bad', wl ? '' : '请执行 addLpPair 登记主交易对');
+    add('LP 时间锁（1 小时）已到期', pairEff <= now ? 'ok' : 'bad',
+      pairEff <= now ? '' : `生效时间 ${fmtTime(ethers.BigNumber.from(pairEff))}（未到期无法开启交易）`);
+  }
+
+  // 分红池
+  let dp = ZERO_ADDR;
+  try { dp = await tokenC.dividendPool(); } catch (e) {}
+  add('分红池已配置', dp && dp !== ZERO_ADDR ? 'ok' : 'bad', '请在「代币」区块设置分红池');
+
+  // 预售配置
+  let usdtA = ZERO_ADDR, pw = ZERO_ADDR;
+  try { usdtA = await saleC.usdt(); pw = await saleC.profitWallet(); } catch (e) {}
+  add('预售配置完成（USDT + 利润钱包）',
+    (usdtA && usdtA !== ZERO_ADDR && pw && pw !== ZERO_ADDR) ? 'ok' : 'bad', '');
+
+  // 预言机
+  let oa = ZERO_ADDR;
+  try { oa = await tokenC.oracle(); } catch (e) {}
+  add('预言机已配置', oa && oa !== ZERO_ADDR ? 'ok' : 'bad', '');
+  let priceOk = false, priceHint = '';
+  if (oa && oa !== ZERO_ADDR) {
+    try {
+      const pd = await oracleC.getPriceData();
+      const fresh = pd[2] && !pd[2].isZero() && (now - pd[2].toNumber()) <= 300;
+      const dev = pd[3].toNumber();
+      priceOk = !pd[0].isZero() && !pd[1].isZero() && fresh && dev <= 1000;
+      priceHint = priceOk ? '' : (pd[0].isZero() || pd[1].isZero() ? '价格未就绪'
+        : !fresh ? '报价过期（需开盘前 5 分钟内 poke）' : `偏差 ${(dev / 10).toFixed(1)}% 超 ±10%`);
+    } catch (e) {
+      priceHint = '观测历史不足：请连续补打观测点（间隔 ≥2.5 分钟，累计 ≥5 分钟）';
+    }
+    add('预言机报价就绪（新鲜 ≤5 分钟 · 偏差 ≤±10%）', priceOk ? 'ok' : 'bad', priceHint);
+  } else {
+    add('预言机报价就绪（新鲜 ≤5 分钟 · 偏差 ≤±10%）', 'bad', '未配置预言机');
+  }
+
+  // minLiquidity 门槛（红线：≤ 池内 USDT 的 50%）
+  let ml = null;
+  try { ml = await oracleC.minLiquidityWei(); } catch (e) {}
+  if (!ml || ml.isZero()) {
+    add('minLiquidity 门槛已设置（>0）', 'bad', '请在「预言机」区块设置，否则开盘必失败');
+  } else {
+    let half = null;
+    try {
+      if (pair && pair !== ZERO_ADDR) {
+        const pc = new ethers.Contract(pair, [
+          'function getReserves() view returns (uint112, uint112, uint32)',
+          'function token0() view returns (address)'
+        ], readProvider);
+        const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
+        const usdtRes = (String(t0).toLowerCase() === CONFIG.usdt.toLowerCase()) ? res[0] : res[1];
+        half = ethers.BigNumber.from(usdtRes).div(2);
+      }
+    } catch (e) {}
+    if (half === null) {
+      add('minLiquidity ≤ 池内 USDT 的 50%（防薄池操纵）', 'warn',
+        `当前门槛 ${fmtAmt(ml, 18)} U；无法读取池内 USDT，请人工确认`);
+    } else if (ml.lte(half)) {
+      add('minLiquidity ≤ 池内 USDT 的 50%（防薄池操纵）', 'ok',
+        `门槛 ${fmtAmt(ml, 18)} U ≤ 池内 ${fmtAmt(half.mul(2), 18)} U 的 50%`);
+    } else {
+      add('minLiquidity ≤ 池内 USDT 的 50%（防薄池操纵）', 'bad',
+        `门槛 ${fmtAmt(ml, 18)} U 超过池内 ${fmtAmt(half.mul(2), 18)} U 的 50%`);
+    }
+  }
+
+  // 铸币权唯一
+  let mc = -1;
+  try {
+    const role = await nftC.MINTER_ROLE();
+    mc = (await nftC.getRoleMemberCount(role)).toNumber();
+  } catch (e) {}
+  add('NFT 铸币权唯一（MINTER == 销售合约）', mc === 1 ? 'ok' : 'bad',
+    mc === -1 ? '无法读取' : `当前 ${mc} 个铸币者`);
+
+  // 代币储备（信息项）
+  let reserve = null;
+  try { reserve = await tokenC.balanceOf(saleC.address); } catch (e) {}
+  add('销售合约代币储备（每张预售消耗 7000 枚）',
+    reserve === null ? 'warn' : (reserve.gt(0) ? 'ok' : 'bad'),
+    reserve === null ? '无法读取' : `当前 ${fmtAmt(reserve, tokenDecimals)} ${tokenSymbol}`);
+
+  // 渲染
+  DOM.adminWizardChecks.innerHTML = items.map(it =>
+    `<div class="wiz-check ${it.st}"><span class="wiz-ic">${it.st === 'ok' ? '✓' : it.st === 'bad' ? '✗' : '!'}</span><span><b>${it.label}</b>${it.hint ? ' · ' + it.hint : ''}</span></div>`
+  ).join('');
+  DOM.adminWizardLaunchBtn.disabled = launched || items.some(i => i.st === 'bad');
+  return items;
+}
+
+async function adminWizardPoke() {
+  showLoading();
+  try {
+    const tx = await oracleC.connect(signer).poke();
+    await waitForTx(tx);
+    showToast('已记录价格观测点（TWAP 已更新）', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminWizardLaunch() {
+  const items = await refreshWizard(true);
+  if (!items) return;
+  const bad = items.filter(i => i.st === 'bad');
+  if (bad.length > 0) { showToast('检查清单未通过：' + bad[0].label, 'error'); return; }
+  if (!confirm('确认一键开盘？\n\n将依次执行：\n① 若预言机报价过期 → 自动补打观测点\n② 开启交易（enableTrading）→ 进入 180 秒防机器人窗口\n③ 开盘（launch）→ 公开购买开放\n\n两步背靠背、不可撤销，请确保网络稳定。')) return;
+  showLoading();
+  try {
+    // ① 报价过期/不可读 → 先补打一次观测点
+    try {
+      const pd = await oracleC.getPriceData();
+      const now = Math.floor(Date.now() / 1000);
+      if (pd[0].isZero() || pd[2].isZero() || now - pd[2].toNumber() > 300) {
+        showToast('预言机报价过期，自动补打观测点…', '');
+        await waitForTx(await oracleC.connect(signer).poke());
+      }
+    } catch (e) {
+      showToast('报价不可读，先补打一次观测点…', '');
+      await waitForTx(await oracleC.connect(signer).poke());
+    }
+    // ② 开启交易
+    showToast('正在开启交易…', '');
+    await waitForTx(await tokenC.connect(signer).enableTrading());
+    // ③ 开盘
+    showToast('交易已开启，正在开盘…', '');
+    await waitForTx(await saleC.connect(signer).launch());
+    showToast('🎉 已开盘！请立即点「锁定核心」', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminWizardLockAll() {
+  if (!confirm('确认永久锁定？\n\n将依次执行：\n① 销售合约 lockCore\n② 分红池 lockCore\n③ 预言机 lockConfig\n\n锁定后核心地址与预言机参数永久不可更改（不可逆）。')) return;
+  showLoading();
+  try {
+    await waitForTx(await saleC.connect(signer).lockCore());
+    await waitForTx(await poolC.connect(signer).lockCore());
+    await waitForTx(await oracleC.connect(signer).lockConfig());
+    showToast('🔒 核心已全部锁定', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1613,6 +1841,9 @@ async function adminGrantMinter() {
 DOM.connectBtn.addEventListener('click', connectWallet);
 DOM.disconnectBtn.addEventListener('click', disconnectWallet);
 DOM.adminLaunchBtn.addEventListener('click', throttle(adminLaunch, 1500));
+DOM.adminWizardPokeBtn.addEventListener('click', throttle(adminWizardPoke, 2000));
+DOM.adminWizardLaunchBtn.addEventListener('click', throttle(adminWizardLaunch, 2000));
+DOM.adminWizardLockBtn.addEventListener('click', throttle(adminWizardLockAll, 3000));
 DOM.adminPauseBtn.addEventListener('click', throttle(() => adminPauseToggle(true), 1500));
 DOM.adminUnpauseBtn.addEventListener('click', throttle(() => adminPauseToggle(false), 1500));
 DOM.adminMintBtn.addEventListener('click', throttle(adminMint, 2000));
