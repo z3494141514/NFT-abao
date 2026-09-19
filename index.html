@@ -4,13 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>卡牌分红 · NFT Dividend</title>
-<script src="./ethers.umd.min.js"></script>
-<script>window.ethers||document.write('<script src="https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
-<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
-<script>window.addEventListener('DOMContentLoaded',function(){if(!window.ethers){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';b.textContent='⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';document.body.appendChild(b)}})</script>
+<script>
+/* ethers 异步加载（链路顺序不变：本地 → npmmirror → jsdelivr → unpkg → cloudflare → bootcdn）。
+   不阻塞首屏渲染；全部失败时显示红色提示条；成功即派发 ethers-ready 供主脚本初始化。 */
+(function () {
+  var CDNS = [
+    'https://cdn.jsdelivr.net/gh/z3494141514/NFT-abao@main/ethers.umd.min.js',
+    'https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js',
+    'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
+    'https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js'
+  ];
+  var i = 0;
+  function fire() {
+    try { window.dispatchEvent(new Event('ethers-ready')); } catch (e) { window.ethersReady = true; }
+  }
+  function failBanner() {
+    var b = document.createElement('div');
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';
+    b.textContent = '⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';
+    document.body.appendChild(b);
+  }
+  function next() {
+    if (window.ethers) { fire(); return; }
+    if (i >= CDNS.length) { failBanner(); return; }
+    var s = document.createElement('script');
+    s.src = CDNS[i++];
+    s.onload = next;
+    s.onerror = next;
+    document.head.appendChild(s);
+  }
+  next();
+})();
+</script>
 <style>
 :root{
   --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
@@ -1084,8 +1111,16 @@ body{-webkit-tap-highlight-color:transparent}
 </div>
 
 <script>
-(function(){
+/* 应用初始化门闸：ethers 异步加载完成（或已就绪）后再执行主逻辑，避免阻塞首屏渲染 */
+var __dappBooted = false;
+(function bootApp(){
 'use strict';
+if (__dappBooted) return;
+if (!window.ethers) {
+  window.addEventListener('ethers-ready', bootApp, { once: true });
+  return;
+}
+__dappBooted = true;
 
 /* ============================================================
  * 配置区：部署合约后把下面的地址替换为实际部署地址
@@ -1118,7 +1153,7 @@ const CONFIG = {
   },
   refreshInterval: 15000,  // 首页/卡牌刷新间隔（毫秒）；团队数据改为进页加载
   // 主视觉背景视频（mp4）：留空 '' 用代码卡牌动画；填 URL 后视频做底层动画，卡牌浮层继续在上方飘
-  heroVideoUrl: 'hero.mp4'
+  heroVideoUrl: 'https://cdn.jsdelivr.net/gh/z3494141514/NFT-abao@main/hero.mp4'
 };
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
@@ -2942,7 +2977,16 @@ function heroVideoEnsurePlaying() {
   v.addEventListener('loadeddata', ready);
   v.addEventListener('canplay', ready);
   v.querySelector('source').src = CONFIG.heroVideoUrl;
-  v.load();
+  // 首次访问：延迟 1.2 秒再加载视频——首秒带宽优先给页面本身（白屏消失的关键之一）；
+  // 之后的访问（sessionStorage 有标记）恢复即时加载，不影响老用户观感
+  let firstVisit = true;
+  try { firstVisit = !sessionStorage.getItem('dapp_visited'); } catch (e) {}
+  if (firstVisit) {
+    try { sessionStorage.setItem('dapp_visited', '1'); } catch (e) {}
+    setTimeout(() => { v.load(); }, 1200);
+  } else {
+    v.load();
+  }
   // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
   setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
   setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
