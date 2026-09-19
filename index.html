@@ -1176,6 +1176,8 @@ const ABIS = {
     'function balanceOf(address) view returns (uint256)',
     'function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)',
     'function totalMinted() view returns (uint256)',
+    'function totalExemptMinted() view returns (uint256)',
+    'function totalAllMinted() view returns (uint256)',
     'function MINTER_ROLE() view returns (bytes32)',
     'function grantRole(bytes32 role, address account)',
     'function hasRole(bytes32, address) view returns (bool)',
@@ -1487,6 +1489,7 @@ let usdtContract = null;          // USDT 合约实例
 let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
 let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
 let estPerCardText = '';          // 每张卡预计可分（≈X U）
+let estDivisor = 1;               // 预计收益的每卡份额分母（真实在线卡数，含分发豁免卡；慢数据枚举）
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页（每页 5 个，逐页懒加载）
@@ -1890,6 +1893,7 @@ function disconnectWallet() {
   poolPendingTokens = ethers.BigNumber.from(0);
   estPendingText = '';
   estPerCardText = '';
+  estDivisor = 1;
   DOM.buyModeBadge.innerText = '100 U / ' + t('unitCard'); // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
@@ -1967,36 +1971,7 @@ async function loadStats() {
   remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
   uiText(DOM.poolBalanceU, t('pendingSwap') + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol);
   poolPendingTokens = pendingSwap !== null ? pendingSwap : ethers.BigNumber.from(0); // 兑换引信：待兑换>0 时允许点领取
-  // 预计收益展示：待兑换代币 × 现货价（约数，不含滑点；仅用于激励点击领取/兑换）
-  estPendingText = '';
-  estPerCardText = '';
-  if (pendingSwap !== null && pendingSwap.gt(0)) {
-    try {
-      const lpInfo = await tokenC.getLpPairInfo();
-      if (lpInfo[0] && lpInfo[0] !== ZERO_ADDR) {
-        const pc = new ethers.Contract(lpInfo[0], [
-          'function getReserves() view returns (uint112, uint112, uint32)',
-          'function token0() view returns (address)'
-        ], readProvider);
-        const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
-        const tokSide = String(t0).toLowerCase() === CONFIG.contracts.token.toLowerCase();
-        const tokRes = tokSide ? res[0] : res[1];
-        const usdtRes = tokSide ? res[1] : res[0];
-        if (tokRes.gt(0) && usdtRes.gt(0)) {
-          // 现货价（U/枚，18 位）× 积压数量 → 预计 U
-          const estWei = usdtRes.mul(pendingSwap).div(tokRes);
-          const estU = Number(ethers.utils.formatEther(estWei));
-          const fmtU = (u) => (u >= 0.01 ? u.toFixed(2) : u.toFixed(4)).replace(/0+$/, '').replace(/\.$/, '');
-          if (estU > 0) {
-            estPendingText = fmtU(estU) + ' U';
-            const n = activeCards.gt(0) ? Number(activeCards.toString()) : 1;
-            estPerCardText = fmtU(estU / n) + ' U';
-            uiText(DOM.poolBalanceU, t('pendingSwap') + fmtAmt(pendingSwap, tokenDecimals) + ' ' + tokenSymbol + ' ≈' + estPendingText);
-          }
-        }
-      }
-    } catch (e) { /* 估算失败静默：不影响主流程 */ }
-  }
+  refreshEstimate(pendingSwap, activeCards); // 预计收益：后台异步估算，不阻塞主刷新；失败保持上次值
   uiText(DOM.buyRemainingSlots, remainingSlots + ' / 520');
 
   // 开盘状态
@@ -2073,6 +2048,44 @@ async function loadStats() {
   if (slowTick === 0) loadSlowData();
 }
 
+/* 预计待兑换收益（纯展示，后台异步，不阻塞主刷新）。
+   失败时保持上次结果——公共节点偶发限流绝不能把显示清零成 0。 */
+async function refreshEstimate(pendingSwap, activeCards) {
+  if (pendingSwap === null) return;       // 池读取失败：保持上次预计
+  if (pendingSwap.isZero()) {             // 确实无积压：才清空预计
+    if (estPendingText || estPerCardText) {
+      estPendingText = '';
+      estPerCardText = '';
+      if (cardsAgg) applyCardsAgg(cardsAgg);
+    }
+    return;
+  }
+  try {
+    const lpInfo = await tokenC.getLpPairInfo();
+    if (!lpInfo[0] || lpInfo[0] === ZERO_ADDR) return;
+    const pc = new ethers.Contract(lpInfo[0], [
+      'function getReserves() view returns (uint112, uint112, uint32)',
+      'function token0() view returns (address)'
+    ], readProvider);
+    const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
+    const tokSide = String(t0).toLowerCase() === CONFIG.contracts.token.toLowerCase();
+    const tokRes = tokSide ? res[0] : res[1];
+    const usdtRes = tokSide ? res[1] : res[0];
+    if (tokRes.isZero() || usdtRes.isZero()) return;
+    // 现货价（U/枚，18 位）× 积压数量 → 预计 U
+    const estWei = usdtRes.mul(pendingSwap).div(tokRes);
+    const estU = Number(ethers.utils.formatEther(estWei));
+    const fmtU = (u) => (u >= 0.01 ? u.toFixed(2) : u.toFixed(4)).replace(/0+$/, '').replace(/\.$/, '');
+    if (estU > 0) {
+      estPendingText = fmtU(estU) + ' U';
+      const n = estDivisor > 0 ? estDivisor : (activeCards.gt(0) ? Number(activeCards.toString()) : 1);
+      estPerCardText = fmtU(estU / n) + ' U';
+      uiText(DOM.poolBalanceU, t('pendingSwap') + fmtAmt(pendingSwap, tokenDecimals) + ' ' + tokenSymbol + ' ≈' + estPendingText);
+      if (cardsAgg) applyCardsAgg(cardsAgg); // 收益总览/首页待领取同步
+    }
+  } catch (e) { /* 读取失败：保持上次预计，不清零 */ }
+}
+
 /* 慢数据：已销毁/流通量（变化缓慢，低频刷新） */
 async function loadSlowData() {
   try {
@@ -2088,6 +2101,26 @@ async function loadSlowData() {
       ? '0%'
       : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%');
   } catch (e) { /* ignore */ }
+  // 真实在线卡数（含分发豁免卡）：预计收益的每卡份额分母。
+  // 分红池的均分分母包含分发卡，但对外统计不含——前端枚举全部卡牌状态求真实在线数。
+  try {
+    const all = await nftC.totalAllMinted();
+    const cap = Math.min(all.toNumber(), 600);
+    let activeCnt = 0;
+    for (let s = 1; s <= cap; s += 20) {
+      const batch = [];
+      for (let i = s; i <= Math.min(s + 19, cap); i++) {
+        batch.push(poolC.getCardInfo(i).catch(() => null));
+      }
+      const infos = await Promise.all(batch);
+      for (const info of infos) { if (info && info[5]) activeCnt++; }
+    }
+    const newDiv = Math.max(activeCnt, 1);
+    if (newDiv !== estDivisor) {
+      estDivisor = newDiv;
+      if (cardsAgg) applyCardsAgg(cardsAgg); // 分母变化 → 立即刷新预计显示
+    }
+  } catch (e) { /* 枚举失败：沿用上次分母 */ }
 }
 
 async function loadUser() {
