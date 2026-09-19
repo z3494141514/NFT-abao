@@ -2228,11 +2228,11 @@ const clampCents = (v) => {
 function applyCardsAgg(agg) {
   uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
   uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
-  // 待领取为 0 且池内有待兑换时：附「预计」提示，引导用户点「兑换并领取」触发兑换
-  const pStr = (agg.pending / 100).toFixed(2) + ' U';
-  const hint = agg.pending === 0 && estPerCardText ? ' · 预计 ' + estPerCardText : '';
-  uiText(DOM.cardsTotalPending, pStr + hint);
-  uiText(DOM.myTotalPending, pStr + hint);
+  // 待领取为 0 且池内有待兑换时：直接显示「预计 X U」（不再显示多余的 0.00 U）
+  const pStr = agg.pending > 0 ? (agg.pending / 100).toFixed(2) + ' U'
+    : (estPerCardText ? '预计 ' + estPerCardText : '0.00 U');
+  uiText(DOM.cardsTotalPending, pStr);
+  uiText(DOM.myTotalPending, pStr);
 }
 
 /* 全量汇总（慢路径，后台执行）：收益总览需要全卡合计，逐卡读取不阻塞列表渲染。
@@ -2314,7 +2314,7 @@ function cardRowHtml(r) {
         </div>
         <div class="metric metric-gold">
           <span class="metric-label">${t('cardPending')}</span>
-          <span class="metric-value">${fmtU(pndC)}</span>
+          <span class="metric-value">${pndC > 0 ? fmtU(pndC) : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : fmtU(pndC)))}</span>
         </div>
       </div>
       <div class="exit-progress">
@@ -2350,7 +2350,8 @@ function patchCardDom(r) {
   if (mvs.length === 3) {
     mvs[0].innerText = (accC / 100).toFixed(2) + ' U';
     mvs[1].innerText = (clmC / 100).toFixed(2) + ' U';
-    mvs[2].innerText = (pndC / 100).toFixed(2) + ' U';
+    mvs[2].innerText = pndC > 0 ? (pndC / 100).toFixed(2) + ' U'
+      : (poolPendingTokens.isZero() ? '0.00 U' : (estPerCardText ? '预计 ' + estPerCardText : '0.00 U'));
   }
   const fill = card.querySelector('.exit-fill');
   if (fill) { fill.style.width = pct.toFixed(2) + '%'; fill.classList.toggle('done', pct >= 100); }
