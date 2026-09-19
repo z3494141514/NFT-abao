@@ -240,7 +240,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="admin-title">分红池（USDT 兑付）</div>
           <div class="data-row"><span class="data-label">池内余额</span><span class="data-value" id="adminPoolBalance"></span></div>
           <div class="data-row"><span class="data-label" id="adminPoolPendingLabel">待兑换</span><span class="data-value" id="adminPoolPending"></span></div>
-          <div class="data-row"><span class="data-label">自动兑换阈值</span><span class="data-value" id="adminSwapThreshold"></span></div>
+          <div class="data-row"><span class="data-label">兑换阈值（仅 keeper 参考）</span><span class="data-value" id="adminSwapThreshold"></span></div>
           <div class="data-row"><span class="data-label">最低兑换价</span><span class="data-value" id="adminMinSwapPriceDisplay">--</span></div>
           <div class="data-row"><span class="data-label">兑换通道</span><span class="data-value" id="adminPoolSwapGate">--</span></div>
           <div class="data-row"><span class="data-label">TWAP 护航宽限</span><span class="data-value" id="adminPoolGrace">--</span></div>
@@ -263,7 +263,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           </div>
           <div class="mt12"><input type="number" min="1" id="adminForceExitInput" class="input" placeholder="tokenId 强制出局"><button id="adminForceExitBtn" class="btn btn-danger btn-sm mt8">强制出局</button></div>
           <div class="mt12"><input type="number" min="1" id="adminReleaseBurnedInput" class="input" placeholder="tokenId 释放已销毁卡牌负债"><button id="adminReleaseBurnedBtn" class="btn btn-ghost btn-sm mt8">释放负债</button></div>
-          <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="自动兑换阈值（TTT 枚数，如 100）"><button id="adminSetSwapThresholdBtn" class="btn btn-primary btn-sm mt8">设置兑换阈值</button></div>
+          <div class="mt12"><input type="number" min="1" id="adminSwapThresholdInput" class="input" placeholder="阈值仅供 keeper 参考（用户领取/买卡时自动兑换）"><button id="adminSetSwapThresholdBtn" class="btn btn-ghost btn-sm mt8">设置兑换阈值</button></div>
           <div class="mt12"><input type="text" id="adminMinSwapPriceInput" class="input" placeholder="最低兑换价（U/枚，默认 0.01；0 = 关闭下限）"><button id="adminSetMinSwapPriceBtn" class="btn btn-primary btn-sm mt8">设置最低兑换价</button></div>
           <div class="mt12"><input type="text" id="adminWithdrawTttToInput" class="input" placeholder="收款地址（留空 = 当前钱包）"><button id="adminWithdrawTttBtn" class="btn btn-ghost btn-sm mt8">提取滞留 TTT</button></div>
           <div class="admin-title mt16">核心配置（updateCore，开盘前）</div>
@@ -666,7 +666,7 @@ const parseError = (e) => {
   if (m.includes('oracletimelocknotexpired')) return '预言机变更时间锁未到期（24 小时）';
   if (m.includes('nopendingoracle')) return '没有待应用的预言机变更';
   if (m.includes('launchpricenotready')) return '开盘限购价格未就绪（交易对无流动性/观测点未就绪）';
-  if (m.includes('launchbuylimitexceeded')) return '超过开盘窗口 50U 限购';
+  if (m.includes('launchbuylimitexceeded')) return '超过开盘窗口 5000 枚限购';
   if (m.includes('lastadminrenouncenotallowed')) return '最后一名管理员不可弃权';
   if (m.includes('timelock not expired')) return 'LP 时间锁未到期（设置主 LP 后需等 1 小时）';
   if (m.includes('core locked') || m.includes('core already locked')) return '核心配置已锁定，不可修改';
@@ -763,7 +763,7 @@ function applyTokenSymbols() {
   DOM.adminPreReserveLabel.innerText = t + ' 储备';
   DOM.adminWithdrawReserveBtn.innerText = '提取 ' + t + ' 储备（未用完部分）';
   DOM.adminPoolPendingLabel.innerText = '待兑换 ' + t;
-  DOM.adminSwapThresholdInput.placeholder = '自动兑换阈值（' + t + ' 枚数，如 100）';
+  DOM.adminSwapThresholdInput.placeholder = '阈值仅供 keeper 参考（' + t + ' 枚数；用户领取/买卡时自动兑换）';
   DOM.adminWithdrawTttBtn.innerText = '提取滞留 ' + t;
 }
 
@@ -983,7 +983,7 @@ async function loadAdminData() {
       let hint = '';
       try {
         const st = await poolC.swapThreshold();
-        if (pt.gte(st)) hint = ' · ⚠️ 已达阈值（下次买入自动兑换，或手动点「兑换手续费」）';
+        if (pt.gte(st)) hint = ' · 领取/买卡时自动兑换，或手动点「强制兑换」';
       } catch (e) { /* ignore */ }
       DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol + hint;
     } catch (e) { /* ignore */ }
@@ -1027,14 +1027,14 @@ async function loadAdminData() {
           // 拦截线 = 均价 × (10000 - 容忍基点)/10000（预言机 p 含 3% 修正，经 9700 逆推）
           const threshold = pd[0].mul(10000 - guard).div(9700);
           if (guard === 0 || spot.gte(threshold)) {
-            DOM.adminPoolSwapGate.innerText = '✅ 自动通道畅通（现货 ≥ 拦截线）；管理员「强制兑换」始终无拦截';
+            DOM.adminPoolSwapGate.innerText = '✅ 兑换通道畅通（现货 ≥ 拦截线）；管理员「强制兑换」始终无拦截';
           } else {
             const ps = (await poolC.pendingSince().catch(() => ethers.BigNumber.from(0))).toNumber();
             const gp = (await poolC.swapGracePeriod().catch(() => ethers.BigNumber.from(1800))).toNumber();
             const now = Math.floor(Date.now() / 1000);
             const left = ps === 0 ? gp : Math.max(0, gp - (now - ps));
             DOM.adminPoolSwapGate.innerText = left > 0
-              ? `⏳ 自动通道护航中（现货 ${(Number(spot) / 1e8).toFixed(4)}U < 拦截线 ${(Number(threshold) / 1e8).toFixed(4)}U；最迟 ${fmtSec(left)} 后宽限放行）；管理员「强制兑换」无拦截`
+              ? `⏳ 兑换通道护航中（现货 ${(Number(spot) / 1e8).toFixed(4)}U < 拦截线 ${(Number(threshold) / 1e8).toFixed(4)}U；最迟 ${fmtSec(left)} 后宽限放行）；管理员「强制兑换」无拦截`
               : '✅ 宽限阀已触发（自动兑换放行）；管理员「强制兑换」始终无拦截';
           }
         } else { DOM.adminPoolSwapGate.innerText = '--（池子无流动性）'; }
@@ -1091,7 +1091,7 @@ async function loadAdminData() {
     const winActive = await tokenC.launchWindowActive();
     if (winActive) {
       const remaining = (await tokenC.launchWindowRemaining()).toNumber();
-      DOM.adminLaunchWindow.innerText = `⏳ 进行中（剩余 ${remaining} 秒：卖出税 18% · 限购 50U）`;
+      DOM.adminLaunchWindow.innerText = `⏳ 进行中（剩余 ${remaining} 秒：卖出税 18% · 限购 5000 枚）`;
     } else {
       DOM.adminLaunchWindow.innerText = trading ? '✅ 已结束（常规税率 3%/3% · 不限购）' : '-- 未开盘';
     }
@@ -1253,7 +1253,7 @@ async function refreshWizard(isTokenAdmin) {
       const win = await tokenC.launchWindowActive();
       if (win) {
         const left = (await tokenC.launchWindowRemaining()).toNumber();
-        DOM.adminWizardWindow.innerText = `⏱ 剩 ${left} 秒（卖出税 18% · 限购 50U 防机器人）`;
+        DOM.adminWizardWindow.innerText = `⏱ 剩 ${left} 秒（卖出税 18% · 限购 5000 枚防机器人）`;
       } else DOM.adminWizardWindow.innerText = '✅ 已结束（税率 3%/3% · 不限购）';
     } catch (e) { DOM.adminWizardWindow.innerText = '--'; }
   } else DOM.adminWizardWindow.innerText = '--（开启交易后自动进入 180 秒）';
