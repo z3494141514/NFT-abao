@@ -1229,19 +1229,28 @@ async function refreshWizard(isTokenAdmin) {
   let oa = ZERO_ADDR;
   try { oa = await tokenC.oracle(); } catch (e) {}
   add('预言机已配置', oa && oa !== ZERO_ADDR ? 'ok' : 'bad', '');
-  let priceOk = false, priceHint = '';
+  let priceSt = 'bad', priceHint = '';
   if (oa && oa !== ZERO_ADDR) {
     try {
       const pd = await oracleC.getPriceData();
       const fresh = pd[2] && !pd[2].isZero() && (now - pd[2].toNumber()) <= 180;
       const dev = pd[3].toNumber();
-      priceOk = !pd[0].isZero() && !pd[1].isZero() && fresh && dev <= 1000;
-      priceHint = priceOk ? '' : (pd[0].isZero() || pd[1].isZero() ? '价格未就绪'
-        : !fresh ? '报价过期（需开盘前 3 分钟内 poke）' : `偏差 ${(dev / 10).toFixed(1)}% 超 ±10%`);
+      const readable = !pd[0].isZero() && !pd[1].isZero();
+      if (readable && fresh && dev <= 1000) {
+        priceSt = 'ok';
+      } else if (readable && dev <= 1000) {
+        // 可读但过期：黄色警示不阻断——「一键开盘」会自动先补打观测点再开启交易
+        priceSt = 'warn';
+        priceHint = '报价可读但已过期：点「补打观测点」或直接点「一键开盘」（将自动补打）';
+      } else {
+        priceSt = 'bad';
+        priceHint = (dev > 1000) ? `偏差 ${(dev / 10).toFixed(1)}% 超 ±10%` : '价格未就绪';
+      }
     } catch (e) {
+      priceSt = 'bad';
       priceHint = '观测历史不足：请连续补打观测点（间隔 ≥2.5 分钟，累计 ≥3 分钟）';
     }
-    add('预言机报价就绪（新鲜 ≤3 分钟 · 偏差 ≤±10%）', priceOk ? 'ok' : 'bad', priceHint);
+    add('预言机报价就绪（新鲜 ≤3 分钟 · 偏差 ≤±10%）', priceSt, priceHint);
   } else {
     add('预言机报价就绪（新鲜 ≤3 分钟 · 偏差 ≤±10%）', 'bad', '未配置预言机');
   }
