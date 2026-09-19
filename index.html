@@ -4,41 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>卡牌分红 · NFT Dividend</title>
-<script>
-/* ethers 异步加载（链路顺序不变：本地 → npmmirror → jsdelivr → unpkg → cloudflare → bootcdn）。
-   不阻塞首屏渲染；全部失败时显示红色提示条；成功即派发 ethers-ready 供主脚本初始化。 */
-(function () {
-  var CDNS = [
-    './ethers.umd.min.js',
-    'https://cdn.jsdelivr.net/gh/z3494141514/NFT-abao@main/ethers.umd.min.js',
-    'https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js',
-    'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
-    'https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js'
-  ];
-  var i = 0;
-  function fire() {
-    try { window.dispatchEvent(new Event('ethers-ready')); } catch (e) { window.ethersReady = true; }
-  }
-  function failBanner() {
-    var b = document.createElement('div');
-    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';
-    b.textContent = '⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';
-    document.body.appendChild(b);
-  }
-  function next() {
-    if (window.ethers) { fire(); return; }
-    if (i >= CDNS.length) { failBanner(); return; }
-    var s = document.createElement('script');
-    s.src = CDNS[i++];
-    s.onload = next;
-    s.onerror = next;
-    document.head.appendChild(s);
-  }
-  next();
-})();
-</script>
+<script src="./ethers.umd.min.js"></script>
+<script>window.ethers||document.write('<script src="https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.addEventListener('DOMContentLoaded',function(){if(!window.ethers){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';b.textContent='⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';document.body.appendChild(b)}})</script>
 <style>
 :root{
   --bg:#05070d;--panel:rgba(255,255,255,.035);--panel-hi:rgba(255,255,255,.06);
@@ -112,7 +84,6 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 52px;margin-bottom:18px}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
 .hero-video.video-ready{opacity:.9}
-.hero-video::-webkit-media-controls-start-playback-button{display:none!important}
 .hero-overlay{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(5,7,13,.45),rgba(5,7,13,.15) 45%,rgba(5,7,13,.28))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
 .hero-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -1113,16 +1084,8 @@ body{-webkit-tap-highlight-color:transparent}
 </div>
 
 <script>
-/* 应用初始化门闸：ethers 异步加载完成（或已就绪）后再执行主逻辑，避免阻塞首屏渲染 */
-var __dappBooted = false;
-(function bootApp(){
+(function(){
 'use strict';
-if (__dappBooted) return;
-if (!window.ethers) {
-  window.addEventListener('ethers-ready', bootApp, { once: true });
-  return;
-}
-__dappBooted = true;
 
 /* ============================================================
  * 配置区：部署合约后把下面的地址替换为实际部署地址
@@ -2974,38 +2937,15 @@ function heroVideoEnsurePlaying() {
   if (!CONFIG.heroVideoUrl || skip) { v.remove(); return; }
   v.muted = true;      // 显式静音（部分浏览器只认 property 不认 attribute）
   v.playsInline = true;
-  const srcEl = v.querySelector('source');
-  // 视频源兜底链：同源（秒出、缓存好）→ jsDelivr（GitHub 镜像 CDN）→ 全部失败移除回退代码卡牌动画。
-  // 只监听 <source> 的 error（视频元素级 error 会在同一次失败中重复触发，双监听会把源链多跳一格）
-  const VIDEO_SOURCES = [CONFIG.heroVideoUrl, 'https://cdn.jsdelivr.net/gh/z3494141514/NFT-abao@main/hero.mp4'];
-  let vi = 0, stallTimer = null;
-  const trySource = () => {
-    clearTimeout(stallTimer);
-    if (vi >= VIDEO_SOURCES.length) { v.remove(); return; }
-    srcEl.src = VIDEO_SOURCES[vi++];
-    v.load();
-    stallTimer = setTimeout(trySource, 10000); // 10 秒未出画面：换下一个源
-  };
-  srcEl.addEventListener('error', trySource);
-  // 数据就绪：清掉换源计时器并尝试播放（此时仍保持透明，避免露出暂停帧/原生播放按钮）
-  const onData = () => { clearTimeout(stallTimer); heroVideoEnsurePlaying(); };
-  v.addEventListener('loadeddata', onData);
-  v.addEventListener('canplay', onData);
-  // 真正开始播放才显示视频：未播放前保持 opacity:0——iOS 暂停态的原生播放按钮随之不可见
-  v.addEventListener('playing', () => { clearTimeout(stallTimer); v.classList.add('video-ready'); });
-  // 首次访问：延迟 1.2 秒再加载视频——首秒带宽优先给页面本身（白屏消失的关键之一）；
-  // 再次访问：延迟 0.6 秒（让 ethers 与页面初始化先拿到带宽，视频稍后淡入，无感）。
-  let firstVisit = true;
-  try { firstVisit = !sessionStorage.getItem('dapp_visited'); } catch (e) {}
-  if (firstVisit) {
-    try { sessionStorage.setItem('dapp_visited', '1'); } catch (e) {}
-    setTimeout(trySource, 1200);
-  } else {
-    setTimeout(trySource, 600);
-  }
-  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次（不强制显示：显示交由 playing 事件）
-  setTimeout(() => { heroVideoEnsurePlaying(); }, 1200);
-  setTimeout(() => { heroVideoEnsurePlaying(); }, 3000);
+  v.addEventListener('error', () => v.remove(), true);
+  const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
+  v.addEventListener('loadeddata', ready);
+  v.addEventListener('canplay', ready);
+  v.querySelector('source').src = CONFIG.heroVideoUrl;
+  v.load();
+  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
+  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();

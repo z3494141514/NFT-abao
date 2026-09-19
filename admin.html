@@ -4,40 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>管理后台 · 卡牌分红</title>
-<script>
-/* ethers 异步加载（链路顺序不变），不阻塞首屏；全部失败显示提示条 */
-(function () {
-  var CDNS = [
-    './ethers.umd.min.js',
-    'https://cdn.jsdelivr.net/gh/z3494141514/NFT-abao@main/ethers.umd.min.js',
-    'https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js',
-    'https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js',
-    'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js'
-  ];
-  var i = 0;
-  function fire() {
-    try { window.dispatchEvent(new Event('ethers-ready')); } catch (e) { window.ethersReady = true; }
-  }
-  function failBanner() {
-    var b = document.createElement('div');
-    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';
-    b.textContent = '⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';
-    document.body.appendChild(b);
-  }
-  function next() {
-    if (window.ethers) { fire(); return; }
-    if (i >= CDNS.length) { failBanner(); return; }
-    var s = document.createElement('script');
-    s.src = CDNS[i++];
-    s.onload = next;
-    s.onerror = next;
-    document.head.appendChild(s);
-  }
-  next();
-})();
-</script>
+<script src="./ethers.umd.min.js"></script>
+<script>window.ethers||document.write('<script src="https://registry.npmmirror.com/ethers/5.7.2/files/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.bootcdn.net/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
+<script>window.ethers||document.write('<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"><\/script>')</script>
 <script>window.addEventListener('DOMContentLoaded',function(){if(!window.ethers){var b=document.createElement('div');b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#7f1d1d,#9f1239);color:#fff;padding:11px 16px;font-size:13px;text-align:center;letter-spacing:.5px';b.textContent='⚠ 网络组件加载失败，页面无法读取链上数据——请切换网络后刷新重试';document.body.appendChild(b)}})</script>
 <style>
 :root{
@@ -337,16 +309,8 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 </div>
 
 <script>
-/* 应用初始化门闸：ethers 异步加载完成后再执行主逻辑 */
-var __dappBooted = false;
-(function bootApp(){
+(function(){
 'use strict';
-if (__dappBooted) return;
-if (!window.ethers) {
-  window.addEventListener('ethers-ready', bootApp, { once: true });
-  return;
-}
-__dappBooted = true;
 
 const CONFIG = {
   chainId: 56,
