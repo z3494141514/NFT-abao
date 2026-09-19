@@ -1489,7 +1489,9 @@ let usdtContract = null;          // USDT 合约实例
 let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
 let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
 let estPerCardText = '';          // 每张卡预计可分（≈X U）
+let estPerCardNum = 0;            // 每张卡预计可分（数值 U）
 let estDivisor = 1;               // 预计收益的每卡份额分母（真实在线卡数，含分发豁免卡；慢数据枚举）
+let estDivisorReady = false;      // 分母是否已枚举确认（未确认前不显示每卡预计，避免把总额当单卡）
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页（每页 5 个，逐页懒加载）
@@ -1543,6 +1545,8 @@ const fmtAmt2 = (bn, dec) => {
     return n.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   } catch (e) { return '--'; }
 };
+/* U 数值格式化（预计收益展示用）：≥0.01 保留 2 位，否则最多 4 位并去尾零 */
+const fmtUval = (u) => (u >= 0.01 ? u.toFixed(2) : u.toFixed(4)).replace(/0+$/, '').replace(/\.$/, '');
 const fmtTime = (ts) => {
   const tsNum = toNum(ts); // ⚠️ 不命名为 t（避免遮蔽全局 i18n 的 t()）
   if (!tsNum) return '--';
@@ -1893,7 +1897,9 @@ function disconnectWallet() {
   poolPendingTokens = ethers.BigNumber.from(0);
   estPendingText = '';
   estPerCardText = '';
+  estPerCardNum = 0;
   estDivisor = 1;
+  estDivisorReady = false;
   DOM.buyModeBadge.innerText = '100 U / ' + t('unitCard'); // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
@@ -2056,6 +2062,8 @@ async function refreshEstimate(pendingSwap, activeCards) {
     if (estPendingText || estPerCardText) {
       estPendingText = '';
       estPerCardText = '';
+      estPerCardNum = 0;
+      applyPendingEstDisplay();
       if (cardsAgg) applyCardsAgg(cardsAgg);
     }
     return;
@@ -2075,12 +2083,19 @@ async function refreshEstimate(pendingSwap, activeCards) {
     // 现货价（U/枚，18 位）× 积压数量 → 预计 U
     const estWei = usdtRes.mul(pendingSwap).div(tokRes);
     const estU = Number(ethers.utils.formatEther(estWei));
-    const fmtU = (u) => (u >= 0.01 ? u.toFixed(2) : u.toFixed(4)).replace(/0+$/, '').replace(/\.$/, '');
     if (estU > 0) {
-      estPendingText = fmtU(estU) + ' U';
-      const n = estDivisor > 0 ? estDivisor : (activeCards.gt(0) ? Number(activeCards.toString()) : 1);
-      estPerCardText = fmtU(estU / n) + ' U';
+      estPendingText = fmtUval(estU) + ' U';
+      // 每卡份额：仅在真实在线卡数（含分发卡）枚举确认后展示——未确认前绝不能用总额冒充单卡
+      if (estDivisorReady) {
+        const n = estDivisor > 0 ? estDivisor : (activeCards.gt(0) ? Number(activeCards.toString()) : 1);
+        estPerCardNum = estU / n;
+        estPerCardText = fmtUval(estPerCardNum) + ' U';
+      } else {
+        estPerCardNum = 0;
+        estPerCardText = '';
+      }
       uiText(DOM.poolBalanceU, t('pendingSwap') + fmtAmt(pendingSwap, tokenDecimals) + ' ' + tokenSymbol + ' ≈' + estPendingText);
+      applyPendingEstDisplay(); // 首页/总览待领取实时同步（不依赖 cardsAgg）
       if (cardsAgg) applyCardsAgg(cardsAgg); // 收益总览/首页待领取同步
     }
   } catch (e) { /* 读取失败：保持上次预计，不清零 */ }
@@ -2116,9 +2131,11 @@ async function loadSlowData() {
       for (const info of infos) { if (info && info[5]) activeCnt++; }
     }
     const newDiv = Math.max(activeCnt, 1);
-    if (newDiv !== estDivisor) {
+    if (newDiv !== estDivisor || !estDivisorReady) {
       estDivisor = newDiv;
-      if (cardsAgg) applyCardsAgg(cardsAgg); // 分母变化 → 立即刷新预计显示
+      estDivisorReady = true;
+      applyPendingEstDisplay(); // 分母确认 → 立即刷新预计显示
+      if (cardsAgg) applyCardsAgg(cardsAgg);
     }
   } catch (e) { /* 枚举失败：沿用上次分母 */ }
 }
@@ -2258,14 +2275,28 @@ const clampCents = (v) => {
 };
 
 /* 卡牌页汇总写入（收益总览面板 + 首页待领取 KPI） */
+/* 用户总预计文案（全部卡牌，含持有的分发卡）：预计每卡份额 × 用户卡数 */
+const estTotalText = (userCount) => (estPerCardNum > 0 && userCount > 0)
+  ? '预计 ' + fmtUval(estPerCardNum * userCount) + ' U'
+  : (poolPendingTokens && !poolPendingTokens.isZero() ? '预计…' : '0.00 U');
+
 function applyCardsAgg(agg) {
   uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
   uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
-  // 待领取为 0 且池内有待兑换时：直接显示「预计 X U」（不再显示多余的 0.00 U）
-  const pStr = agg.pending > 0 ? (agg.pending / 100).toFixed(2) + ' U'
-    : (estPerCardText ? '预计 ' + estPerCardText : '0.00 U');
+  // 待领取为 0 且池内有待兑换时：显示「用户全部卡牌（含持有的分发卡）的预计总和」
+  const pStr = agg.pending > 0 ? (agg.pending / 100).toFixed(2) + ' U' : estTotalText(agg.count || 0);
   uiText(DOM.cardsTotalPending, pStr);
   uiText(DOM.myTotalPending, pStr);
+}
+
+/* 首页/总览待领取的预计显示（不依赖 cardsAgg：连接后停留首页也能实时看到） */
+function applyPendingEstDisplay() {
+  const aggPending = cardsAgg ? cardsAgg.pending : 0;
+  if (aggPending > 0) return; // 有真实待领取：由 applyCardsAgg 显示实际值
+  const userCount = cardsAgg ? (cardsAgg.count || 0) : (parseInt(DOM.myCardCount.innerText, 10) || 0);
+  const txt = estTotalText(userCount);
+  uiText(DOM.myTotalPending, txt);
+  uiText(DOM.cardsTotalPending, txt);
 }
 
 /* 全量汇总（慢路径，后台执行）：收益总览需要全卡合计，逐卡读取不阻塞列表渲染。
@@ -2347,7 +2378,7 @@ function cardRowHtml(r) {
         </div>
         <div class="metric metric-gold">
           <span class="metric-label">${t('cardPending')}</span>
-          <span class="metric-value">${pndC > 0 ? fmtU(pndC) : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : fmtU(pndC)))}</span>
+          <span class="metric-value">${pndC > 0 ? fmtU(pndC) : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : '预计…'))}</span>
         </div>
       </div>
       <div class="exit-progress">
@@ -2384,7 +2415,7 @@ function patchCardDom(r) {
     mvs[0].innerText = (accC / 100).toFixed(2) + ' U';
     mvs[1].innerText = (clmC / 100).toFixed(2) + ' U';
     mvs[2].innerText = pndC > 0 ? (pndC / 100).toFixed(2) + ' U'
-      : (poolPendingTokens.isZero() ? '0.00 U' : (estPerCardText ? '预计 ' + estPerCardText : '0.00 U'));
+      : (poolPendingTokens.isZero() ? '0.00 U' : (estPerCardText ? '预计 ' + estPerCardText : '预计…'));
   }
   const fill = card.querySelector('.exit-fill');
   if (fill) { fill.style.width = pct.toFixed(2) + '%'; fill.classList.toggle('done', pct >= 100); }
