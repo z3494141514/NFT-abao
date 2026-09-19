@@ -263,7 +263,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
         </div>
 
         <div class="admin-grid-item" id="adminOracleBlock" style="display:none">
-          <div class="admin-title">实时价格（5 分钟 TWAP · 全自动）</div>
+          <div class="admin-title">实时价格（3 分钟 TWAP · 全自动）</div>
           <div class="data-row"><span class="data-label">当前 TWAP 价格</span><span class="data-value hi" id="adminOraclePrice"></span></div>
           <div class="data-row"><span class="data-label">价格观测点</span><span class="data-value" id="adminOracleObs"></span></div>
           <div class="data-row"><span class="data-label">最低流动性门槛</span><span class="data-value" id="adminOracleMinLiq"></span></div>
@@ -272,7 +272,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="mt12"><button id="adminPokeBtn" class="btn btn-primary btn-sm">记录价格观测点</button></div>
           <div class="mt12"><input type="number" step="any" id="adminMinLiqInput" class="input" placeholder="最低流动性门槛（USDT，如 3000；0=关闭）"><button id="adminSetMinLiqBtn" class="btn btn-primary btn-sm mt8">设置门槛</button></div>
           <div class="mt12"><button id="adminLockOracleBtn" class="btn btn-danger btn-sm">永久锁定配置</button></div>
-          <div class="data-tip mt8">价格 = 交易对过去 5 分钟的时间加权均价（TWAP）：闪电贷拉价无法撼动，市场大涨大跌自动跟随，零手动。任何人可点「记录价格观测点」（每 2.5 分钟一次）；池子低于门槛时拒读价格；3% 卖出税已修正，买卡=精确 100U。</div>
+          <div class="data-tip mt8">价格 = 交易对过去 3 分钟的时间加权均价（TWAP）：闪电贷拉价无法撼动，市场大涨大跌自动跟随，零手动。任何人可点「记录价格观测点」（每 2.5 分钟一次）；池子低于门槛时拒读价格；3% 卖出税已修正，买卡=精确 100U。</div>
         </div>
 
         <div class="admin-grid-item" id="adminNftBlock" style="display:none">
@@ -312,12 +312,12 @@ const CONFIG = {
   router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
   usdt:   '0x55d398326f99059fF775485246999027B3197955',
   contracts: {
-    // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
-    token:  '0x8a41c95F24D49216784e2fA5933335383aeece25', // 新 OfficialToken（已部署）
-    nft:    '0xCbb206119A200dEE8A438F84702082759638a270', // 新 OfficialNFT（已部署）
-    sale:   '0xE1A108cC9D6200cfE05795f08ecB5AEC3B67a416', // 新 OfficialNFTSale（已部署）
-    pool:   '0x9d9C434e18A053E7DB93cABC5700bA82886aec76', // 新 CardDividendPool（已部署）
-    oracle: '0xa0D116E9Acf42aB5d5F52281dA8cCCbd8911E980'  // 新 PriceOracle（已部署）
+    // ⚠️ V3 全量重部署（最新代码）：以下五个地址为最终上线地址
+    token:  '0x71e4a2F336F76fDF72b12B8381B634c4cc5D3216', // OfficialToken（最新）
+    nft:    '0xEa3Cb635B9A9E33d15356f3886958c319Cf16c5A', // OfficialNFT（最新）
+    sale:   '0x23090a69e0396D1eAdAf2A4d70dD091e53bE7378', // OfficialNFTSale（最新）
+    pool:   '0x1e4B5665E9Df74d8749433bF02Ee825098547ECb', // CardDividendPool（最新）
+    oracle: '0x663C122365a8A74054939c079152Aa45Bc8dC53e'  // PriceOracle（最新）
   },
   refreshInterval: 10000
 };
@@ -586,7 +586,7 @@ const parseError = (e) => {
   if (m.includes('trading already enabled')) return '交易已开启，预售已结束（此操作不可执行）';
   if (m.includes('pair not whitelisted')) return '交易对尚未登记白名单（需先 setLpPair/addLpPair）';
   if (m.includes('usdt locked')) return 'USDT 已配置并永久冻结，不可更换';
-  if (m.includes('price below twap')) return '兑换价低于 5 分钟均价 97%，已暂缓（价格回稳后自动恢复）';
+  if (m.includes('price below twap')) return '兑换价低于 3 分钟均价锚定线，已暂缓（价格回稳或宽限到期后自动恢复；管理员可强制兑换）';
   if (m.includes('not launched')) return '尚未开盘';
   if (m.includes('trading not enabled')) return '代币交易尚未开启（请先执行「开启交易」再开盘）';
   if (m.includes('oracle timelock')) return '卡价预言机变更时间锁未到期（24 小时）';
@@ -603,7 +603,7 @@ const parseError = (e) => {
   if (m.includes('price too old')) return '预言机价格已过期，请稍后再试';
   if (m.includes('poke too soon')) return '观测点间隔需 ≥2.5 分钟';
   if (m.includes('no observations')) return '尚未记录价格观测点（请点「记录价格观测点」初始化）';
-  if (m.includes('observations too young')) return '观测历史不足 5 分钟，请再多点几次「记录价格观测点」（间隔 ≥2.5 分钟）';
+  if (m.includes('observations too young')) return '观测历史不足 3 分钟，请再多点几次「记录价格观测点」（间隔 ≥2.5 分钟）';
   if (m.includes('no time elapsed')) return '交易对尚无新交易，价格暂不可用';
   if (m.includes('pair not created')) return '交易对尚未创建（需先完成一笔预售购买）';
   if (m.includes('zero price')) return '实时价异常为 0，请稍后再试';
@@ -896,7 +896,7 @@ async function loadAdminData() {
     } catch (e) { /* ignore */ }
   }
 
-  // 实时价格（5 分钟 TWAP · 全自动）
+  // 实时价格（3 分钟 TWAP · 全自动）
   const isOracleOwner = oracleOwner.toLowerCase() === userAddress.toLowerCase();
   DOM.adminOracleBlock.style.display = isOracleOwner ? '' : 'none';
   if (isOracleOwner) {
@@ -962,7 +962,7 @@ async function loadAdminData() {
       const tol = (10000 - guard) / 100;
       DOM.adminPoolGuard.innerText = guard === 0
         ? '已关闭（不做 TWAP 拦截）'
-        : `${tol.toFixed(guard % 100 === 0 ? 0 : 1)}% 容忍（现货 < 5 分钟均价 × ${(tol / 100).toFixed(2)} 才拦）`;
+        : `${tol.toFixed(guard % 100 === 0 ? 0 : 1)}% 容忍（现货 < 3 分钟均价 × ${(tol / 100).toFixed(2)} 才拦）`;
       if (pd[0].gt(0) && lpInfo[0] && lpInfo[0] !== ZERO_ADDR) {
         const pc = new ethers.Contract(lpInfo[0], [
           'function getReserves() view returns (uint112, uint112, uint32)',
@@ -1233,17 +1233,17 @@ async function refreshWizard(isTokenAdmin) {
   if (oa && oa !== ZERO_ADDR) {
     try {
       const pd = await oracleC.getPriceData();
-      const fresh = pd[2] && !pd[2].isZero() && (now - pd[2].toNumber()) <= 300;
+      const fresh = pd[2] && !pd[2].isZero() && (now - pd[2].toNumber()) <= 180;
       const dev = pd[3].toNumber();
       priceOk = !pd[0].isZero() && !pd[1].isZero() && fresh && dev <= 1000;
       priceHint = priceOk ? '' : (pd[0].isZero() || pd[1].isZero() ? '价格未就绪'
-        : !fresh ? '报价过期（需开盘前 5 分钟内 poke）' : `偏差 ${(dev / 10).toFixed(1)}% 超 ±10%`);
+        : !fresh ? '报价过期（需开盘前 3 分钟内 poke）' : `偏差 ${(dev / 10).toFixed(1)}% 超 ±10%`);
     } catch (e) {
-      priceHint = '观测历史不足：请连续补打观测点（间隔 ≥2.5 分钟，累计 ≥5 分钟）';
+      priceHint = '观测历史不足：请连续补打观测点（间隔 ≥2.5 分钟，累计 ≥3 分钟）';
     }
-    add('预言机报价就绪（新鲜 ≤5 分钟 · 偏差 ≤±10%）', priceOk ? 'ok' : 'bad', priceHint);
+    add('预言机报价就绪（新鲜 ≤3 分钟 · 偏差 ≤±10%）', priceOk ? 'ok' : 'bad', priceHint);
   } else {
-    add('预言机报价就绪（新鲜 ≤5 分钟 · 偏差 ≤±10%）', 'bad', '未配置预言机');
+    add('预言机报价就绪（新鲜 ≤3 分钟 · 偏差 ≤±10%）', 'bad', '未配置预言机');
   }
 
   // minLiquidity 门槛（红线：≤ 池内 USDT 的 50%）
@@ -1331,7 +1331,7 @@ async function adminWizardLaunch() {
       try {
         const pd = await oracleC.getPriceData();
         const now = Math.floor(Date.now() / 1000);
-        if (pd[0].isZero() || pd[2].isZero() || now - pd[2].toNumber() > 300) {
+        if (pd[0].isZero() || pd[2].isZero() || now - pd[2].toNumber() > 180) {
           showToast('预言机报价过期，自动补打观测点…', '');
           await waitForTx(await oracleC.connect(signer).poke());
         }

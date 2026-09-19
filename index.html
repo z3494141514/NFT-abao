@@ -845,7 +845,7 @@ body{-webkit-tap-highlight-color:transparent}
                   <span class="bs-txt"><b>100 U</b> <span data-i18n="splitGold">金本位</span></span>
                 </div>
               </div>
-              <div class="buy-note" data-i18n="buyNote">价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 缓冲</div>
+              <div class="buy-note" data-i18n="buyNote">价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲</div>
               <button id="buyBtn" class="btn btn-primary btn-block mt10" data-i18n="buyNow">购买卡牌</button>
             </div>
           </div>
@@ -1109,12 +1109,12 @@ const CONFIG = {
   ],
   rpcUrl: 'https://bsc-dataseed1.defibit.io/',
   contracts: {
-    // ⚠️ 全量重部署后：以下五个地址必须替换为新一轮部署的地址（旧地址作废）
-    token:  '0x8a41c95F24D49216784e2fA5933335383aeece25', // 新 OfficialToken（已部署）
-    nft:    '0xCbb206119A200dEE8A438F84702082759638a270', // 新 OfficialNFT（已部署）
-    sale:   '0xE1A108cC9D6200cfE05795f08ecB5AEC3B67a416', // 新 OfficialNFTSale（已部署）
-    pool:   '0x9d9C434e18A053E7DB93cABC5700bA82886aec76', // 新 CardDividendPool（已部署）
-    oracle: '0xa0D116E9Acf42aB5d5F52281dA8cCCbd8911E980'  // 新 PriceOracle（已部署）
+    // ⚠️ V3 全量重部署（最新代码）：以下五个地址为最终上线地址
+    token:  '0x71e4a2F336F76fDF72b12B8381B634c4cc5D3216', // OfficialToken（最新）
+    nft:    '0xEa3Cb635B9A9E33d15356f3886958c319Cf16c5A', // OfficialNFT（最新）
+    sale:   '0x23090a69e0396D1eAdAf2A4d70dD091e53bE7378', // OfficialNFTSale（最新）
+    pool:   '0x1e4B5665E9Df74d8749433bF02Ee825098547ECb', // CardDividendPool（最新）
+    oracle: '0x663C122365a8A74054939c079152Aa45Bc8dC53e'  // PriceOracle（最新）
   },
   refreshInterval: 15000,  // 首页/卡牌刷新间隔（毫秒）；团队数据改为进页加载
   // 主视觉背景视频（mp4）：留空 '' 用代码卡牌动画；填 URL 后视频做底层动画，卡牌浮层继续在上方飘
@@ -1289,7 +1289,7 @@ const I18N = {
     buyTitle:'购买卡牌', qty:'数量', buyCost:'卡牌成本', buyNeed:'需支付', myUsdt:'我的 USDT', preLeft:'剩余额度',
     price:'实时价格', myBalance:'我的余额', slotsLeft:'剩余名额',
     splitRefCash:'实时转上级', splitLp:'自动加池', splitTreasury:'项目金库', splitRefTok:'转给上级', splitBurn:'永久销毁', splitGold:'金本位',
-    buyNote:'价格按 5 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌',
+    buyNote:'价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌',
     buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
@@ -1365,7 +1365,7 @@ const I18N = {
     buyTitle:'Buy Cards', qty:'Qty', buyCost:'Card Cost', buyNeed:'Pay for', myUsdt:'My USDT', preLeft:'Quota Left',
     price:'Live Price', myBalance:'My Balance', slotsLeft:'Slots Left',
     splitRefCash:'to Referrer', splitLp:'Auto LP', splitTreasury:'Treasury', splitRefTok:'to Referrer', splitBurn:'Burned Forever', splitGold:'Gold Standard',
-    buyNote:'Price auto-converts via 5-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards',
+    buyNote:'Price auto-converts via 3-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards',
     buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
     launchProtect:'Launch Shield · ', sec:'s left',
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
