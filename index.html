@@ -2894,6 +2894,15 @@ function heroVideoEnsurePlaying() {
   const active = document.querySelector('.page.active');
   const onHome = active && active.id === 'homePage';
   if (!onHome || document.visibilityState !== 'visible') return;
+  // 从未成功播放过（含首次加载失败被吞的场景）：
+  // 已加载完成 → 直接重试 play（无需重新拉流）；未加载/出错 → 触发带 8 秒冷却的重拉
+  if (!(hv.dataset && hv.dataset.videoOk)) {
+    if (hv.readyState >= 2) {
+      try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+      return;
+    }
+    if (typeof window.heroVideoRetry === 'function') { window.heroVideoRetry(); return; }
+  }
   // 不检查 paused：WebView 切后台时解码器可能被系统冻结但元素仍报「播放中」，
   // 回前台必须无条件再 play() 一次（对已播放元素是安全 no-op）
   try {
@@ -2938,19 +2947,41 @@ function heroVideoEnsurePlaying() {
   if (!CONFIG.heroVideoUrl || skip) { v.remove(); return; }
   v.muted = true;      // 显式静音（部分浏览器只认 property 不认 attribute）
   v.playsInline = true;
-  v.addEventListener('error', () => v.remove(), true);
-  const ready = () => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
-  v.addEventListener('loadeddata', ready);
-  v.addEventListener('canplay', ready);
-  // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
-  // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别
-  const startVideo = () => {
+
+  // 真正播起来才淡入：被策略拦截/加载失败时保持透明，只显示代码卡牌动画，
+  // 因此永远不会出现「静止画面 + 原生 ▶ 播放按钮」
+  const setOk = () => {
+    v.dataset.videoOk = '1';
+    v.classList.add('video-ready');
+  };
+  v.addEventListener('playing', setOk);
+  v.addEventListener('timeupdate', setOk, { once: true }); // 双保险：帧开始推进也算播起来了
+
+  // 加载出错不再删除元素（旧逻辑删除后整个会话视频消失 = 「第二次进去视频被吞」），
+  // 静默吞掉错误，等下一次进入首页/回到前台时自动重试
+  v.addEventListener('error', () => {}, true);
+
+  let lastLoadTs = 0;
+  const tryLoad = () => {
+    if (v.dataset.videoOk) return;
+    const now = Date.now();
+    if (now - lastLoadTs < 8000) return;  // 8 秒冷却：错误风暴/高频触发只执行一次
+    lastLoadTs = now;
     v.querySelector('source').src = CONFIG.heroVideoUrl;
     v.load();
-    // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
-    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
-    setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
+    // 加载后反复尝试播放（部分内核策略拦截需延迟/手势才放行），真正播起来为止
+    const t0 = Date.now();
+    const timer = setInterval(() => {
+      if (v.dataset.videoOk) { clearInterval(timer); return; }
+      try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+      if (Date.now() - t0 > 12000) clearInterval(timer);
+    }, 2000);
   };
+  window.heroVideoRetry = tryLoad;
+
+  // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
+  // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别
+  const startVideo = () => { tryLoad(); };
   if (document.readyState === 'complete') startVideo();
   else window.addEventListener('load', startVideo, { once: true });
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
