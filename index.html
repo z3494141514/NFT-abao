@@ -700,7 +700,7 @@ body{-webkit-tap-highlight-color:transparent}
     <!-- 品牌主视觉 -->
     <div class="hero">
       <!-- mp4 背景动画：CONFIG.heroVideoUrl 留空时自动移除，回退到代码卡牌动画 -->
-      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto"
+      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"
              aria-hidden="true">
         <source src="" type="video/mp4">
@@ -2993,14 +2993,14 @@ function heroVideoEnsurePlaying() {
   // 真正开始播放才显示视频：未播放前保持 opacity:0——iOS 暂停态的原生播放按钮随之不可见
   v.addEventListener('playing', () => { clearTimeout(stallTimer); v.classList.add('video-ready'); });
   // 首次访问：延迟 1.2 秒再加载视频——首秒带宽优先给页面本身（白屏消失的关键之一）；
-  // 之后的访问（sessionStorage 有标记）恢复即时加载，不影响老用户观感
+  // 再次访问：延迟 0.6 秒（让 ethers 与页面初始化先拿到带宽，视频稍后淡入，无感）。
   let firstVisit = true;
   try { firstVisit = !sessionStorage.getItem('dapp_visited'); } catch (e) {}
   if (firstVisit) {
     try { sessionStorage.setItem('dapp_visited', '1'); } catch (e) {}
     setTimeout(trySource, 1200);
   } else {
-    trySource();
+    setTimeout(trySource, 600);
   }
   // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次（不强制显示：显示交由 playing 事件）
   setTimeout(() => { heroVideoEnsurePlaying(); }, 1200);
