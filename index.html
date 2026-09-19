@@ -2789,9 +2789,14 @@ async function claimAll() {
       tokenIds.map(id => (id !== null ? poolC.getCardInfo(id).catch(() => null) : Promise.resolve(null)))
     );
     const ids = [];
+    // 池内有待兑换时：领取交易会先兑换 → 所有在线卡都会新增份额，
+    // 因此把「待领取>0 的卡 + 待领取=0 但在线且每卡份额≥1分 的卡」全部纳入批次，一次领干净。
+    const includeZeroActive = poolPendingTokens && !poolPendingTokens.isZero() && estPerCardNum >= 0.01;
     for (let i = 0; i < count; i++) {
       const info = infos[i];
-      if (tokenIds[i] !== null && info !== null && info[4].gt(0)) ids.push(tokenIds[i]);
+      if (tokenIds[i] === null || info === null) continue;
+      if (info[4].gt(0)) ids.push(tokenIds[i]);
+      else if (includeZeroActive && info[5]) ids.push(tokenIds[i]);
     }
 
     if (ids.length === 0) {
@@ -2871,6 +2876,31 @@ function heroVideoEnsurePlaying() {
 }
 
 (function initHeroVideo() {
+  // 媒体解锁手势监听：无条件注册（视频元素缺失/被移除时静默跳过）。
+  // 部分微信/TP 版本即使静音也要求「真实手势」才放行媒体播放，且极个别版本会把
+  // 首次点击当成「媒体解锁手势」吞掉。对策：pointerdown/touchstart/touchend/click
+  // 四级 capture 监听（比目标元素更早执行、覆盖各内核解锁时机差异），一旦真正进入
+  // 播放状态才移除——首次手势未成功放行时，保留到后续点击继续补救。
+  const unlockMedia = () => {
+    const hv = document.getElementById('heroVideo');
+    if (!hv) return;
+    try {
+      hv.muted = true;
+      const p = hv.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+    if (!hv.paused) {
+      window.removeEventListener('pointerdown', unlockMedia, true);
+      window.removeEventListener('touchstart', unlockMedia, true);
+      window.removeEventListener('touchend', unlockMedia, true);
+      window.removeEventListener('click', unlockMedia, true);
+    }
+  };
+  window.addEventListener('pointerdown', unlockMedia, { capture: true, passive: true });
+  window.addEventListener('touchstart', unlockMedia, { capture: true, passive: true });
+  window.addEventListener('touchend', unlockMedia, { capture: true, passive: true });
+  window.addEventListener('click', unlockMedia, { capture: true, passive: true });
+
   const v = document.getElementById('heroVideo');
   if (!v) return;
   const skip = (navigator.connection && navigator.connection.saveData)
@@ -2895,28 +2925,6 @@ function heroVideoEnsurePlaying() {
   } else {
     document.addEventListener('WeixinJSBridgeReady', wxAutoPlay, false);
   }
-  // 部分微信/TP 版本即使静音也要求「真实手势」才放行媒体播放，且极个别版本会把
-  // 首次点击当成「媒体解锁手势」吞掉。对策：pointerdown/touchstart 阶段（比 click 更早）
-  // 就先解锁视频——等 click 真正到来时媒体已放行，首次点击不再被平台占用。
-  // capture 阶段监听：即使页面元素 stopPropagation 也必定执行；且只有视频真正进入
-  // 播放状态后才移除监听——首次手势未成功放行时，保留到后续点击里继续补救。
-  const unlockMedia = () => {
-    const hv = document.getElementById('heroVideo');
-    if (!hv) return;
-    try {
-      hv.muted = true;
-      const p = hv.play();
-      if (p && p.catch) p.catch(() => {});
-    } catch (e) {}
-    if (!hv.paused) {
-      window.removeEventListener('pointerdown', unlockMedia, true);
-      window.removeEventListener('touchstart', unlockMedia, true);
-      window.removeEventListener('click', unlockMedia, true);
-    }
-  };
-  window.addEventListener('pointerdown', unlockMedia, { capture: true, passive: true });
-  window.addEventListener('touchstart', unlockMedia, { capture: true, passive: true });
-  window.addEventListener('click', unlockMedia, { capture: true, passive: true });
 })();
 
 document.querySelectorAll('.nav-item').forEach(btn => {
