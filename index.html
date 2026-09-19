@@ -75,7 +75,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .page.active{display:block}
 /* ---------- 品牌主视觉 Hero（AI 动画视频背景） ---------- */
 .hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 52px;margin-bottom:18px}
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .3s ease;pointer-events:none}
 .hero-video.video-ready{opacity:.9}
 .hero-overlay{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(5,7,13,.45),rgba(5,7,13,.15) 45%,rgba(5,7,13,.28))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
@@ -670,6 +670,49 @@ body{-webkit-tap-highlight-color:transparent}
              aria-hidden="true">
         <source src="" type="video/mp4">
       </video>
+      <script>
+      /* 次访视频预启动：视频标签一解析就用本地缓存（Cache Storage）blob 立即开播，
+         不等 ethers 与主脚本执行。首访（未播过 hvPlayed）直接跳过，由主脚本按「数据先出」流程接管；
+         主脚本会检测到已由这里接管（blob 源 / 已播放）并跳过重复加载。
+         注意：heroVideo-v1 与 hero.mp4 须与主脚本 CACHE_NAME / CONFIG.heroVideoUrl 保持一致，
+         视频文件更新时两处同步升版本号。 */
+      (function () {
+        var played = false;
+        try { played = localStorage.getItem('hvPlayed') === '1'; } catch (e) {}
+        if (!played || typeof caches === 'undefined') return;
+        var skip = (navigator.connection && navigator.connection.saveData) ||
+          (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (skip) return;
+        var v = document.getElementById('heroVideo');
+        if (!v) return;
+        caches.open('heroVideo-v1')
+          .then(function (c) { return c.match('hero.mp4'); })
+          .then(function (r) { return r ? r.blob() : null; })
+          .then(function (blob) {
+            if (!blob || !v || v.dataset.videoOk || !v.parentNode) return;
+            v.muted = true;
+            v.playsInline = true;
+            v.autoplay = false;
+            v.querySelector('source').src = URL.createObjectURL(blob);
+            v.load();
+            var setOk = function () {
+              v.dataset.videoOk = '1';
+              v.classList.add('video-ready');
+            };
+            v.addEventListener('playing', setOk);
+            v.addEventListener('timeupdate', setOk, { once: true });
+            v.addEventListener('canplaythrough', function () {
+              try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+            });
+            // blob 坏了：清掉源，让主脚本走网络源正常重试（自愈）
+            v.addEventListener('error', function () {
+              v.querySelector('source').removeAttribute('src');
+              v.removeAttribute('src');
+            }, true);
+          })
+          .catch(function () { /* 主脚本接管 */ });
+      })();
+      </script>
       <!-- AI 卡牌动画背景（代码实时渲染，无需视频文件） -->
       <div class="hero-scene" aria-hidden="true">
         <span class="float-card fc1"></span>
@@ -2967,34 +3010,49 @@ function heroVideoEnsurePlaying() {
     v.dataset.videoOk = '1';
     v.classList.add('video-ready');
     try { localStorage.setItem('hvPlayed', '1'); } catch (e) {} // 次访识别：播过即有缓存，下次零延迟
+    // 首访走网络源播成功后：后台把视频写入显式缓存，次访直接读本地 blob 秒播
+    // （正播着本地 blob 时不重复写缓存，避免每次进入都后台重下视频）
+    if (!blobUrlUsed && !(v.currentSrc && v.currentSrc.indexOf('blob:') === 0) && typeof caches !== 'undefined') {
+      caches.open(CACHE_NAME).then(c => c.add(CONFIG.heroVideoUrl)).catch(() => {});
+    }
   };
   v.addEventListener('playing', setOk);
   v.addEventListener('timeupdate', setOk, { once: true }); // 双保险：帧开始推进也算播起来了
 
   // 加载出错不再删除元素（旧逻辑删除后整个会话视频消失 = 「第二次进去视频被吞」），
-  // 静默吞掉错误，等下一次进入首页/回到前台时自动重试
-  v.addEventListener('error', () => {}, true);
+  // 静默吞掉错误，等下一次进入首页/回到前台时自动重试；
+  // 正在播本地 blob 缓存却出错 → 自动回落网络源
+  v.addEventListener('error', () => {
+    if (blobUrlUsed) {
+      blobUrlUsed = false;
+      setTimeout(() => { if (!v.dataset.videoOk) loadNetwork(); }, 500);
+    }
+  }, true);
+  // 缓冲完整（本地 blob 几乎立刻触发 / 网络整段就绪）→ 立即开播，不等 2 秒轮询
+  v.addEventListener('canplaythrough', () => {
+    if (!v.dataset.videoOk) {
+      try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    }
+  });
 
   let lastLoadTs = 0;
   let loadCount = 0;
-  const MAX_LOADS = 3;  // 每次页面生命周期最多重拉 3 次：拉不动就静默用卡牌动画，避免「反复加载」churn
-  const tryLoad = () => {
-    if (v.dataset.videoOk || loadCount >= MAX_LOADS) return;
-    const now = Date.now();
-    if (now - lastLoadTs < 8000) return;  // 8 秒冷却：错误风暴/高频触发只执行一次
-    lastLoadTs = now;
-    loadCount++;
-    // 重试加 ?r=N：绕开部分安卓内核缓存下来的坏响应
-    v.querySelector('source').src = CONFIG.heroVideoUrl + (loadCount > 1 ? '?r=' + loadCount : '');
-    v.preload = 'auto'; // 动态加载（load 事件之后）：尽量整段缓冲，不抢首屏
-    v.load();
-    // 内核无关的成功判定：安卓 X5 等对 playing/timeupdate 事件不可靠，
-    // 每 2 秒直接读元素状态（真正播起来 = 不暂停且时间在走）。
-    // 缓冲充足才开播：已缓冲 ≥ 时长 95%（≈整段就位）或 readyState>=4；
-    // 「边下边播」是安卓卡顿的根源；12 秒仍不达标才强制开播（慢网兜底，宁可见不永久等）
+  let blobUrlUsed = false;
+  let pathDecided = false;
+  const MAX_LOADS = 3;      // 每次页面生命周期最多重拉 3 次：拉不动就静默用卡牌动画，避免「反复加载」churn
+  const CACHE_NAME = 'heroVideo-v1'; // 显式视频缓存：安卓内核不缓存媒体文件，这层是次访零延迟的关键
+
+  // 内核无关的成功判定：安卓 X5 等对 playing/timeupdate 事件不可靠，
+  // 直接读元素状态（真正播起来 = 不暂停且时间在走）。
+  // 缓冲充足才开播：已缓冲 ≥ 时长 95%（≈整段就位）或 readyState>=4；
+  // 「边下边播」是安卓卡顿的根源；12 秒仍不达标才强制开播（慢网兜底，宁可见不永久等）
+  const startKick = () => {
     const t0 = Date.now();
-    const timer = setInterval(() => {
-      if (!v.paused && v.currentTime > 0) { setOk(); clearInterval(timer); return; }
+    let stopped = false;
+    const stop = () => { stopped = true; };
+    const tick = () => {
+      if (stopped) return;
+      if (!v.paused && v.currentTime > 0) { setOk(); stop(); return; }
       let bufferedOk = false;
       try {
         const b = v.buffered;
@@ -3007,8 +3065,57 @@ function heroVideoEnsurePlaying() {
       if (v.readyState >= 4 || bufferedOk || Date.now() - t0 > 12000) {
         try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
       }
-      if (Date.now() - t0 > 16000) clearInterval(timer);
-    }, 2000);
+      if (Date.now() - t0 > 16000) stop();
+    };
+    tick(); // 立即先查一次：blob/缓存场景秒播
+    const timer = setInterval(() => { if (stopped) clearInterval(timer); else tick(); }, 2000);
+  };
+
+  // 网络源：重试加 ?r=N 绕开部分安卓内核缓存下来的坏响应
+  const loadNetwork = () => {
+    pathDecided = true;
+    blobUrlUsed = false;
+    v.querySelector('source').src = CONFIG.heroVideoUrl + (loadCount > 1 ? '?r=' + loadCount : '');
+    v.preload = 'auto'; // 动态加载（load 事件之后）：尽量整段缓冲，不抢首屏
+    v.load();
+    startKick();
+  };
+
+  // 本地 blob 源：Cache Storage 命中 → 完全本地播放，零网络零延迟
+  const loadBlob = (blob) => {
+    pathDecided = true;
+    blobUrlUsed = true;
+    v.querySelector('source').src = URL.createObjectURL(blob);
+    v.load();
+    startKick();
+  };
+
+  const tryLoad = () => {
+    if (v.dataset.videoOk || loadCount >= MAX_LOADS) return;
+    // 视频标签后的预启动脚本已用本地 blob 接管：不重复加载（等它自己播起来或出错自愈）
+    if (v.currentSrc && v.currentSrc.indexOf('blob:') === 0) return;
+    const now = Date.now();
+    if (now - lastLoadTs < 8000) return;  // 8 秒冷却：错误风暴/高频触发只执行一次
+    lastLoadTs = now;
+    loadCount++;
+    pathDecided = false;
+    // 显式缓存优先（仅首次尝试查缓存）：命中 → 本地 blob 秒播；未命中/不支持 → 网络源
+    if (typeof caches !== 'undefined' && loadCount === 1) {
+      caches.open(CACHE_NAME)
+        .then(c => c.match(CONFIG.heroVideoUrl))
+        .then(r => (r ? r.blob() : null))
+        .then(blob => {
+          if (pathDecided) return;
+          pathDecided = true;
+          if (blob) loadBlob(blob); else loadNetwork();
+        })
+        .catch(() => { if (!pathDecided) { pathDecided = true; loadNetwork(); } });
+      // 缓存查询兜底：2.5 秒没出结果就直连网络（慢盘/兼容问题不拖住视频）
+      setTimeout(() => { if (!pathDecided) { pathDecided = true; loadNetwork(); } }, 2500);
+    } else {
+      pathDecided = true;
+      loadNetwork();
+    }
   };
   window.heroVideoRetry = tryLoad;
   window.heroVideoSetOk = setOk;  // 供 heroVideoEnsurePlaying 在事件不可靠内核上按状态补判
@@ -3017,7 +3124,7 @@ function heroVideoEnsurePlaying() {
   // 视频下载不再拖住进度条。
   // 首访（未播过）：等「第一轮链上数据渲染完成」（firstdata）+ 600ms 渲染峰值缓冲才启动视频，
   //   安卓上「数据先出、视频后出」且不卡顿；无已授权账户（nodata）/无钱包注入时提前启动，6 秒兜底。
-  // 次访（播过=有缓存）：不等数据，load 一到立即加载播放 → 视频零延迟
+  // 次访（播过=本地有缓存）：脚本一执行完立即启动（不等 load 事件），缓存命中 → 毫秒级开播
   let playedBefore = false;
   try { playedBefore = localStorage.getItem('hvPlayed') === '1'; } catch (e) {}
 
@@ -3033,8 +3140,13 @@ function heroVideoEnsurePlaying() {
       setTimeout(go, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后启动
     }
   };
-  if (document.readyState === 'complete') startVideo();
-  else window.addEventListener('load', startVideo, { once: true });
+  if (playedBefore) {
+    startVideo();                                  // 次访：不等 load 事件，立即启动
+  } else if (document.readyState === 'complete') {
+    startVideo();
+  } else {
+    window.addEventListener('load', startVideo, { once: true });
+  }
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
