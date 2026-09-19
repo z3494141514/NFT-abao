@@ -2286,10 +2286,11 @@ const estTotalText = (userCount) => (estPerCardNum > 0 && userCount > 0)
 function applyCardsAgg(agg) {
   uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
   uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
-  // 真实待领取 + 待兑换预计（待兑换部分会在下次兑换时追加到每一张卡）
+  // 真实待领取与待兑换预计【合并】为一个「预计 X U」总数（待兑换部分下次兑换时追加入账）
   const pStr = agg.pending > 0
-    ? (agg.pending / 100).toFixed(2) + ' U'
-      + (estPerCardNum > 0 && (agg.count || 0) > 0 ? ' +预计' + fmtUval(estPerCardNum * agg.count) + ' U' : '')
+    ? ((estPerCardNum > 0 && (agg.count || 0) > 0)
+        ? '预计 ' + fmtUval(agg.pending / 100 + estPerCardNum * agg.count) + ' U'
+        : (agg.pending / 100).toFixed(2) + ' U')
     : estTotalText(agg.count || 0);
   uiText(DOM.cardsTotalPending, pStr);
   uiText(DOM.myTotalPending, pStr);
@@ -2384,7 +2385,7 @@ function cardRowHtml(r) {
         </div>
         <div class="metric metric-gold">
           <span class="metric-label">${t('cardPending')}</span>
-          <span class="metric-value">${pndC > 0 ? fmtU(pndC) + (estPerCardText ? ' +预计' + estPerCardText : '') : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : '预计…'))}</span>
+          <span class="metric-value">${pndC > 0 ? (estPerCardText ? '预计 ' + fmtUval(pndC / 100 + estPerCardNum) + ' U' : fmtU(pndC)) : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : '预计…'))}</span>
         </div>
       </div>
       <div class="exit-progress">
@@ -2421,7 +2422,7 @@ function patchCardDom(r) {
     mvs[0].innerText = (accC / 100).toFixed(2) + ' U';
     mvs[1].innerText = (clmC / 100).toFixed(2) + ' U';
     mvs[2].innerText = pndC > 0
-      ? (pndC / 100).toFixed(2) + ' U' + (estPerCardText ? ' +预计' + estPerCardText : '')
+      ? (estPerCardText ? '预计 ' + fmtUval(pndC / 100 + estPerCardNum) + ' U' : (pndC / 100).toFixed(2) + ' U')
       : (poolPendingTokens.isZero() ? '0.00 U' : (estPerCardText ? '预计 ' + estPerCardText : '预计…'));
   }
   const fill = card.querySelector('.exit-fill');
