@@ -229,6 +229,11 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
           <div class="data-row"><span class="data-label" id="adminPoolPendingLabel">待兑换</span><span class="data-value" id="adminPoolPending"></span></div>
           <div class="data-row"><span class="data-label">自动兑换阈值</span><span class="data-value" id="adminSwapThreshold"></span></div>
           <div class="data-row"><span class="data-label">最低兑换价</span><span class="data-value" id="adminMinSwapPriceDisplay">--</span></div>
+          <div class="data-row"><span class="data-label">兑换通道</span><span class="data-value" id="adminPoolSwapGate">--</span></div>
+          <div class="data-row"><span class="data-label">TWAP 护航宽限</span><span class="data-value" id="adminPoolGrace">--</span></div>
+          <div class="data-row"><span class="data-label">TWAP 容忍带</span><span class="data-value" id="adminPoolGuard">--</span></div>
+          <div class="mt12"><input type="number" id="adminGraceInput" class="input" placeholder="宽限秒数（600 ~ 604800，默认 1800 = 30 分钟）"><button id="adminGraceBtn" class="btn btn-ghost btn-sm mt8">设置宽限</button></div>
+          <div class="mt12"><input type="number" id="adminGuardInput" class="input" placeholder="容忍基点（0 ~ 9900；300 = 3% 最严，7000 = 70% 仅拦闪崩）"><button id="adminGuardBtn" class="btn btn-ghost btn-sm mt8">设置容忍带</button></div>
           <div class="data-row"><span class="data-label">金本位负债</span><span class="data-value" id="adminPoolLiability"></span></div>
           <div class="data-row"><span class="data-label">超额资金</span><span class="data-value" id="adminPoolExcess"></span></div>
           <div class="data-row"><span class="data-label">暂停状态</span><span class="data-value" id="adminPoolPaused"></span></div>
@@ -238,7 +243,7 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
             <button id="adminPoolUnpauseBtn" class="btn btn-ghost btn-sm">恢复领取</button>
           </div>
           <div class="flex mt12">
-            <button id="adminSwapBtn" class="btn btn-ghost btn-sm">兑换手续费</button>
+            <button id="adminSwapBtn" class="btn btn-ghost btn-sm">强制兑换手续费（无拦截）</button>
             <button id="adminSweepBtn" class="btn btn-ghost btn-sm">清理出局</button>
             <div class="mt12"><input type="text" id="adminWithdrawExcessToInput" class="input" placeholder="超额收款地址（留空 = 当前钱包）"><button id="adminWithdrawExcessBtn" class="btn btn-danger btn-sm mt8">提取超额</button></div>
             <button id="adminPoolLockCoreBtn" class="btn btn-danger btn-sm">锁定核心</button>
@@ -428,11 +433,17 @@ const ABIS = {
     'function nft() view returns (address)',
     'function router() view returns (address)',
     'function swapFeesToUsdt()',
+    'function adminForceSwap()',
     'function withdrawStrandedTokens(address)',
     'function swapThreshold() view returns (uint256)',
     'function setSwapThreshold(uint256)',
     'function minSwapPrice() view returns (uint256)',
     'function setMinSwapPrice(uint256)',
+    'function pendingSince() view returns (uint256)',
+    'function swapGracePeriod() view returns (uint256)',
+    'function setSwapGracePeriod(uint256)',
+    'function twapGuardBps() view returns (uint256)',
+    'function setTwapGuardBps(uint256)',
     'function updateCore(address, address, address, address, address)'
   ],
   oracle: [
@@ -482,7 +493,9 @@ const DOM = {
   adminPokeBtn: $('adminPokeBtn'),
   adminMinLiqInput: $('adminMinLiqInput'), adminSetMinLiqBtn: $('adminSetMinLiqBtn'),
   adminLockOracleBtn: $('adminLockOracleBtn'),
-  adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolPendingLabel: $('adminPoolPendingLabel'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'),
+  adminPoolBlock: $('adminPoolBlock'), adminPoolBalance: $('adminPoolBalance'), adminPoolPending: $('adminPoolPending'), adminPoolPendingLabel: $('adminPoolPendingLabel'), adminPoolLiability: $('adminPoolLiability'), adminPoolExcess: $('adminPoolExcess'), adminPoolSwapGate: $('adminPoolSwapGate'), adminPoolGrace: $('adminPoolGrace'), adminPoolGuard: $('adminPoolGuard'),
+  adminGraceInput: $('adminGraceInput'), adminGraceBtn: $('adminGraceBtn'),
+  adminGuardInput: $('adminGuardInput'), adminGuardBtn: $('adminGuardBtn'),
   adminSwapBtn: $('adminSwapBtn'), adminWithdrawTttBtn: $('adminWithdrawTttBtn'), adminWithdrawTttToInput: $('adminWithdrawTttToInput'),
   adminSwapThreshold: $('adminSwapThreshold'), adminSwapThresholdInput: $('adminSwapThresholdInput'), adminSetSwapThresholdBtn: $('adminSetSwapThresholdBtn'),
   adminMinSwapPriceInput: $('adminMinSwapPriceInput'), adminSetMinSwapPriceBtn: $('adminSetMinSwapPriceBtn'),
@@ -556,6 +569,14 @@ const fmtTime = (ts) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 const shortAddr = (a) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '--';
+/* 秒数人性化：X 分 Y 秒 / X 小时 Y 分 */
+const fmtSec = (s) => {
+  const n = Number(s);
+  if (!Number.isFinite(n) || n < 0) return '--';
+  if (n >= 3600) return `${Math.floor(n / 3600)} 小时 ${Math.floor((n % 3600) / 60)} 分`;
+  if (n >= 60) return `${Math.floor(n / 60)} 分 ${n % 60} 秒`;
+  return `${n} 秒`;
+};
 const parseError = (e) => {
   const m = ((e && (e.reason || e.message || e.errorName)) || '').toLowerCase();
   if (m.includes('user rejected') || m.includes('user denied')) return '您取消了交易';
@@ -909,8 +930,13 @@ async function loadAdminData() {
     try {
       const pt = await poolC.pendingSwapTokens();
       pendingTtt = fmtAmt(pt, tokenDecimals);
+      let hint = '';
+      try {
+        const st = await poolC.swapThreshold();
+        if (pt.gte(st)) hint = ' · ⚠️ 已达阈值（下次买入自动兑换，或手动点「兑换手续费」）';
+      } catch (e) { /* ignore */ }
+      DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol + hint;
     } catch (e) { /* ignore */ }
-    DOM.adminPoolPending.innerText = pendingTtt + ' ' + tokenSymbol;
     const excess = await poolC.excessTokens();
     DOM.adminPoolExcess.innerText = fmtAmt(excess, usdtDecimals) + ' U';
     try {
@@ -921,6 +947,49 @@ async function loadAdminData() {
       const mp = await poolC.minSwapPrice();
       DOM.adminMinSwapPriceDisplay.innerText = mp.isZero() ? '已关闭（无下限）' : (Number(mp) / 1e8).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U/枚';
     } catch (e) { DOM.adminMinSwapPriceDisplay.innerText = '--'; }
+    // 兑换通道状态：现货 vs TWAP 锚定线（容忍带可调）+ 宽限阀（持续阴跌时宽限到期自动放行）
+    try {
+      const pd = await oracleC.getPriceData();
+      const lpInfo = await tokenC.getLpPairInfo();
+      let graceTxt = '--';
+      try {
+        const gp = (await poolC.swapGracePeriod()).toNumber();
+        const ps = (await poolC.pendingSince()).toNumber();
+        DOM.adminPoolGrace.innerText = ps === 0 ? fmtSec(gp) : `${fmtSec(gp)} · 本批积压已 ${fmtSec(Math.floor(Date.now() / 1000) - ps)}`;
+      } catch (e) { DOM.adminPoolGrace.innerText = '--（旧版合约无宽限阀）'; }
+      let guard = 7000;
+      try { guard = (await poolC.twapGuardBps()).toNumber(); } catch (e) {}
+      const tol = (10000 - guard) / 100;
+      DOM.adminPoolGuard.innerText = guard === 0
+        ? '已关闭（不做 TWAP 拦截）'
+        : `${tol.toFixed(guard % 100 === 0 ? 0 : 1)}% 容忍（现货 < 5 分钟均价 × ${(tol / 100).toFixed(2)} 才拦）`;
+      if (pd[0].gt(0) && lpInfo[0] && lpInfo[0] !== ZERO_ADDR) {
+        const pc = new ethers.Contract(lpInfo[0], [
+          'function getReserves() view returns (uint112, uint112, uint32)',
+          'function token0() view returns (address)'
+        ], readProvider);
+        const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
+        const tokSide = String(t0).toLowerCase() === CONFIG.contracts.token.toLowerCase();
+        const tokRes = tokSide ? res[0] : res[1];
+        const usdtRes = tokSide ? res[1] : res[0];
+        if (tokRes.gt(0) && usdtRes.gt(0)) {
+          const spot = ethers.BigNumber.from(usdtRes).mul(ethers.BigNumber.from(10).pow(8)).div(tokRes);
+          // 拦截线 = 均价 × (10000 - 容忍基点)/10000（预言机 p 含 3% 修正，经 9700 逆推）
+          const threshold = pd[0].mul(10000 - guard).div(9700);
+          if (guard === 0 || spot.gte(threshold)) {
+            DOM.adminPoolSwapGate.innerText = '✅ 自动通道畅通（现货 ≥ 拦截线）；管理员「强制兑换」始终无拦截';
+          } else {
+            const ps = (await poolC.pendingSince().catch(() => ethers.BigNumber.from(0))).toNumber();
+            const gp = (await poolC.swapGracePeriod().catch(() => ethers.BigNumber.from(1800))).toNumber();
+            const now = Math.floor(Date.now() / 1000);
+            const left = ps === 0 ? gp : Math.max(0, gp - (now - ps));
+            DOM.adminPoolSwapGate.innerText = left > 0
+              ? `⏳ 自动通道护航中（现货 ${(Number(spot) / 1e8).toFixed(4)}U < 拦截线 ${(Number(threshold) / 1e8).toFixed(4)}U；最迟 ${fmtSec(left)} 后宽限放行）；管理员「强制兑换」无拦截`
+              : '✅ 宽限阀已触发（自动兑换放行）；管理员「强制兑换」始终无拦截';
+          }
+        } else { DOM.adminPoolSwapGate.innerText = '--（池子无流动性）'; }
+      } else { DOM.adminPoolSwapGate.innerText = '--'; }
+    } catch (e) { DOM.adminPoolSwapGate.innerText = '--'; }
     const poolPaused = await poolC.paused();
     DOM.adminPoolPaused.innerText = poolPaused ? '⏸ 已暂停（禁止领取）' : '▶ 运行中';
     DOM.adminPoolPauseBtn.disabled = poolPaused;
@@ -1695,11 +1764,47 @@ async function adminSweep() {
 }
 
 async function adminSwap() {
+  if (!confirm('确认强制兑换全部积压手续费为 USDT？\n\n· 管理员强制兑换：不做任何价格拦截（跳过最低价地板与 TWAP 锚定）\n· 仅保留 5% 执行滑点保护\n· 兑换所得 100% 按在线卡牌均分（含宽限阀自动放行后的正常路径）')) return;
   showLoading();
   try {
-    const tx = await poolC.connect(signer).swapFeesToUsdt();
+    const tx = await poolC.connect(signer).adminForceSwap();
     await waitForTx(tx);
-    showToast('手续费已兑换为 USDT 并分发', 'success');
+    showToast('手续费已强制兑换为 USDT 并分发', 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSetGrace() {
+  const v = Number(DOM.adminGraceInput.value);
+  if (!Number.isFinite(v) || v < 600 || v > 604800) {
+    showToast('宽限须在 600 ~ 604800 秒之间（10 分钟 ~ 7 天）', 'error');
+    return;
+  }
+  if (!confirm(`确认把 TWAP 护航宽限设为 ${fmtSec(v)}？\n积压手续费超过该时长后，即使现货价低于锚定线也会放行兑换（分红活性兜底）。`)) return;
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).setSwapGracePeriod(v);
+    await waitForTx(tx);
+    showToast(`宽限已设为 ${fmtSec(v)}`, 'success');
+    loadAll();
+  } catch (e) { showToast(parseError(e), 'error'); }
+  finally { hideLoading(); }
+}
+
+async function adminSetGuard() {
+  const v = Number(DOM.adminGuardInput.value);
+  if (!Number.isFinite(v) || v < 0 || v > 9900) {
+    showToast('容忍基点须在 0 ~ 9900 之间（300 = 3% 最严，7000 = 70% 仅拦闪崩，0 = 关闭锚定）', 'error');
+    return;
+  }
+  const tol = v === 0 ? '关闭锚定' : `${(10000 - v) / 100}% 容忍（现货 < 均价 × ${((10000 - v) / 10000).toFixed(2)} 才拦）`;
+  if (!confirm(`确认把 TWAP 锚定容忍带设为：${tol}？\n仅约束自动兑换路径；管理员「强制兑换」不受限。`)) return;
+  showLoading();
+  try {
+    const tx = await poolC.connect(signer).setTwapGuardBps(v);
+    await waitForTx(tx);
+    showToast(`容忍带已设为 ${v === 0 ? '关闭' : (10000 - v) / 100 + '%'}`, 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
@@ -1884,6 +1989,8 @@ DOM.adminReleaseBurnedBtn.addEventListener('click', throttle(adminReleaseBurned,
 DOM.adminBurnBtn.addEventListener('click', throttle(adminBurnCard, 2000));
 DOM.adminSweepBtn.addEventListener('click', throttle(adminSweep, 1500));
 DOM.adminSwapBtn.addEventListener('click', throttle(adminSwap, 1500));
+DOM.adminGraceBtn.addEventListener('click', throttle(adminSetGrace, 1500));
+DOM.adminGuardBtn.addEventListener('click', throttle(adminSetGuard, 1500));
 DOM.adminWithdrawTttBtn.addEventListener('click', throttle(adminWithdrawTtt, 2000));
 DOM.adminSetSwapThresholdBtn.addEventListener('click', throttle(adminSetSwapThreshold, 1500));
 DOM.adminSetMinSwapPriceBtn.addEventListener('click', throttle(adminSetMinSwapPrice, 1500));
