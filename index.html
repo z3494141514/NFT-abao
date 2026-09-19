@@ -665,7 +665,7 @@ body{-webkit-tap-highlight-color:transparent}
     <!-- 品牌主视觉 -->
     <div class="hero">
       <!-- mp4 背景动画：CONFIG.heroVideoUrl 留空时自动移除，回退到代码卡牌动画 -->
-      <video class="hero-video" id="heroVideo" autoplay muted loop playsinline preload="metadata"
+      <video class="hero-video" id="heroVideo" muted loop playsinline preload="metadata"
              webkit-playsinline x5-playsinline x5-video-player-type="h5" x5-video-player-fullscreen="false"
              aria-hidden="true">
         <source src="" type="video/mp4">
@@ -1727,7 +1727,7 @@ async function connectWallet() {
   }
 }
 
-/* 只读 RPC 轮换器：串行尝试、单节点 2 秒超时、失败自动换下一个（最多 5 个）。
+/* 只读 RPC 轮换器：串行尝试、单节点 6 秒超时、失败自动换下一个（最多 5 个）。
    不用 ethers 的 FallbackProvider——它会向全部节点广播每个请求，公共节点极易触发限流导致全站卡死。
    节点顺序 = [钱包注入节点, 公共节点...]：钱包能连上 BSC 说明该 RPC 在当前网络可达，
    优先复用钱包通道（对国内用户最稳），失败再轮换公共节点 */
@@ -1740,7 +1740,7 @@ function createReadProvider(providers) {
   };
   const withTimeout = (p) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 2000))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 6000))
   ]);
   return new Proxy(current, {
     get(target, prop) {
@@ -1802,7 +1802,7 @@ async function setupProvider(address) {
   estPerCardText = '';
   estPerCardNum = 0;
 
-  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，2 秒超时/失败自动换）
+  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，6 秒超时/失败自动换）
   // 签名交易仍走钱包注入的 signer
   const readNodes = [provider].concat(
     CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
@@ -1971,6 +1971,11 @@ async function loadAll() {
     // 团队数据量大（逐地址查询），改为「打开团队页时才加载」，不再随 10 秒轮询
     await Promise.all([loadStats(), loadUser(), loadCards()]);
     setHeroTravel(); // 绑定态/预售态切换会改变 Hero 高度，重算背景卡牌飞行距离
+    // 首轮数据渲染完成信号：背景视频等它出现后再启动（安卓「数据先出、视频后出」）
+    if (!window.__firstDataDone) {
+      window.__firstDataDone = true;
+      try { window.dispatchEvent(new Event('firstdata')); } catch (err) {}
+    }
   } catch (e) {
     console.warn('数据加载失败（请检查合约地址配置）', e);
   }
@@ -2897,7 +2902,8 @@ function heroVideoEnsurePlaying() {
   // 从未成功播放过（含首次加载失败被吞的场景）：
   // 已加载完成 → 直接重试 play（无需重新拉流）；未加载/出错 → 触发带 8 秒冷却的重拉
   if (!(hv.dataset && hv.dataset.videoOk)) {
-    if (hv.readyState >= 2) {
+    // 缓冲足够（readyState>=3，已有未来数据）才补播，薄缓冲时交给带冷却的重拉
+    if (hv.readyState >= 3) {
       try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
       // 事件不可靠的内核（安卓 X5）：300ms 后按元素状态补判，真播起来了就淡入
       setTimeout(() => {
@@ -2953,6 +2959,7 @@ function heroVideoEnsurePlaying() {
   if (!CONFIG.heroVideoUrl || skip) { v.remove(); return; }
   v.muted = true;      // 显式静音（部分浏览器只认 property 不认 attribute）
   v.playsInline = true;
+  v.autoplay = false;  // 关掉原生自动播放：开播时机完全由 JS 控制（缓冲足够才播，避免边下边播卡顿）
 
   // 真正播起来才淡入：被策略拦截/加载失败时保持透明，只显示代码卡牌动画，
   // 因此永远不会出现「静止画面 + 原生 ▶ 播放按钮」
@@ -2978,14 +2985,26 @@ function heroVideoEnsurePlaying() {
     loadCount++;
     // 重试加 ?r=N：绕开部分安卓内核缓存下来的坏响应
     v.querySelector('source').src = CONFIG.heroVideoUrl + (loadCount > 1 ? '?r=' + loadCount : '');
+    v.preload = 'auto'; // 动态加载（load 事件之后）：尽量整段缓冲，不抢首屏
     v.load();
     // 内核无关的成功判定：安卓 X5 等对 playing/timeupdate 事件不可靠，
-    // 每 2 秒直接读元素状态（真正播起来 = 不暂停且时间在走），同时不断尝试 play
+    // 每 2 秒直接读元素状态（真正播起来 = 不暂停且时间在走）。
+    // 缓冲充足才开播（readyState>=4 或已缓冲 >= min(时长,3) 秒）：「边下边播」是
+    // 安卓第二次进入（部分缓存+区间补拉）时一卡一卡的根源；8 秒不达标强制开播兜底
     const t0 = Date.now();
     const timer = setInterval(() => {
       if (!v.paused && v.currentTime > 0) { setOk(); clearInterval(timer); return; }
-      try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
-      if (Date.now() - t0 > 12000) clearInterval(timer);
+      let bufferedOk = false;
+      try {
+        const b = v.buffered;
+        if (b && b.length > 0) {
+          bufferedOk = (b.end(b.length - 1) - b.start(0)) >= Math.min((isFinite(v.duration) && v.duration > 0) ? v.duration : 99, 3);
+        }
+      } catch (e) {}
+      if (v.readyState >= 4 || bufferedOk || Date.now() - t0 > 8000) {
+        try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+      }
+      if (Date.now() - t0 > 16000) clearInterval(timer);
     }, 2000);
   };
   window.heroVideoRetry = tryLoad;
@@ -2993,9 +3012,16 @@ function heroVideoEnsurePlaying() {
 
   // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
   // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别。
-  // 再延后 1 秒启动：让钱包自动连接 + 链上数据请求先发出去，安卓上「数据先出、视频后出」，
-  // 次访时数据本身就快，1 秒对视频无感
-  const startVideo = () => { setTimeout(tryLoad, 1000); };
+  // 数据优先：再等「第一轮链上数据渲染完成」（firstdata 信号，由 loadAll 发出）才启动视频，
+  // 安卓上「数据先出、视频后出」；无已授权账户（nodata）/ 无钱包注入时提前启动，6 秒兜底
+  const startVideo = () => {
+    let started = false;
+    const go = () => { if (!started) { started = true; tryLoad(); } };
+    window.addEventListener('firstdata', go, { once: true });
+    window.addEventListener('nodata', go, { once: true });
+    if (!window.ethereum) setTimeout(go, 1500); // 无钱包访客：没有数据可等，1.5 秒后启动
+    setTimeout(go, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后启动
+  };
   if (document.readyState === 'complete') startVideo();
   else window.addEventListener('load', startVideo, { once: true });
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
@@ -3169,8 +3195,13 @@ window.addEventListener('load', async () => {
       if (accounts.length > 0) {
         await setupProvider(accounts[0]);
         checkInviteBindModal();
+      } else {
+        // 无已授权账户：不会有数据可等，直接放行背景视频
+        try { window.dispatchEvent(new Event('nodata')); } catch (err) {}
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      try { window.dispatchEvent(new Event('nodata')); } catch (err) {}
+    }
 
     window.ethereum.on('accountsChanged', (accs) => {
       if (accs.length > 0) {
