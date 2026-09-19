@@ -698,6 +698,14 @@ body{-webkit-tap-highlight-color:transparent}
             v.addEventListener('canplaythrough', function () {
               try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
             });
+            // iOS 自动播放策略更严：单次 play() 被拒后持续重试（最多 5 次），
+            // 一旦放行立刻播起来；主脚本的监督器也会接力重试
+            var tries = 0;
+            var retry = setInterval(function () {
+              if (v.dataset.videoOk) { clearInterval(retry); return; }
+              try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+              if (++tries > 4) clearInterval(retry);
+            }, 1000);
             // blob 坏了：清掉源，让主脚本走网络源正常重试（自愈）
             v.addEventListener('error', function () {
               v.querySelector('source').removeAttribute('src');
@@ -3058,15 +3066,17 @@ function heroVideoEnsurePlaying() {
   const tryLoad = () => {
     if (v.dataset.videoOk || loadCount >= MAX_LOADS) return;
     playAllowed = true; // 完整路径 = 允许开播
-    // 视频标签后的预启动脚本已用本地 blob 接管：不重复加载（等它自己播起来或出错自愈）
-    if (v.currentSrc && v.currentSrc.indexOf('blob:') === 0) return;
+    // 视频标签后的预启动脚本已用本地 blob 接管：不重复加载，
+    // 但接上监督器持续尝试开播（iOS 自动播放受限时，一直 retry 到放行为止）
+    if (v.currentSrc && v.currentSrc.indexOf('blob:') === 0) { startKick(); return; }
     const now = Date.now();
     if (now - lastLoadTs < 8000) return;  // 8 秒冷却：错误风暴/高频触发只执行一次
     lastLoadTs = now;
     loadCount++;
     pathDecided = false;
-    // 显式缓存优先（仅首次尝试查缓存）：命中 → 本地 blob 秒播；未命中/不支持 → 网络源
-    if (typeof caches !== 'undefined' && loadCount === 1) {
+    // 显式缓存优先（仅次访首次尝试查缓存）：命中 → 本地 blob 秒播；未命中/不支持 → 网络源。
+    // 首访必然未命中，跳过查询（iOS 首次 caches.open 秒级延迟，只会拖慢下载起点）
+    if (typeof caches !== 'undefined' && loadCount === 1 && playedBefore) {
       caches.open(CACHE_NAME)
         .then(c => c.match(CONFIG.heroVideoUrl))
         .then(r => (r ? r.blob() : null))
@@ -3084,29 +3094,17 @@ function heroVideoEnsurePlaying() {
     }
   };
 
-  // 首访并行下载：只下载不开播（kick=false），等数据期间把视频缓冲好
+  // 首访并行下载：只下载不开播（kick=false），等数据期间把视频缓冲好。
+  // 首访不查缓存（必然未命中）：iOS Safari 首次 caches.open 可达秒级延迟，
+  // 查了只会把下载起点拖后 2~3 秒（安卓毫秒级、iOS 很慢的根源）→ 直接走网络源
   const startDownload = () => {
     if (v.dataset.videoOk || v.currentSrc || loadCount >= MAX_LOADS) return;
     const now = Date.now();
     if (now - lastLoadTs < 8000) return;
     lastLoadTs = now;
     loadCount++;
-    pathDecided = false;
-    if (typeof caches !== 'undefined') {
-      caches.open(CACHE_NAME)
-        .then(c => c.match(CONFIG.heroVideoUrl))
-        .then(r => (r ? r.blob() : null))
-        .then(blob => {
-          if (pathDecided) return;
-          pathDecided = true;
-          if (blob) loadBlob(blob, false); else loadNetwork(false);
-        })
-        .catch(() => { if (!pathDecided) { pathDecided = true; loadNetwork(false); } });
-      setTimeout(() => { if (!pathDecided) { pathDecided = true; loadNetwork(false); } }, 2500);
-    } else {
-      pathDecided = true;
-      loadNetwork(false);
-    }
+    pathDecided = true;
+    loadNetwork(false);
   };
 
   // 开播：已有源（预下载中/就绪）→ 直接监督开播；无源 → 走完整路径
