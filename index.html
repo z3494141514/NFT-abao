@@ -1318,7 +1318,7 @@ const I18N = {
     modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
     cardActive:'分红持续分发中…', cardWaiting:'等待开盘中…', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算', cardProgress:'分红进度', cardCycle:'三倍出局 · 循环补位',
     cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取', cardCollector:'您的专属卡牌',
-    cardPending:'待领取', cardClaim:'领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取', cardSeries:'CC CARD',
+    cardPending:'待领取', cardClaim:'领取分红', cardClaimSwap:'兑换并领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取', cardSeries:'CC CARD',
     calc:'计算中…',
     noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
     toastBusy:'操作太频繁，请稍后再试', toastConnect:'请先连接钱包', toastDisconnected:'已断开钱包',
@@ -1394,7 +1394,7 @@ const I18N = {
     modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
     cardActive:'Earning', cardWaiting:'Awaiting Launch…', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit', cardProgress:'Dividend Progress', cardCycle:'3× Exit · Seat Renewed',
     cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed', cardCollector:'Your Exclusive Card',
-    cardPending:'Pending', cardClaim:'Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim', cardSeries:'CC CARD',
+    cardPending:'Pending', cardClaim:'Claim', cardClaimSwap:'Swap & Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim', cardSeries:'CC CARD',
     calc:'Calculating…',
     noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
     toastBusy:'Too frequent — try again shortly', toastConnect:'Connect wallet first', toastDisconnected:'Wallet disconnected',
@@ -1483,6 +1483,9 @@ let remainingSlots = 520;         // 剩余可购买名额
 let isPreLaunch = false;          // 是否开盘前（USDT 预售模式）
 let launchedNow = false;          // 是否已开盘（卡面徽标：等待开盘中… 黄色 / 分红持续分发中… 绿色）
 let usdtContract = null;          // USDT 合约实例
+let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
+let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
+let estPerCardText = '';          // 每张卡预计可分（≈X U）
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
 let pendingRef = '';              // 邀请链接带入的待绑定上级
 let teamPageNo = 1;               // 团队列表当前页（每页 5 个，逐页懒加载）
@@ -1883,6 +1886,9 @@ function disconnectWallet() {
   remainingSlots = 520;
   isPreLaunch = false;
   preLaunchRemain = 220;
+  poolPendingTokens = ethers.BigNumber.from(0);
+  estPendingText = '';
+  estPerCardText = '';
   DOM.buyModeBadge.innerText = '100 U / ' + t('unitCard'); // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
@@ -1959,6 +1965,37 @@ async function loadStats() {
   uiText(DOM.activeCardsDisplay, poolOk ? `${activeCards.toString()} / 520` : '-- / 520');
   remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
   uiText(DOM.poolBalanceU, t('pendingSwap') + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol);
+  poolPendingTokens = pendingSwap !== null ? pendingSwap : ethers.BigNumber.from(0); // 兑换引信：待兑换>0 时允许点领取
+  // 预计收益展示：待兑换代币 × 现货价（约数，不含滑点；仅用于激励点击领取/兑换）
+  estPendingText = '';
+  estPerCardText = '';
+  if (pendingSwap !== null && pendingSwap.gt(0)) {
+    try {
+      const lpInfo = await tokenC.getLpPairInfo();
+      if (lpInfo[0] && lpInfo[0] !== ZERO_ADDR) {
+        const pc = new ethers.Contract(lpInfo[0], [
+          'function getReserves() view returns (uint112, uint112, uint32)',
+          'function token0() view returns (address)'
+        ], readProvider);
+        const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
+        const tokSide = String(t0).toLowerCase() === CONFIG.contracts.token.toLowerCase();
+        const tokRes = tokSide ? res[0] : res[1];
+        const usdtRes = tokSide ? res[1] : res[0];
+        if (tokRes.gt(0) && usdtRes.gt(0)) {
+          // 现货价（U/枚，18 位）× 积压数量 → 预计 U
+          const estWei = usdtRes.mul(pendingSwap).div(tokRes);
+          const estU = Number(ethers.utils.formatEther(estWei));
+          const fmtU = (u) => (u >= 0.01 ? u.toFixed(2) : u.toFixed(4)).replace(/0+$/, '').replace(/\.$/, '');
+          if (estU > 0) {
+            estPendingText = fmtU(estU) + ' U';
+            const n = activeCards.gt(0) ? Number(activeCards.toString()) : 1;
+            estPerCardText = fmtU(estU / n) + ' U';
+            uiText(DOM.poolBalanceU, t('pendingSwap') + fmtAmt(pendingSwap, tokenDecimals) + ' ' + tokenSymbol + ' ≈' + estPendingText);
+          }
+        }
+      }
+    } catch (e) { /* 估算失败静默：不影响主流程 */ }
+  }
   uiText(DOM.buyRemainingSlots, remainingSlots + ' / 520');
 
   // 开盘状态
@@ -2190,8 +2227,11 @@ const clampCents = (v) => {
 function applyCardsAgg(agg) {
   uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
   uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
-  uiText(DOM.cardsTotalPending, (agg.pending / 100).toFixed(2) + ' U');
-  uiText(DOM.myTotalPending, (agg.pending / 100).toFixed(2) + ' U');
+  // 待领取为 0 且池内有待兑换时：附「预计」提示，引导用户点「兑换并领取」触发兑换
+  const pStr = (agg.pending / 100).toFixed(2) + ' U';
+  const hint = agg.pending === 0 && estPerCardText ? ' · 预计 ' + estPerCardText : '';
+  uiText(DOM.cardsTotalPending, pStr + hint);
+  uiText(DOM.myTotalPending, pStr + hint);
 }
 
 /* 全量汇总（慢路径，后台执行）：收益总览需要全卡合计，逐卡读取不阻塞列表渲染。
@@ -2283,8 +2323,8 @@ function cardRowHtml(r) {
           <span class="progress-txt">${progressTxt}</span>
         </div>
       </div>
-      <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero ? 'disabled' : ''}>
-        ${pendingZero ? t('cardNone') : t('cardClaim')}
+      <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero && poolPendingTokens.isZero() ? 'disabled' : ''}>
+        ${pendingZero ? (poolPendingTokens.isZero() ? t('cardNone') : t('cardClaimSwap') + (estPerCardText ? ' ≈' + estPerCardText : '')) : t('cardClaim')}
       </button>
     </div>`;
 }
@@ -2320,8 +2360,11 @@ function patchCardDom(r) {
   const btn = card.querySelector('.claim-one-btn');
   if (btn) {
     const zero = r.pending.isZero();
-    btn.disabled = zero;
-    btn.innerText = zero ? t('cardNone') : t('cardClaim');
+    // 待领取=0 但池内有待兑换积压时：按钮可点，领取交易会先兑换再发钱（兑换引信）
+    btn.disabled = zero && poolPendingTokens.isZero();
+    btn.innerText = zero
+      ? (poolPendingTokens.isZero() ? t('cardNone') : t('cardClaimSwap') + (estPerCardText ? ' ≈' + estPerCardText : ''))
+      : t('cardClaim');
   }
 }
 
@@ -2664,8 +2707,14 @@ async function claimAll() {
     }
 
     if (ids.length === 0) {
-      showToast(t('toastNothing'), '');
-      return;
+      // 兑换引信：所有卡都无待领取、但池内有待兑换积压 → 用第一张卡触发「先兑换后发放」
+      const firstOwned = tokenIds.find(id => id !== null);
+      if (poolPendingTokens && !poolPendingTokens.isZero() && firstOwned) {
+        ids.push(firstOwned);
+      } else {
+        showToast(t('toastNothing'), '');
+        return;
+      }
     }
 
     // 批量领取：每 100 张一笔交易（多数情况一笔搞定，只需一次签名）
