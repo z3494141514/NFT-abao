@@ -111,6 +111,7 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .hero{position:relative;overflow:hidden;text-align:center;background:linear-gradient(160deg,rgba(34,211,238,.1),rgba(139,92,246,.1) 50%,rgba(245,193,76,.06)),linear-gradient(180deg,rgba(19,23,42,.96),rgba(10,13,26,.98));border:1px solid var(--border-hi);border-radius:24px;padding:64px 28px 52px;margin-bottom:18px}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
 .hero-video.video-ready{opacity:.9}
+.hero-video::-webkit-media-controls-start-playback-button{display:none!important}
 .hero-overlay{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(5,7,13,.45),rgba(5,7,13,.15) 45%,rgba(5,7,13,.28))}
 /* ---------- 代码实时渲染的卡牌动画背景 ---------- */
 .hero-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -2985,9 +2986,12 @@ function heroVideoEnsurePlaying() {
     stallTimer = setTimeout(trySource, 10000); // 10 秒未出画面：换下一个源
   };
   srcEl.addEventListener('error', trySource);
-  const ready = () => { clearTimeout(stallTimer); v.classList.add('video-ready'); heroVideoEnsurePlaying(); };
-  v.addEventListener('loadeddata', ready);
-  v.addEventListener('canplay', ready);
+  // 数据就绪：清掉换源计时器并尝试播放（此时仍保持透明，避免露出暂停帧/原生播放按钮）
+  const onData = () => { clearTimeout(stallTimer); heroVideoEnsurePlaying(); };
+  v.addEventListener('loadeddata', onData);
+  v.addEventListener('canplay', onData);
+  // 真正开始播放才显示视频：未播放前保持 opacity:0——iOS 暂停态的原生播放按钮随之不可见
+  v.addEventListener('playing', () => { clearTimeout(stallTimer); v.classList.add('video-ready'); });
   // 首次访问：延迟 1.2 秒再加载视频——首秒带宽优先给页面本身（白屏消失的关键之一）；
   // 之后的访问（sessionStorage 有标记）恢复即时加载，不影响老用户观感
   let firstVisit = true;
@@ -2998,9 +3002,9 @@ function heroVideoEnsurePlaying() {
   } else {
     trySource();
   }
-  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次
-  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 1200);
-  setTimeout(() => { v.classList.add('video-ready'); heroVideoEnsurePlaying(); }, 3000);
+  // 兜底：动态 src + 自动播放策略拦截等边缘情况再试一次（不强制显示：显示交由 playing 事件）
+  setTimeout(() => { heroVideoEnsurePlaying(); }, 1200);
+  setTimeout(() => { heroVideoEnsurePlaying(); }, 3000);
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
   // WeixinJSBridgeReady 可能在脚本执行前已触发，需同时检查桥是否已就绪。
   const wxAutoPlay = () => heroVideoEnsurePlaying();
