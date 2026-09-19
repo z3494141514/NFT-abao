@@ -2899,6 +2899,9 @@ function heroVideoEnsurePlaying() {
   // 从未成功播放过（含首次加载失败被吞的场景）：
   // 已加载完成 → 直接重试 play（无需重新拉流）；未加载/出错 → 触发带 8 秒冷却的重拉
   if (!(hv.dataset && hv.dataset.videoOk)) {
+    // 首访数据门控未放行（等 firstdata）时：什么都不做，避免视频抢在数据前播
+    const mayPlay = (typeof window.heroVideoMayPlay === 'function') ? window.heroVideoMayPlay() : true;
+    if (!mayPlay) return;
     // 缓冲足够（readyState>=3，已有未来数据）才补播，薄缓冲时交给带冷却的重拉
     if (hv.readyState >= 3) {
       try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
@@ -2930,6 +2933,7 @@ function heroVideoEnsurePlaying() {
   // 四级 capture 监听（比目标元素更早执行、覆盖各内核解锁时机差异），一旦真正进入
   // 播放状态才移除——首次手势未成功放行时，保留到后续点击继续补救。
   const unlockMedia = () => {
+    if (!playAllowed) return; // 首访数据门控未放行前，手势也不许开播
     const hv = document.getElementById('heroVideo');
     if (!hv) return;
     try {
@@ -2979,12 +2983,13 @@ function heroVideoEnsurePlaying() {
   v.addEventListener('error', () => {
     if (blobUrlUsed) {
       blobUrlUsed = false;
-      setTimeout(() => { if (!v.dataset.videoOk) loadNetwork(); }, 500);
+      setTimeout(() => { if (!v.dataset.videoOk) loadNetwork(true); }, 500);
     }
   }, true);
-  // 缓冲完整（本地 blob 几乎立刻触发 / 网络整段就绪）→ 立即开播，不等 2 秒轮询
+  // 缓冲完整（本地 blob 几乎立刻触发 / 网络整段就绪）→ 立即开播，不等 2 秒轮询。
+  // playAllowed：首访「只下载不开播」阶段缓冲完也不许播，等数据门控放行
   v.addEventListener('canplaythrough', () => {
-    if (!v.dataset.videoOk) {
+    if (playAllowed && !v.dataset.videoOk) {
       try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
     }
   });
@@ -2993,6 +2998,8 @@ function heroVideoEnsurePlaying() {
   let loadCount = 0;
   let blobUrlUsed = false;
   let pathDecided = false;
+  let kicking = false;
+  let playAllowed = false;  // 数据门控放行后才允许真正开播（首访数据先出）
   const MAX_LOADS = 3;      // 每次页面生命周期最多重拉 3 次：拉不动就静默用卡牌动画，避免「反复加载」churn
   const CACHE_NAME = 'heroVideo-v1'; // 显式视频缓存：安卓内核不缓存媒体文件，这层是次访零延迟的关键
 
@@ -3001,9 +3008,11 @@ function heroVideoEnsurePlaying() {
   // 缓冲充足才开播：已缓冲 ≥ 时长 95%（≈整段就位）或 readyState>=4；
   // 「边下边播」是安卓卡顿的根源；12 秒仍不达标才强制开播（慢网兜底，宁可见不永久等）
   const startKick = () => {
+    if (kicking) return;   // 只保留一个监督器
+    kicking = true;
     const t0 = Date.now();
     let stopped = false;
-    const stop = () => { stopped = true; };
+    const stop = () => { stopped = true; kicking = false; };
     const tick = () => {
       if (stopped) return;
       if (!v.paused && v.currentTime > 0) { setOk(); stop(); return; }
@@ -3025,27 +3034,30 @@ function heroVideoEnsurePlaying() {
     const timer = setInterval(() => { if (stopped) clearInterval(timer); else tick(); }, 2000);
   };
 
-  // 网络源：重试加 ?r=N 绕开部分安卓内核缓存下来的坏响应
-  const loadNetwork = () => {
+  // 网络源：重试加 ?r=N 绕开部分安卓内核缓存下来的坏响应。
+  // kick=false 时只下载不开播（首访并行下载：等数据期间就把视频缓冲好）
+  const loadNetwork = (kick) => {
     pathDecided = true;
     blobUrlUsed = false;
     v.querySelector('source').src = CONFIG.heroVideoUrl + (loadCount > 1 ? '?r=' + loadCount : '');
     v.preload = 'auto'; // 动态加载（load 事件之后）：尽量整段缓冲，不抢首屏
     v.load();
-    startKick();
+    if (kick) startKick();
   };
 
   // 本地 blob 源：Cache Storage 命中 → 完全本地播放，零网络零延迟
-  const loadBlob = (blob) => {
+  const loadBlob = (blob, kick) => {
     pathDecided = true;
     blobUrlUsed = true;
     v.querySelector('source').src = URL.createObjectURL(blob);
     v.load();
-    startKick();
+    if (kick) startKick();
   };
 
+  // 完整路径（查缓存/网络 + 开播）：次访启动、失败重试用
   const tryLoad = () => {
     if (v.dataset.videoOk || loadCount >= MAX_LOADS) return;
+    playAllowed = true; // 完整路径 = 允许开播
     // 视频标签后的预启动脚本已用本地 blob 接管：不重复加载（等它自己播起来或出错自愈）
     if (v.currentSrc && v.currentSrc.indexOf('blob:') === 0) return;
     const now = Date.now();
@@ -3061,37 +3073,73 @@ function heroVideoEnsurePlaying() {
         .then(blob => {
           if (pathDecided) return;
           pathDecided = true;
-          if (blob) loadBlob(blob); else loadNetwork();
+          if (blob) loadBlob(blob, true); else loadNetwork(true);
         })
-        .catch(() => { if (!pathDecided) { pathDecided = true; loadNetwork(); } });
+        .catch(() => { if (!pathDecided) { pathDecided = true; loadNetwork(true); } });
       // 缓存查询兜底：2.5 秒没出结果就直连网络（慢盘/兼容问题不拖住视频）
-      setTimeout(() => { if (!pathDecided) { pathDecided = true; loadNetwork(); } }, 2500);
+      setTimeout(() => { if (!pathDecided) { pathDecided = true; loadNetwork(true); } }, 2500);
     } else {
       pathDecided = true;
-      loadNetwork();
+      loadNetwork(true);
     }
+  };
+
+  // 首访并行下载：只下载不开播（kick=false），等数据期间把视频缓冲好
+  const startDownload = () => {
+    if (v.dataset.videoOk || v.currentSrc || loadCount >= MAX_LOADS) return;
+    const now = Date.now();
+    if (now - lastLoadTs < 8000) return;
+    lastLoadTs = now;
+    loadCount++;
+    pathDecided = false;
+    if (typeof caches !== 'undefined') {
+      caches.open(CACHE_NAME)
+        .then(c => c.match(CONFIG.heroVideoUrl))
+        .then(r => (r ? r.blob() : null))
+        .then(blob => {
+          if (pathDecided) return;
+          pathDecided = true;
+          if (blob) loadBlob(blob, false); else loadNetwork(false);
+        })
+        .catch(() => { if (!pathDecided) { pathDecided = true; loadNetwork(false); } });
+      setTimeout(() => { if (!pathDecided) { pathDecided = true; loadNetwork(false); } }, 2500);
+    } else {
+      pathDecided = true;
+      loadNetwork(false);
+    }
+  };
+
+  // 开播：已有源（预下载中/就绪）→ 直接监督开播；无源 → 走完整路径
+  const startPlay = () => {
+    if (v.dataset.videoOk) return;
+    playAllowed = true; // 数据门控已放行
+    if (v.currentSrc) { startKick(); return; }
+    tryLoad();
   };
   window.heroVideoRetry = tryLoad;
   window.heroVideoSetOk = setOk;  // 供 heroVideoEnsurePlaying 在事件不可靠内核上按状态补判
+  window.heroVideoMayPlay = () => playAllowed; // 供 ensurePlaying 判断数据门控是否已放行
 
   // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
   // 视频下载不再拖住进度条。
-  // 首访（未播过）：等「第一轮链上数据渲染完成」（firstdata）+ 600ms 渲染峰值缓冲才启动视频，
-  //   安卓上「数据先出、视频后出」且不卡顿；无已授权账户（nodata）/无钱包注入时提前启动，6 秒兜底。
-  // 次访（播过=本地有缓存）：脚本一执行完立即启动（不等 load 事件），缓存命中 → 毫秒级开播
+  // 首访（未播过）：
+  //   ① load 事件后 1 秒 → 只下载不开播（第一波数据请求已先发出，下载与后续数据并行）；
+  //   ② 播放等「第一轮数据渲染完成」（firstdata）+ 600ms 渲染峰值缓冲 → 视频此时多半已缓冲好，秒播；
+  //   ③ 无已授权账户（nodata）/无钱包注入 → 提前开播；6 秒兜底。
+  // 次访（播过=本地有缓存）：脚本一执行完立即完整启动（不等 load 事件），缓存命中 → 毫秒级开播
   let playedBefore = false;
   try { playedBefore = localStorage.getItem('hvPlayed') === '1'; } catch (e) {}
 
   const startVideo = () => {
-    let started = false;
-    const go = () => { if (!started) { started = true; tryLoad(); } };
     if (playedBefore) {
-      go();
+      tryLoad();
     } else {
-      window.addEventListener('firstdata', () => setTimeout(go, 600), { once: true });
-      window.addEventListener('nodata', go, { once: true });
-      if (!window.ethereum) setTimeout(go, 1500); // 无钱包访客：没有数据可等，1.5 秒后启动
-      setTimeout(go, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后启动
+      const play = () => startPlay();
+      window.addEventListener('firstdata', () => setTimeout(play, 600), { once: true });
+      window.addEventListener('nodata', play, { once: true });
+      if (!window.ethereum) setTimeout(play, 1500); // 无钱包访客：没有数据可等，1.5 秒后开播
+      setTimeout(play, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后开播
+      setTimeout(startDownload, 1000);               // 并行下载：让数据第一波请求先走，再进视频
     }
   };
   if (playedBefore) {
