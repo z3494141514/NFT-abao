@@ -1782,6 +1782,25 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
+  // 换号/重连：作废上一个账户的全部用户级缓存（防止 A 账户的卡牌缓存被 B 账户短暂复用）
+  cardsAgg = null;
+  cardsAllCache = null;
+  cardsAggBusy = false;
+  cardsAggTick = 0;
+  cardsAggTargetCount = 0;
+  _cardsRenderKey = '';
+  teamRenderKey = '';
+  teamPageNo = 1;
+  cardPageNo = 1;
+  lastRenderedPage = -1;
+  estDivisor = 1;
+  estDivisorReady = false;
+  divisorCheckTick = 0;
+  _lastPendingSwap = null;
+  estPendingText = '';
+  estPerCardText = '';
+  estPerCardNum = 0;
+
   // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，8 秒超时/失败自动换）
   // 签名交易仍走钱包注入的 signer
   const readNodes = [provider].concat(
