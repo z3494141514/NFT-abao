@@ -1118,7 +1118,7 @@ async function refreshWizard(isTokenAdmin) {
   try { launched = await saleC.launched(); } catch (e) {}
   DOM.adminWizardTrading.innerText = trading ? '✅ 已开启（买卖税自动进分红池）' : '❌ 未开启';
   DOM.adminWizardLaunched.innerText = launched ? '✅ 已开盘（公开购买开放）'
-    : (trading ? '⏳ 未开盘（点「一键开盘」背靠背执行）' : '❌ 未开盘');
+    : (trading ? '⚠️ 交易已开启但未开盘——立即点「一键开盘」补上开盘步骤' : '❌ 未开盘');
   if (trading) {
     try {
       const win = await tokenC.launchWindowActive();
@@ -1247,40 +1247,52 @@ async function adminWizardLaunch() {
   if (!items) return;
   const bad = items.filter(i => i.st === 'bad');
   if (bad.length > 0) { showToast('检查清单未通过：' + bad[0].label, 'error'); return; }
-  if (!confirm('确认一键开盘？\n\n将依次执行：\n① 若预言机报价过期 → 自动补打观测点\n② 开启交易（enableTrading）→ 进入 180 秒防机器人窗口\n③ 开盘（launch）→ 公开购买开放\n\n两步背靠背、不可撤销，请确保网络稳定。')) return;
+  // 断点续跑：交易已开启则跳过 enableTrading（避免 TradingAlreadyEnabled 回滚卡死）
+  let tradingOn = false;
+  try { tradingOn = await tokenC.tradingEnabled(); } catch (e) {}
+  if (!confirm(tradingOn
+    ? '检测到「开启交易」已完成、但「开盘」未执行（上次中断）。\n\n本次将直接执行开盘（launch），开放公开购买，不可撤销。'
+    : '确认一键开盘？\n\n将依次执行：\n① 若预言机报价过期 → 自动补打观测点\n② 开启交易（enableTrading）→ 进入 180 秒防机器人窗口\n③ 开盘（launch）→ 公开购买开放\n\n两步背靠背、不可撤销，请确保网络稳定。')) return;
   showLoading();
   try {
-    // ① 报价过期/不可读 → 先补打一次观测点
-    try {
-      const pd = await oracleC.getPriceData();
-      const now = Math.floor(Date.now() / 1000);
-      if (pd[0].isZero() || pd[2].isZero() || now - pd[2].toNumber() > 300) {
-        showToast('预言机报价过期，自动补打观测点…', '');
+    if (tradingOn) {
+      showToast('交易已开启，直接执行开盘…', '');
+    } else {
+      // ① 报价过期/不可读 → 先补打一次观测点
+      try {
+        const pd = await oracleC.getPriceData();
+        const now = Math.floor(Date.now() / 1000);
+        if (pd[0].isZero() || pd[2].isZero() || now - pd[2].toNumber() > 300) {
+          showToast('预言机报价过期，自动补打观测点…', '');
+          await waitForTx(await oracleC.connect(signer).poke());
+        }
+      } catch (e) {
+        showToast('报价不可读，先补打一次观测点…', '');
         await waitForTx(await oracleC.connect(signer).poke());
       }
-    } catch (e) {
-      showToast('报价不可读，先补打一次观测点…', '');
-      await waitForTx(await oracleC.connect(signer).poke());
+      // ② 开启交易
+      showToast('正在开启交易…', '');
+      await waitForTx(await tokenC.connect(signer).enableTrading());
     }
-    // ② 开启交易
-    showToast('正在开启交易…', '');
-    await waitForTx(await tokenC.connect(signer).enableTrading());
     // ③ 开盘
-    showToast('交易已开启，正在开盘…', '');
+    showToast('正在开盘…', '');
     await waitForTx(await saleC.connect(signer).launch());
-    showToast('🎉 已开盘！请立即点「锁定核心」', 'success');
+    showToast('🎉 已开盘！销售核心已随开盘自动锁定，请再点「锁定核心」锁定分红池与预言机', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
   finally { hideLoading(); }
 }
 
 async function adminWizardLockAll() {
-  if (!confirm('确认永久锁定？\n\n将依次执行：\n① 销售合约 lockCore\n② 分红池 lockCore\n③ 预言机 lockConfig\n\n锁定后核心地址与预言机参数永久不可更改（不可逆）。')) return;
+  if (!confirm('确认永久锁定？\n\n将依次执行：\n① 销售合约 lockCore（开盘时已自动锁定则跳过）\n② 分红池 lockCore\n③ 预言机 lockConfig\n\n锁定后核心地址与预言机参数永久不可更改（不可逆）。')) return;
   showLoading();
   try {
-    await waitForTx(await saleC.connect(signer).lockCore());
-    await waitForTx(await poolC.connect(signer).lockCore());
-    await waitForTx(await oracleC.connect(signer).lockConfig());
+    const saleLocked = await saleC.coreLocked();
+    if (!saleLocked) await waitForTx(await saleC.connect(signer).lockCore());
+    const poolLocked = await poolC.coreLocked();
+    if (!poolLocked) await waitForTx(await poolC.connect(signer).lockCore());
+    const oracleLocked = await oracleC.configLocked();
+    if (!oracleLocked) await waitForTx(await oracleC.connect(signer).lockConfig());
     showToast('🔒 核心已全部锁定', 'success');
     loadAll();
   } catch (e) { showToast(parseError(e), 'error'); }
