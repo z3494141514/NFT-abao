@@ -1492,6 +1492,7 @@ let estPerCardText = '';          // 每张卡预计可分（≈X U）
 let estPerCardNum = 0;            // 每张卡预计可分（数值 U）
 let estDivisor = 1;               // 预计收益的每卡份额分母（真实在线卡数，含分发豁免卡；慢数据枚举）
 let estDivisorReady = false;      // 分母是否已枚举确认
+let divisorCheckTick = 0;         // 分母复核计数（确认后每 5 个慢周期低频复核一次）
 let _lastPendingSwap = null;      // 最近一次成功读取的待兑换积压（供枚举完成后重算预计）
 let _lastActiveCards = ethers.BigNumber.from(0); // 最近一次可见在线卡数（同上）
 let preLaunchRemain = 220;        // 开盘前剩余预售额度
@@ -1902,6 +1903,8 @@ function disconnectWallet() {
   estPerCardNum = 0;
   estDivisor = 1;
   estDivisorReady = false;
+  divisorCheckTick = 0;
+  _lastPendingSwap = null;
   DOM.buyModeBadge.innerText = '100 U / ' + t('unitCard'); // 断开后复位徽标（避免残留旧模式文案）
   DOM.preLaunchBuyArea.style.display = 'none';
   DOM.tokenBuyArea.style.display = '';
@@ -2101,11 +2104,29 @@ async function refreshEstimate(pendingSwap, activeCards) {
   } catch (e) { /* 读取失败：保持上次预计，不清零 */ }
 }
 
-/* 慢数据：真实在线卡数（预计分母，优先）+ 已销毁/流通量（变化缓慢，低频刷新） */
+/* 慢数据：已销毁/流通量（优先，保证首页基础数据不被拖慢）+ 真实在线卡数（预计分母，低频懒枚举） */
 async function loadSlowData() {
-  // ① 真实在线卡数（含分发豁免卡）：预计收益的每卡份额分母。
-  //    分红池的均分分母包含分发卡，但对外统计不含——前端枚举全部卡牌状态求真实在线数。
-  //    放在最前：这是「预计…」能否尽快变成具体数字的关键路径。
+  // ① 已销毁 / 流通量（基础数据优先，避免被枚举抢占读取通道拖慢首页）
+  try {
+    const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
+    const totalSup = await tokenC.totalSupply();
+    const circ = totalSup.sub(dead); // 流通量 = 当前总量 − 销毁地址余额
+    // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
+    const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
+    const burned = MAXSUP.sub(circ);
+    uiHtml(DOM.burnedSupply, fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
+    uiHtml(DOM.circulatingSupply, fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
+    uiText(DOM.burnedPercent, MAXSUP.isZero() || burned.isZero()
+      ? '0%'
+      : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%');
+  } catch (e) { /* ignore */ }
+
+  // ② 真实在线卡数（含分发豁免卡）懒枚举：仅在「池内有待兑换」时才需要（预计收益分母）；
+  //    未确认前持续尝试，确认后每 5 个慢周期（约 7.5 分钟）低频复核一次，避免抢占读取通道
+  divisorCheckTick++;
+  const pendingGt0 = _lastPendingSwap && !_lastPendingSwap.isZero();
+  if (!pendingGt0) return;
+  if (estDivisorReady && divisorCheckTick % 5 !== 0) return;
   try {
     const all = await nftC.totalAllMinted();
     const cap = Math.min(all.toNumber(), 600);
@@ -2127,20 +2148,6 @@ async function loadSlowData() {
       refreshEstimate(_lastPendingSwap, _lastActiveCards); // 用确认后的分母重算每卡份额
     }
   } catch (e) { /* 枚举失败：沿用上次分母 */ }
-  // ② 已销毁 / 流通量
-  try {
-    const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
-    const totalSup = await tokenC.totalSupply();
-    const circ = totalSup.sub(dead); // 流通量 = 当前总量 − 销毁地址余额
-    // 已销毁 = 初始总量(1000万) − 流通量：同时覆盖 burn() 直接销毁 与 转入销毁地址两种路径
-    const MAXSUP = BN.from(10000000).mul(BN.from(10).pow(tokenDecimals));
-    const burned = MAXSUP.sub(circ);
-    uiHtml(DOM.burnedSupply, fmtAmt2(burned, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
-    uiHtml(DOM.circulatingSupply, fmtAmt2(circ, tokenDecimals) + '<span class="unit-char">' + t('unitToken') + '</span>');
-    uiText(DOM.burnedPercent, MAXSUP.isZero() || burned.isZero()
-      ? '0%'
-      : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%');
-  } catch (e) { /* ignore */ }
 }
 
 async function loadUser() {
