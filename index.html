@@ -217,7 +217,6 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .chip-ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1)}
 .chip-warn{color:var(--gold);border-color:rgba(245,193,76,.4);background:rgba(245,193,76,.1)}
 .chip-off{color:var(--red);border-color:rgba(251,113,133,.4);background:rgba(251,113,133,.1)}
-.chip-info{color:var(--cyan);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)}
 /* ---------- 开盘窗口状态条 ---------- */
 .launch-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(251,113,133,.12),rgba(245,193,76,.08));border:1px solid rgba(251,113,133,.35);border-radius:16px;padding:14px 20px;margin-bottom:18px;backdrop-filter:blur(14px)}
 .launch-bar .lb-ic{font-size:22px;animation:pulse 1.6s infinite}
@@ -246,11 +245,9 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px rgba(139,92,246,.4)}
 .btn-ghost{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.35);color:var(--cyan)}
 .btn-ghost:hover:not(:disabled){background:rgba(34,211,238,.16)}
-.btn-danger{background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.4);color:var(--red)}
-.btn-danger:hover:not(:disabled){background:rgba(251,113,133,.2)}
 .btn-sm{padding:9px 18px;font-size:13px;border-radius:11px}
 .btn-block{width:100%}
-.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mt10{margin-top:10px}.mt12{margin-top:12px}.mt16{margin-top:16px}
 /* ---------- 数量选择器 ---------- */
 .qty-stepper{display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:99px;padding:4px 5px}
 .qty-btn{width:34px;height:34px;border-radius:50%;border:none;background:linear-gradient(135deg,#22d3ee,#8b5cf6);color:#fff;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
@@ -394,7 +391,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .reward-mini b{color:var(--gold);font-weight:700}
 .reward-label{font-size:11px;letter-spacing:2px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
 .reward-value{font-size:26px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all}
-.reward-sub{font-size:12.5px;color:var(--muted)}
 /* 规则细则条：图标与对应奖励卡一致（缩小版）+ 标题明确区分预售/开盘后 + 亮色正文 */
 .reward-notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .reward-note{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(245,193,76,.28);border-radius:12px;padding:11px 13px}
@@ -475,8 +471,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .invite-wrap{max-width:560px;margin:0 auto}
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .empty-tip{text-align:center;color:var(--muted);padding:56px 0;font-size:13.5px;letter-spacing:.5px}
-.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px}
-.cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
 /* ---------- Toast / Loader ---------- */
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 .toast{background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.55);animation:toastIn .25s cubic-bezier(.22,.8,.36,1);max-width:76vw;text-align:left;backdrop-filter:blur(16px)}
@@ -1167,7 +1161,6 @@ const CONFIG = {
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
-const U_CENT = 100;      // U 分精度
 const PRICE_SCALE = 1e8; // 价格精度
 const USDT_CENT_WEI = ethers.BigNumber.from('10000000000000000'); // 1 U分 = 1e16 wei
 
@@ -1380,25 +1373,6 @@ const I18N = {
     toastClaimOk:'分红领取成功', toastNothing:'没有待领取的分红', toastClaimAll:'已领取 {n} 张卡牌的分红 🎉',
     toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试',
     chainChecking:'检测中…', chainNoWallet:'未检测到钱包', chainNetErr:'网络错误，点击连接以切换', chainFail:'网络检测失败',
-    errReject:'您取消了交易', errFunds:'余额不足', errAllow:'授权额度不足，请重新授权后再试',
-    errAllow2:'授权额度不足（价格波动导致）：已自动放宽，请重新授权后再试', errTokLow:'代币余额不足',
-    errNotLaunched:'尚未开盘', errPreLimit:'开盘前名额已满（220 张）', errUsdtCfg:'预售收款币种未配置',
-    errProfitCfg:'利润钱包未配置', errReserve:'代币储备不足，请联系管理员充值', errPoolCfg:'分红池地址未配置（需先 updateCore）',
-    errBindFirst:'请先绑定上级', errBound:'已绑定过上级，不可更换', errSelf:'不能绑定自己',
-    errDownline:'不能绑定自己的下级为上级', errProtocol:'不能绑定协议合约地址为上级', errZeroRef:'请输入合法的上级地址',
-    errMaxCards:'有效卡牌已达 520 张上限', errNothing:'暂无待领取分红', errNotOwner:'您不是该卡牌的持有者',
-    errLaunched:'已开盘', errTradingOn:'交易已开启，预售已结束', errPairWl:'交易对尚未登记白名单，请稍后重试或联系管理员',
-    errCardExists:'卡牌已存在', errBuyBatch:'单笔最多购买 10 张卡牌', errClaimBatch:'单笔最多领取 100 张卡牌',
-    errBatch:'单笔数量过多（最多 50 张），已自动分批', errEmptyBatch:'没有可领取的卡牌', errLaunchLimit:'开盘 3 分钟内每个地址最多买入 5000 枚代币',
-    errPriceNReady:'实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）', errPairNo:'交易对尚未创建，价格暂不可用',
-    errLiq:'池子流动性低于门槛，价格暂不可读', errObs:'价格观测引导中，请稍后再试',
-    errZeroPrice:'价格异常为 0，请稍后再试', errPriceNotReady:'预言机价格未就绪，请稍后再试', errPriceNew:'预言机价格时间异常，请稍后再试',
-    errPriceRange:'预言机价格超出合理范围，请稍后再试', errQtyZero:'购买数量无效', errTradingNot:'预售加池未放行（预售伙伴未配置），请联系管理员',
-    errPriceHigh:'预言机价格过高，暂时无法购买', errPriceDev:'预言机价格偏差过大，请稍后再试', errPriceOld:'预言机价格已过期，请稍后再试',
-    errSoulbound:'卡牌不可转让/转赠（灵魂绑定）', errPaused:'合约已暂停，操作被拒绝', errCoreLocked:'核心配置已锁定，不可修改',
-    errNoCard:'卡牌不存在', errOracleSet:'预言机已设置；更换请使用「提议更换」（24 小时生效）', errNoPendingOracle:'没有待应用的预言机变更',
-    errOracleLock:'预言机变更时间锁未到期（24 小时）', errPoolLocked:'分红池地址已锁定（开盘后不可更换）',
-    errNoLiq:'交易对流动性不足，手续费兑换失败', errNoStranded:'没有可提取的滞留代币', errOnlyToken:'该操作仅限代币合约调用',
     errGeneric:'交易执行失败，请重试', errTimeout:'交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果',
     pageTitle:'卡牌分红 · NFT Dividend'
   },
@@ -1456,25 +1430,6 @@ const I18N = {
     toastClaimOk:'dividend claimed', toastNothing:'Nothing to claim', toastClaimAll:'Claimed {n} cards\u2019 dividends 🎉',
     toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry',
     chainChecking:'Checking…', chainNoWallet:'No wallet', chainNetErr:'Network error — tap to connect', chainFail:'Network check failed',
-    errReject:'Transaction cancelled', errFunds:'Insufficient balance', errAllow:'Allowance too low — approve again',
-    errAllow2:'Allowance too low (price moved): widened automatically — approve again', errTokLow:'Insufficient tokens',
-    errNotLaunched:'Not launched yet', errPreLimit:'Pre-sale quota full (220 cards)', errUsdtCfg:'USDT not configured',
-    errProfitCfg:'Profit wallet not configured', errReserve:'Token reserve low — contact admin', errPoolCfg:'Pool address not set (run updateCore first)',
-    errBindFirst:'Bind a referrer first', errBound:'Referrer already bound — cannot change', errSelf:'Cannot bind yourself',
-    errDownline:'Cannot bind your own downline', errProtocol:'Cannot bind protocol contracts', errZeroRef:'Enter a valid referrer address',
-    errMaxCards:'Active cards reached the 520 cap', errNothing:'Nothing to claim', errNotOwner:'You are not the card owner',
-    errLaunched:'Already launched', errTradingOn:'Trading enabled — pre-sale ended', errPairWl:'Pair not whitelisted — retry later or contact admin',
-    errCardExists:'Card already exists', errBuyBatch:'Max 10 cards per purchase', errClaimBatch:'Max 100 cards per claim',
-    errBatch:'Batch too large (max 50) — split automatically', errEmptyBatch:'No claimable cards', errLaunchLimit:'Max 5,000 tokens per address in the first 3 minutes',
-    errPriceNReady:'Live price read failed: no liquidity / observations not ready (retry later)', errPairNo:'Pair not created — price unavailable',
-    errLiq:'Liquidity below threshold — price unreadable', errObs:'Price observations bootstrapping — retry later',
-    errZeroPrice:'Price is zero — retry later', errPriceNotReady:'Oracle price not ready — retry later', errPriceNew:'Oracle price timestamp invalid — retry later',
-    errPriceRange:'Oracle price out of range — retry later', errQtyZero:'Invalid quantity', errTradingNot:'Pre-sale LP not released (partner not configured) — contact admin',
-    errPriceHigh:'Oracle price too high — cannot buy now', errPriceDev:'Oracle price deviation too large — retry later', errPriceOld:'Oracle price expired — retry later',
-    errSoulbound:'Card is soulbound — cannot transfer', errPaused:'Contract paused', errCoreLocked:'Core config locked',
-    errNoCard:'Card not found', errOracleSet:'Oracle set — use \u201cPropose Change\u201d (24h lock)', errNoPendingOracle:'No pending oracle change',
-    errOracleLock:'Oracle timelock not expired (24h)', errPoolLocked:'Pool address locked after launch',
-    errNoLiq:'Insufficient pair liquidity — fee conversion failed', errNoStranded:'No stranded tokens to withdraw', errOnlyToken:'Token contract only',
     errGeneric:'Transaction failed — retry', errTimeout:'Confirmation timeout: the tx may still be processing — refresh the page shortly',
     pageTitle:'CARD DIVIDEND · NFT Dividend'
   }
@@ -1563,7 +1518,6 @@ const toNum = (v) => {
     return Number.isFinite(n) ? n : 0;
   } catch (e) { return 0; }
 };
-const fmtCents = (cents) => (toNum(cents) / U_CENT).toFixed(2) + ' U';
 const fmtTokens = (bn) => {
   try {
     const n = parseFloat(ethers.utils.formatUnits(bn, tokenDecimals));

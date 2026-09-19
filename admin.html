@@ -65,8 +65,6 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
 .empty-tip{text-align:center;color:var(--muted);padding:56px 0;font-size:13.5px;letter-spacing:.5px}
-.cooldown-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:10px;display:none}
-.cooldown-fill{height:100%;background:linear-gradient(90deg,#22d3ee,#8b5cf6);transition:width .5s linear;width:0}
 .toast{background:rgba(14,16,30,.96);border:1px solid rgba(34,211,238,.4);color:var(--text);padding:13px 24px;border-radius:14px;font-size:13.5px;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.55);max-width:76vw;text-align:left;backdrop-filter:blur(16px);animation:toastIn .25s cubic-bezier(.22,.8,.36,1)}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
 .toast.error{border-color:rgba(251,113,133,.55);color:#ffd7dd}
@@ -587,13 +585,6 @@ const toNum = (v) => {
   } catch (e) { return 0; }
 };
 const fmtCents = (cents) => (toNum(cents) / U_CENT).toFixed(2) + ' U';
-const fmtTokens = (bn) => {
-  try {
-    const n = parseFloat(ethers.utils.formatUnits(bn, tokenDecimals));
-    if (!Number.isFinite(n) || n < 0 || n > 10_000_000) return '--';
-    return n.toLocaleString('zh-CN', {maximumFractionDigits: 4});
-  } catch (e) { return '--'; }
-};
 const fmtPrice = (p) => {
   if (!p || p.isZero()) return '--';
   return (Number(p) / PRICE_SCALE).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') + ' U';
@@ -1002,7 +993,6 @@ async function loadAdminData() {
     try {
       const pd = await oracleC.getPriceData();
       const lpInfo = await tokenC.getLpPairInfo();
-      let graceTxt = '--';
       try {
         const gp = (await poolC.swapGracePeriod()).toNumber();
         const ps = (await poolC.pendingSince()).toNumber();
