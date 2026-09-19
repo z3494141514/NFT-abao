@@ -768,7 +768,7 @@ function applyTokenSymbols() {
   DOM.adminWithdrawTttBtn.innerText = '提取滞留 ' + t;
 }
 
-/* 只读 RPC 轮换器：串行尝试、单节点 8 秒超时、失败自动换下一个（最多 5 个）。
+/* 只读 RPC 轮换器：串行尝试、单节点 2 秒超时、失败自动换下一个（最多 5 个）。
    不用 ethers 的 FallbackProvider——它会向全部节点广播每个请求，公共节点极易触发限流导致全站卡死。
    节点顺序 = [钱包注入节点, 公共节点...]：钱包能连上 BSC 说明该 RPC 在当前网络可达，
    优先复用钱包通道（对国内用户最稳），失败再轮换公共节点 */
@@ -781,7 +781,7 @@ function createReadProvider(providers) {
   };
   const withTimeout = (p) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 8000))
+    new Promise((_, rej) => setTimeout(() => rej(new Error('rpc timeout')), 2000))
   ]);
   return new Proxy(current, {
     get(target, prop) {
@@ -819,7 +819,7 @@ async function setupProvider(address) {
   signer = provider.getSigner();
   userAddress = address;
 
-  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，8 秒超时/失败自动换）
+  // 只读数据层：钱包节点优先 + 公共节点串行轮换（一次只问一个，2 秒超时/失败自动换）
   // 签名交易仍走钱包注入的 signer
   const readNodes = [provider].concat(
     CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId))
