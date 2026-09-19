@@ -1159,8 +1159,8 @@ const ABIS = {
     'function launchWindowActive() view returns (bool)',
     'function launchWindowRemaining() view returns (uint256)',
     'function LAUNCH_WINDOW() view returns (uint256)',
-    'function LAUNCH_BUY_LIMIT_CENTS() view returns (uint256)',
-    'function launchBuyCents(address) view returns (uint256)',
+    'function LAUNCH_BUY_LIMIT_TOKENS() view returns (uint256)',
+    'function launchBuyTokens(address) view returns (uint256)',
     'function oracle() view returns (address)',
     'function setOracle(address)',
     'function proposeOracle(address)',
@@ -1345,7 +1345,7 @@ const I18N = {
     errMaxCards:'有效卡牌已达 520 张上限', errNothing:'暂无待领取分红', errNotOwner:'您不是该卡牌的持有者',
     errLaunched:'已开盘', errTradingOn:'交易已开启，预售已结束', errPairWl:'交易对尚未登记白名单，请稍后重试或联系管理员',
     errCardExists:'卡牌已存在', errBuyBatch:'单笔最多购买 10 张卡牌', errClaimBatch:'单笔最多领取 100 张卡牌',
-    errBatch:'单笔数量过多（最多 50 张），已自动分批', errEmptyBatch:'没有可领取的卡牌', errLaunchLimit:'开盘 3 分钟内每个地址最多买入 50U 代币',
+    errBatch:'单笔数量过多（最多 50 张），已自动分批', errEmptyBatch:'没有可领取的卡牌', errLaunchLimit:'开盘 3 分钟内每个地址最多买入 5000 枚代币',
     errPriceNReady:'实时价读取失败：交易对无流动性/观测点未就绪（请稍后再试）', errPairNo:'交易对尚未创建，价格暂不可用',
     errLiq:'池子流动性低于门槛，价格暂不可读', errObs:'价格观测引导中，请稍后再试',
     errZeroPrice:'价格异常为 0，请稍后再试', errPriceNotReady:'预言机价格未就绪，请稍后再试', errPriceNew:'预言机价格时间异常，请稍后再试',
@@ -1421,7 +1421,7 @@ const I18N = {
     errMaxCards:'Active cards reached the 520 cap', errNothing:'Nothing to claim', errNotOwner:'You are not the card owner',
     errLaunched:'Already launched', errTradingOn:'Trading enabled — pre-sale ended', errPairWl:'Pair not whitelisted — retry later or contact admin',
     errCardExists:'Card already exists', errBuyBatch:'Max 10 cards per purchase', errClaimBatch:'Max 100 cards per claim',
-    errBatch:'Batch too large (max 50) — split automatically', errEmptyBatch:'No claimable cards', errLaunchLimit:'Max 50U tokens per address in the first 3 minutes',
+    errBatch:'Batch too large (max 50) — split automatically', errEmptyBatch:'No claimable cards', errLaunchLimit:'Max 5,000 tokens per address in the first 3 minutes',
     errPriceNReady:'Live price read failed: no liquidity / observations not ready (retry later)', errPairNo:'Pair not created — price unavailable',
     errLiq:'Liquidity below threshold — price unreadable', errObs:'Price observations bootstrapping — retry later',
     errZeroPrice:'Price is zero — retry later', errPriceNotReady:'Oracle price not ready — retry later', errPriceNew:'Oracle price timestamp invalid — retry later',
@@ -2123,9 +2123,10 @@ async function refreshEstimate(pendingSwap, activeCards) {
   } catch (e) { /* 读取失败：保持上次预计，不清零 */ }
 }
 
-/* 慢数据：已销毁/流通量（优先，保证首页基础数据不被拖慢）+ 真实在线卡数（预计分母，低频懒枚举） */
-async function loadSlowData() {
-  // ① 已销毁 / 流通量（基础数据优先，避免被枚举抢占读取通道拖慢首页）
+/* 已销毁/流通量：独立刷新函数。
+   买卡（销毁 70%）后立即调用 + 两次延迟重试；连接时与 90 秒慢周期兜底调用。
+   读取失败静默（节点瞬时限流），由重试与下一轮兜底自愈。 */
+async function refreshBurnStats() {
   try {
     const dead = await tokenC.balanceOf('0x000000000000000000000000000000000000dEaD');
     const totalSup = await tokenC.totalSupply();
@@ -2138,10 +2139,15 @@ async function loadSlowData() {
     uiText(DOM.burnedPercent, MAXSUP.isZero() || burned.isZero()
       ? '0%'
       : (toNum(burned) / toNum(MAXSUP) * 100).toFixed(2) + '%');
-  } catch (e) { /* ignore */ }
+  } catch (e) { /* 节点瞬时不可用：下一轮重试 */ }
+}
 
-  // ② 真实在线卡数（含分发豁免卡）懒枚举：仅在「池内有待兑换」时才需要（预计收益分母）；
-  //    未确认前持续尝试，确认后每 5 个慢周期（约 7.5 分钟）低频复核一次，避免抢占读取通道
+/* 慢数据：已销毁/流通量 + 真实在线卡数（预计分母，低频懒枚举） */
+async function loadSlowData() {
+  await refreshBurnStats();
+
+  // 真实在线卡数（含分发豁免卡）懒枚举：仅在「池内有待兑换」时才需要（预计收益分母）；
+  // 未确认前持续尝试，确认后每 5 个慢周期（约 7.5 分钟）低频复核一次，避免抢占读取通道
   divisorCheckTick++;
   const pendingGt0 = _lastPendingSwap && !_lastPendingSwap.isZero();
   if (!pendingGt0) return;
@@ -2770,6 +2776,10 @@ async function buyCardToken() {
   showToast(t('toastBuyOk').replace('{n}', buyQuantity), 'success');
   cardsAgg = null; cardsAllCache = null; // 新卡入账：强制刷新卡牌缓存与全量汇总
   loadAll();
+  // 开盘后购买销毁 70% 代币：立即刷新已销毁/流通量，并错开节点限流窗口重试两次
+  refreshBurnStats();
+  setTimeout(refreshBurnStats, 4000);
+  setTimeout(refreshBurnStats, 10000);
 }
 
 async function claimCard(tokenId) {
