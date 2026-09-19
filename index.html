@@ -2286,8 +2286,11 @@ const estTotalText = (userCount) => (estPerCardNum > 0 && userCount > 0)
 function applyCardsAgg(agg) {
   uiText(DOM.cardsTotalAccrued, (agg.accrued / 100).toFixed(2) + ' U');
   uiText(DOM.cardsTotalClaimed, (agg.claimed / 100).toFixed(2) + ' U');
-  // 待领取为 0 且池内有待兑换时：显示「用户全部卡牌（含持有的分发卡）的预计总和」
-  const pStr = agg.pending > 0 ? (agg.pending / 100).toFixed(2) + ' U' : estTotalText(agg.count || 0);
+  // 真实待领取 + 待兑换预计（待兑换部分会在下次兑换时追加到每一张卡）
+  const pStr = agg.pending > 0
+    ? (agg.pending / 100).toFixed(2) + ' U'
+      + (estPerCardNum > 0 && (agg.count || 0) > 0 ? ' +预计' + fmtUval(estPerCardNum * agg.count) + ' U' : '')
+    : estTotalText(agg.count || 0);
   uiText(DOM.cardsTotalPending, pStr);
   uiText(DOM.myTotalPending, pStr);
 }
@@ -2381,7 +2384,7 @@ function cardRowHtml(r) {
         </div>
         <div class="metric metric-gold">
           <span class="metric-label">${t('cardPending')}</span>
-          <span class="metric-value">${pndC > 0 ? fmtU(pndC) : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : '预计…'))}</span>
+          <span class="metric-value">${pndC > 0 ? fmtU(pndC) + (estPerCardText ? ' +预计' + estPerCardText : '') : (poolPendingTokens.isZero() ? fmtU(pndC) : (estPerCardText ? '预计 ' + estPerCardText : '预计…'))}</span>
         </div>
       </div>
       <div class="exit-progress">
@@ -2392,7 +2395,7 @@ function cardRowHtml(r) {
         </div>
       </div>
       <button class="btn btn-primary claim-one-btn" data-token="${r.tokenId.toString()}" ${pendingZero && poolPendingTokens.isZero() ? 'disabled' : ''}>
-        ${pendingZero ? (poolPendingTokens.isZero() ? t('cardNone') : t('cardClaimSwap') + (estPerCardText ? ' ≈' + estPerCardText : '')) : t('cardClaim')}
+        ${pendingZero ? (poolPendingTokens.isZero() ? t('cardNone') : t('cardClaimSwap') + (estPerCardText ? ' ≈' + estPerCardText : '')) : t('cardClaim') + (estPerCardText ? ' ≈' + fmtUval(pndC / 100 + estPerCardNum) + 'U' : '')}
       </button>
     </div>`;
 }
@@ -2417,7 +2420,8 @@ function patchCardDom(r) {
   if (mvs.length === 3) {
     mvs[0].innerText = (accC / 100).toFixed(2) + ' U';
     mvs[1].innerText = (clmC / 100).toFixed(2) + ' U';
-    mvs[2].innerText = pndC > 0 ? (pndC / 100).toFixed(2) + ' U'
+    mvs[2].innerText = pndC > 0
+      ? (pndC / 100).toFixed(2) + ' U' + (estPerCardText ? ' +预计' + estPerCardText : '')
       : (poolPendingTokens.isZero() ? '0.00 U' : (estPerCardText ? '预计 ' + estPerCardText : '预计…'));
   }
   const fill = card.querySelector('.exit-fill');
@@ -2433,7 +2437,7 @@ function patchCardDom(r) {
     btn.disabled = zero && poolPendingTokens.isZero();
     btn.innerText = zero
       ? (poolPendingTokens.isZero() ? t('cardNone') : t('cardClaimSwap') + (estPerCardText ? ' ≈' + estPerCardText : ''))
-      : t('cardClaim');
+      : t('cardClaim') + (estPerCardText ? ' ≈' + fmtUval(r.pending.toNumber() / 100 + estPerCardNum) + 'U' : '');
   }
 }
 
