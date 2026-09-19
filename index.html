@@ -2966,6 +2966,7 @@ function heroVideoEnsurePlaying() {
   const setOk = () => {
     v.dataset.videoOk = '1';
     v.classList.add('video-ready');
+    try { localStorage.setItem('hvPlayed', '1'); } catch (e) {} // 次访识别：播过即有缓存，下次零延迟
   };
   v.addEventListener('playing', setOk);
   v.addEventListener('timeupdate', setOk, { once: true }); // 双保险：帧开始推进也算播起来了
@@ -2989,8 +2990,8 @@ function heroVideoEnsurePlaying() {
     v.load();
     // 内核无关的成功判定：安卓 X5 等对 playing/timeupdate 事件不可靠，
     // 每 2 秒直接读元素状态（真正播起来 = 不暂停且时间在走）。
-    // 缓冲充足才开播（readyState>=4 或已缓冲 >= min(时长,3) 秒）：「边下边播」是
-    // 安卓第二次进入（部分缓存+区间补拉）时一卡一卡的根源；8 秒不达标强制开播兜底
+    // 缓冲充足才开播：已缓冲 ≥ 时长 95%（≈整段就位）或 readyState>=4；
+    // 「边下边播」是安卓卡顿的根源；12 秒仍不达标才强制开播（慢网兜底，宁可见不永久等）
     const t0 = Date.now();
     const timer = setInterval(() => {
       if (!v.paused && v.currentTime > 0) { setOk(); clearInterval(timer); return; }
@@ -2998,10 +2999,12 @@ function heroVideoEnsurePlaying() {
       try {
         const b = v.buffered;
         if (b && b.length > 0) {
-          bufferedOk = (b.end(b.length - 1) - b.start(0)) >= Math.min((isFinite(v.duration) && v.duration > 0) ? v.duration : 99, 3);
+          const dur = (isFinite(v.duration) && v.duration > 0) ? v.duration : 0;
+          const span = b.end(b.length - 1) - b.start(0);
+          bufferedOk = dur ? span >= dur * 0.95 : span >= 3;
         }
       } catch (e) {}
-      if (v.readyState >= 4 || bufferedOk || Date.now() - t0 > 8000) {
+      if (v.readyState >= 4 || bufferedOk || Date.now() - t0 > 12000) {
         try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
       }
       if (Date.now() - t0 > 16000) clearInterval(timer);
@@ -3011,16 +3014,24 @@ function heroVideoEnsurePlaying() {
   window.heroVideoSetOk = setOk;  // 供 heroVideoEnsurePlaying 在事件不可靠内核上按状态补判
 
   // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
-  // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别。
-  // 数据优先：再等「第一轮链上数据渲染完成」（firstdata 信号，由 loadAll 发出）才启动视频，
-  // 安卓上「数据先出、视频后出」；无已授权账户（nodata）/ 无钱包注入时提前启动，6 秒兜底
+  // 视频下载不再拖住进度条。
+  // 首访（未播过）：等「第一轮链上数据渲染完成」（firstdata）+ 600ms 渲染峰值缓冲才启动视频，
+  //   安卓上「数据先出、视频后出」且不卡顿；无已授权账户（nodata）/无钱包注入时提前启动，6 秒兜底。
+  // 次访（播过=有缓存）：不等数据，load 一到立即加载播放 → 视频零延迟
+  let playedBefore = false;
+  try { playedBefore = localStorage.getItem('hvPlayed') === '1'; } catch (e) {}
+
   const startVideo = () => {
     let started = false;
     const go = () => { if (!started) { started = true; tryLoad(); } };
-    window.addEventListener('firstdata', go, { once: true });
-    window.addEventListener('nodata', go, { once: true });
-    if (!window.ethereum) setTimeout(go, 1500); // 无钱包访客：没有数据可等，1.5 秒后启动
-    setTimeout(go, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后启动
+    if (playedBefore) {
+      go();
+    } else {
+      window.addEventListener('firstdata', () => setTimeout(go, 600), { once: true });
+      window.addEventListener('nodata', go, { once: true });
+      if (!window.ethereum) setTimeout(go, 1500); // 无钱包访客：没有数据可等，1.5 秒后启动
+      setTimeout(go, 6000);                        // 兜底：RPC 极慢/异常时 6 秒后启动
+    }
   };
   if (document.readyState === 'complete') startVideo();
   else window.addEventListener('load', startVideo, { once: true });
