@@ -2899,6 +2899,12 @@ function heroVideoEnsurePlaying() {
   if (!(hv.dataset && hv.dataset.videoOk)) {
     if (hv.readyState >= 2) {
       try { const p = hv.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+      // 事件不可靠的内核（安卓 X5）：300ms 后按元素状态补判，真播起来了就淡入
+      setTimeout(() => {
+        if (hv && !hv.paused && hv.currentTime > 0 && typeof window.heroVideoSetOk === 'function') {
+          window.heroVideoSetOk();
+        }
+      }, 300);
       return;
     }
     if (typeof window.heroVideoRetry === 'function') { window.heroVideoRetry(); return; }
@@ -2962,26 +2968,34 @@ function heroVideoEnsurePlaying() {
   v.addEventListener('error', () => {}, true);
 
   let lastLoadTs = 0;
+  let loadCount = 0;
+  const MAX_LOADS = 3;  // 每次页面生命周期最多重拉 3 次：拉不动就静默用卡牌动画，避免「反复加载」churn
   const tryLoad = () => {
-    if (v.dataset.videoOk) return;
+    if (v.dataset.videoOk || loadCount >= MAX_LOADS) return;
     const now = Date.now();
     if (now - lastLoadTs < 8000) return;  // 8 秒冷却：错误风暴/高频触发只执行一次
     lastLoadTs = now;
-    v.querySelector('source').src = CONFIG.heroVideoUrl;
+    loadCount++;
+    // 重试加 ?r=N：绕开部分安卓内核缓存下来的坏响应
+    v.querySelector('source').src = CONFIG.heroVideoUrl + (loadCount > 1 ? '?r=' + loadCount : '');
     v.load();
-    // 加载后反复尝试播放（部分内核策略拦截需延迟/手势才放行），真正播起来为止
+    // 内核无关的成功判定：安卓 X5 等对 playing/timeupdate 事件不可靠，
+    // 每 2 秒直接读元素状态（真正播起来 = 不暂停且时间在走），同时不断尝试 play
     const t0 = Date.now();
     const timer = setInterval(() => {
-      if (v.dataset.videoOk) { clearInterval(timer); return; }
+      if (!v.paused && v.currentTime > 0) { setOk(); clearInterval(timer); return; }
       try { const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
       if (Date.now() - t0 > 12000) clearInterval(timer);
     }, 2000);
   };
   window.heroVideoRetry = tryLoad;
+  window.heroVideoSetOk = setOk;  // 供 heroVideoEnsurePlaying 在事件不可靠内核上按状态补判
 
   // 首访提速：视频源等 window load（浏览器进度条走完）之后再拉取，
-  // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别
-  const startVideo = () => { tryLoad(); };
+  // 视频下载不再拖住进度条；次访有缓存，load 秒触发，视频照样秒显，无任何差别。
+  // 再延后 1 秒启动：让钱包自动连接 + 链上数据请求先发出去，安卓上「数据先出、视频后出」，
+  // 次访时数据本身就快，1 秒对视频无感
+  const startVideo = () => { setTimeout(tryLoad, 1000); };
   if (document.readyState === 'complete') startVideo();
   else window.addEventListener('load', startVideo, { once: true });
   // 微信内置浏览器：自动播放依赖 WeixinJSBridge 就绪后再 play。
