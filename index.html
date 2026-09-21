@@ -953,7 +953,7 @@ body{-webkit-tap-highlight-color:transparent}
             <span class="div-step-no">1</span>
           </div>
           <span class="div-step-title" data-i18n="divS1T">交易手续费 3%</span>
-          <span class="div-step-desc" data-i18n="divS1D">CC 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大</span>
+          <span class="div-step-desc" data-i18n="divS1D">NDX 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大</span>
         </div>
         <span class="div-conn" aria-hidden="true"><i></i><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         <div class="div-step ds-cyan">
@@ -1343,7 +1343,7 @@ const I18N = {
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
     ovTitle:'收益总览', ovSub:'Earnings Overview · 金本位分红', ovTotal:'总获得分红', ovClaimed:'已领取', ovPending:'待领取', ovBadge:'卡牌汇总分红情况',
     divTitle:'分红来源', divSub:'DIVIDEND FLOW · 全程链上自动',
-    divS1T:'交易手续费 3%', divS1D:'CC 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大',
+    divS1T:'交易手续费 3%', divS1D:'NDX 每笔买入、卖出自动收取 3% 手续费，交易越活跃，分红池越大',
     divS2T:'100% 自动入池', divS2D:'手续费全额转入分红池合约，零抽成、零中间环节',
     divS3T:'自动兑换 USDT', divS3D:'池内手续费自动换成 USDT，链上 TWAP 护航、兑换免税，收益不缩水',
     divS4T:'按卡均分到账', divS4D:'每批 USDT 按有效卡牌数等额分配，每张卡各得一份',
@@ -1366,7 +1366,7 @@ const I18N = {
     modalLater:'暂不绑定', modalConfirmBind:'确认绑定',
     cardActive:'分红持续分发中…', cardWaiting:'等待开盘中…', cardExited:'✓ 已出局', cardLeft:'还差', cardExitReady:'已满 300U · 待出局结算', cardProgress:'分红进度', cardCycle:'三倍出局 · 循环补位',
     cardDone:'已完成 · 待领取可随时提取', cardAccrued:'累计分红', cardClaimed:'已领取', cardCollector:'您的专属卡牌',
-    cardPending:'待领取', cardClaim:'领取分红', cardClaimSwap:'兑换并领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取', cardSeries:'CC CARD',
+    cardPending:'待领取', cardClaim:'领取分红', cardClaimSwap:'兑换并领取分红', noCards:'暂无卡牌', cardEntry:'入场时间', cardNone:'无待领取', cardSeries:'NDX CARD',
     calc:'计算中…',
     noTeam:'暂无下级，快去邀请好友吧', pagerPrev:'‹ 上一页', pagerNext:'下一页 ›',
     toastBusy:'操作太频繁，请稍后再试', toastConnect:'请先连接钱包', toastDisconnected:'已断开钱包',
@@ -1401,7 +1401,7 @@ const I18N = {
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
     ovTitle:'Earnings', ovSub:'Earnings Overview · Gold-Standard', ovTotal:'Total Earned', ovClaimed:'Claimed', ovPending:'Pending', ovBadge:'TOTAL EARNINGS',
     divTitle:'Dividend Sources', divSub:'DIVIDEND FLOW · FULLY ON-CHAIN',
-    divS1T:'3% Trading Fee', divS1D:'Every CC buy & sell auto-collects a 3% fee — more trading, bigger pool',
+    divS1T:'3% Trading Fee', divS1D:'Every NDX buy & sell auto-collects a 3% fee — more trading, bigger pool',
     divS2T:'100% Into The Pool', divS2D:'All fees flow straight into the dividend pool — zero cuts, zero middlemen',
     divS3T:'Auto-Swap To USDT', divS3D:'Pooled fees auto-swap into USDT — TWAP-protected & tax-free, no value leakage',
     divS4T:'Equal Share Per Card', divS4D:'Each USDT batch is split equally among all active cards — one share per card',
@@ -1424,7 +1424,7 @@ const I18N = {
     modalLater:'Not Now', modalConfirmBind:'Confirm Bind',
     cardActive:'Earning', cardWaiting:'Awaiting Launch…', cardExited:'✓ Exited', cardLeft:'short by', cardExitReady:'300U reached · ready to exit', cardProgress:'Dividend Progress', cardCycle:'3× Exit · Seat Renewed',
     cardDone:'Completed · withdraw anytime', cardAccrued:'Total Accrued', cardClaimed:'Claimed', cardCollector:'Your Exclusive Card',
-    cardPending:'Pending', cardClaim:'Claim', cardClaimSwap:'Swap & Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim', cardSeries:'CC CARD',
+    cardPending:'Pending', cardClaim:'Claim', cardClaimSwap:'Swap & Claim', noCards:'No cards yet', cardEntry:'Entry Time', cardNone:'Nothing to claim', cardSeries:'NDX CARD',
     calc:'Calculating…',
     noTeam:'No downlines yet — invite friends!', pagerPrev:'‹ Prev', pagerNext:'Next ›',
     toastBusy:'Too frequent — try again shortly', toastConnect:'Connect wallet first', toastDisconnected:'Wallet disconnected',
@@ -2410,7 +2410,7 @@ function cardRowHtml(r) {
   // accC 单位是「分」，先换算成 U 再与 300U 相减
   const remain = Math.max(0, 300 - accC / 100);
   const cardNo = t('cardSeries');   // 卡面不显示编号（链上降噪：外部无法从卡面推断卡号/类型）
-  const serial = 'CC';              // 水印固定为品牌字样
+  const serial = 'NDX';              // 水印固定为品牌字样
   const progressTxt = r.active
     ? (remain > 0 ? t('cardLeft') + ' ' + remain.toFixed(2) + ' U' : t('cardExitReady'))
     : t('cardDone');
