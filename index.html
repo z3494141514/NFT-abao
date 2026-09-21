@@ -1379,7 +1379,7 @@ const I18N = {
     toastNotLaunched:'尚未开盘，暂不能购买', toastNoPrice:'预言机价格未就绪', toastTokLow:'代币余额不足',
     toastPreOk:'预售成功！{n} 张卡牌已激活并开始累积分红 🎉', toastBuyOk:'购买成功！{n} 张卡牌已开始累积分红 🎉',
     toastClaimOk:'分红领取成功', toastNothing:'没有待领取的分红', toastClaimAll:'已领取 {n} 张卡牌的分红 🎉',
-    toastMinClaim:'每张卡最低领取 0.01U，当前手续费积累不足——攒够后自动到账',
+    toastMinClaim:'每张卡最低领取 0.01U，当前手续费积累不足——攒够后再来领取',
     toastAddNet:'请手动在钱包中添加 ', toastSwitchNet:'请切换到 ', toastConnFail:'连接失败，请重试',
     chainChecking:'检测中…', chainNoWallet:'未检测到钱包', chainNetErr:'网络错误，点击连接以切换', chainFail:'网络检测失败',
     errGeneric:'交易执行失败，请重试', errTimeout:'交易确认超时：交易可能仍在链上处理中，请稍后刷新页面查看结果',
@@ -1437,7 +1437,7 @@ const I18N = {
     toastNotLaunched:'Not launched yet', toastNoPrice:'Oracle price not ready', toastTokLow:'Insufficient tokens',
     toastPreOk:'Pre-sale success! {n} cards activated and earning 🎉', toastBuyOk:'Purchase success! {n} cards now earning 🎉',
     toastClaimOk:'dividend claimed', toastNothing:'Nothing to claim', toastClaimAll:'Claimed {n} cards\u2019 dividends 🎉',
-    toastMinClaim:'Min 0.01U per card — fees still accumulating, released automatically',
+    toastMinClaim:'Min 0.01U per card — fees still accumulating, please claim again later',
     toastAddNet:'Add network manually: ', toastSwitchNet:'Switch to ', toastConnFail:'Connection failed, retry',
     chainChecking:'Checking…', chainNoWallet:'No wallet', chainNetErr:'Network error — tap to connect', chainFail:'Network check failed',
     errGeneric:'Transaction failed — retry', errTimeout:'Confirmation timeout: the tx may still be processing — refresh the page shortly',
@@ -2806,7 +2806,11 @@ async function claimCard(tokenId) {
     loadAll();
   } catch (e) {
     const reason = (e && (e.reason || e.message)) || '';
-    showToast(reason.indexOf('nothing to claim') !== -1 ? t('toastMinClaim') : parseError(e), 'error');
+    if (reason.indexOf('nothing to claim') !== -1) {
+      showToast(t('toastMinClaim'), 'error');
+    } else {
+      showToast(parseError(e), 'error');
+    }
   } finally {
     hideLoading();
   }
@@ -2849,7 +2853,7 @@ async function claimAll() {
         // 领取最低额度 0.01U/卡：预计每卡份额不足 1 分时，合约整数除法会得出每卡 0 分
         // → 整批回滚 nothing to claim。直接不发交易，友好提示等手续费积累
         if (estPerCardNum < 0.01) {
-          showToast(t('toastMinClaim'), '');
+          showToast(t('toastMinClaim'), 'error');
           return;
         }
         ids.push(firstOwned);
