@@ -203,15 +203,6 @@ button:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:2px}
 .bs-value.gold{color:var(--gold)}
 .bs-value.hi{color:var(--cyan)}
 .buy-card>*{position:relative;z-index:1}
-/* ---------- 开盘后购买模块（资金拆分三格 + 说明条） ---------- */
-.buy-split{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.buy-split-item{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));border:1px solid rgba(148,163,184,.14);border-radius:11px;padding:7px 8px;text-align:center;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:7px;transition:border-color .25s,transform .25s}
-@media (hover:hover){
-.buy-split-item:hover{border-color:rgba(34,211,238,.4);transform:translateY(-2px)}
-}
-.buy-split-item .bs-ic{font-size:14px;filter:drop-shadow(0 0 8px rgba(34,211,238,.45))}
-.buy-split-item .bs-txt{font-size:10px;color:var(--muted);white-space:nowrap}
-.buy-split-item .bs-txt b{color:var(--gold);font-size:11.5px;font-weight:800;letter-spacing:.5px}
 .buy-note{margin-top:8px;font-size:10.5px;color:rgba(139,147,167,.8);line-height:1.6;border-left:2px solid rgba(34,211,238,.45);padding:1px 0 1px 9px}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid}
 .chip-ok{color:var(--green);border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.1)}
@@ -512,8 +503,6 @@ body{-webkit-tap-highlight-color:transparent}
 .bind-inline{flex:1 1 100%;justify-content:flex-end;gap:8px}
 .bind-inline .input{flex:1;max-width:none}
 .buy-stats{grid-template-columns:repeat(2,1fr)}
-.buy-split-item{flex-direction:column;gap:3px;padding:7px 4px}
-.buy-split-item .bs-txt{white-space:normal;font-size:9px;line-height:1.4}
 .buy-stage{padding:0;margin-bottom:4px}
 .buy-card{padding:12px 12px 13px;border-radius:18px}
 .buy-card-badge{font-size:9.5px;padding:2px 9px}
@@ -831,20 +820,6 @@ body{-webkit-tap-highlight-color:transparent}
                   <span class="bs-value" id="preLaunchRemainingDisplay">-- / 220</span>
                 </div>
               </div>
-              <div class="buy-split">
-                <div class="buy-split-item">
-                  <span class="bs-ic">👥</span>
-                  <span class="bs-txt"><b>20U</b> <span data-i18n="splitRefCash">实时转上级</span></span>
-                </div>
-                <div class="buy-split-item">
-                  <span class="bs-ic">💧</span>
-                  <span class="bs-txt"><b>50U</b> <span data-i18n="splitLp">自动加池</span></span>
-                </div>
-                <div class="buy-split-item">
-                  <span class="bs-ic">🏦</span>
-                  <span class="bs-txt"><b>30U</b> <span data-i18n="splitTreasury">项目金库</span></span>
-                </div>
-              </div>
               <div class="buy-note" id="preLaunchRewardText">🎁 购卡立得 2000 枚空投（价值 20U）· 每满 10 张直推再得 1 张卡</div>
               <button id="preLaunchBuyBtn" class="btn btn-primary btn-block mt10" data-i18n="buyPre">USDT 预售购买</button>
             </div>
@@ -867,20 +842,6 @@ body{-webkit-tap-highlight-color:transparent}
                 <div class="buy-stat">
                   <span class="bs-label" data-i18n="slotsLeft">剩余名额</span>
                   <span class="bs-value" id="buyRemainingSlots">-- / 520</span>
-                </div>
-              </div>
-              <div class="buy-split">
-                <div class="buy-split-item">
-                  <span class="bs-ic">👥</span>
-                  <span class="bs-txt"><b>30%</b> <span data-i18n="splitRefTok">转给上级</span></span>
-                </div>
-                <div class="buy-split-item">
-                  <span class="bs-ic">🔥</span>
-                  <span class="bs-txt"><b>70%</b> <span data-i18n="splitBurn">永久销毁</span></span>
-                </div>
-                <div class="buy-split-item">
-                  <span class="bs-ic">⚖️</span>
-                  <span class="bs-txt"><b>100 U</b> <span data-i18n="splitGold">金本位</span></span>
                 </div>
               </div>
               <div class="buy-note" data-i18n="buyNote">价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲</div>
@@ -1336,7 +1297,6 @@ const I18N = {
     bindTitle:'上级绑定', bindPh:'推荐人钱包地址 0x…', bindBtn:'绑定', boundOk:'✓ 已绑定',
     buyTitle:'购买卡牌', qty:'数量', buyCost:'卡牌成本', buyNeed:'需支付', myUsdt:'我的 USDT', preLeft:'剩余额度',
     price:'实时价格', myBalance:'我的余额', slotsLeft:'剩余名额',
-    splitRefCash:'实时转上级', splitLp:'自动加池', splitTreasury:'项目金库', splitRefTok:'转给上级', splitBurn:'永久销毁', splitGold:'金本位',
     buyNote:'价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌',
     buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
@@ -1394,7 +1354,6 @@ const I18N = {
     bindTitle:'Referrer', bindPh:'Referrer wallet address 0x…', bindBtn:'Bind', boundOk:'✓ Bound',
     buyTitle:'Buy Cards', qty:'Qty', buyCost:'Card Cost', buyNeed:'Pay for', myUsdt:'My USDT', preLeft:'Quota Left',
     price:'Live Price', myBalance:'My Balance', slotsLeft:'Slots Left',
-    splitRefCash:'to Referrer', splitLp:'Auto LP', splitTreasury:'Treasury', splitRefTok:'to Referrer', splitBurn:'Burned Forever', splitGold:'Gold Standard',
     buyNote:'Price auto-converts via 3-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards',
     buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
     launchProtect:'Launch Shield · ', sec:'s left',
