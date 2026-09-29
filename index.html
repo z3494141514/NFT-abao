@@ -1308,7 +1308,7 @@ const I18N = {
     bindTitle:'上级绑定', bindPh:'推荐人钱包地址 0x…', bindBtn:'绑定', boundOk:'✓ 已绑定',
     buyTitle:'购买卡牌', qty:'数量', buyCost:'卡牌成本', buyNeed:'需支付', myUsdt:'我的 USDT', preLeft:'剩余额度',
     price:'实时价格', myBalance:'我的余额', slotsLeft:'剩余名额', splitBurn:'永久销毁',
-    buyNote:'价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌',
+    buyNote:'价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌', buyPreSold:'已售罄',
     buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
@@ -1365,7 +1365,7 @@ const I18N = {
     bindTitle:'Referrer', bindPh:'Referrer wallet address 0x…', bindBtn:'Bind', boundOk:'✓ Bound',
     buyTitle:'Buy Cards', qty:'Qty', buyCost:'Card Cost', buyNeed:'Pay for', myUsdt:'My USDT', preLeft:'Quota Left',
     price:'Live Price', myBalance:'My Balance', slotsLeft:'Slots Left', splitBurn:'Burned Forever',
-    buyNote:'Price auto-converts via 3-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards',
+    buyNote:'Price auto-converts via 3-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards', buyPreSold:'Sold Out',
     buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
     launchProtect:'Launch Shield · ', sec:'s left',
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
@@ -2023,6 +2023,10 @@ async function loadStats() {
       preLaunchRemain = toNum(pr);
       if (!Number.isFinite(preLaunchRemain) || preLaunchRemain < 0) preLaunchRemain = 0;
     } catch (e) { preLaunchRemain = -1; } // 读取失败：显示未知并拦截购买（避免误导性 220 乐观回退）
+    // 售罄态：按钮禁用 + 文字切「已售罄」（每轮刷新同步，语言切换后也会自动修正）
+    const soldOut = (preLaunchRemain === 0);
+    DOM.preLaunchBuyBtn.disabled = (paused === true) || soldOut;
+    DOM.preLaunchBuyBtn.innerText = soldOut ? t('buyPreSold') : t('buyPre');
     // 额度被抢购后回钳数量：否则按钮仍显示「5 张」但实际只买剩余张数（静默截断）
     if (preLaunchRemain >= 0 && buyQuantity > Math.min(10, preLaunchRemain)) {
       buyQuantity = Math.max(1, Math.min(10, preLaunchRemain));
