@@ -1327,7 +1327,7 @@ const I18N = {
     statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定',
     preGift1:'购卡立得 2000 枚', preGift2:'空投（价值 20U）· 每满 10 张直推再得 1 张卡',
     teamPreLabel:'预售直推奖励',
-    teamPreSub:'下级预售每买 1 张卡，您实时到账 20U；直推金额每满 1000U（即 10 张卡）再送您 1 张卡',
+    teamPreSub:'直推金额每满 1000U（即 10 张卡）再送您 1 张卡',
     teamPreMiniA:'直推购买', teamPreMiniB:'张 · 已获奖励卡', teamPostLabel:'开盘后推荐奖励',
     teamPostMini:'直属下级购买实时到账',
     teamPostSub:'直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励',
@@ -2192,7 +2192,7 @@ async function loadTeam() {
     DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
   }
 
-  // 块一：预售直推奖励（20U 实时到账 + 直推金额每满 1000U 送 1 张卡）
+  // 块一：预售直推奖励（直推金额每满 1000U 送 1 张卡）
   try {
     const [directCents, bonusCards] = await Promise.all([
       saleC.directAmountOf(userAddress),
