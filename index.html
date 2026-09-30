@@ -1430,6 +1430,11 @@ function applyLang() {
   const r = document.querySelector('.lang-radio[value="' + LANG + '"]');
   if (r) r.checked = true;
   if (userAddress) { loadAll(); loadSlowData(); } // 动态文案随语言刷新（含「枚」等 JS 渲染单位）
+  // 临时停售（静态开关）：首屏/语言切换后立即恢复「已售罄」态，不等链上刷新
+  if (CONFIG.preSalePaused === true) {
+    DOM.preLaunchBuyBtn.disabled = true;
+    DOM.preLaunchBuyBtn.innerText = t('buyPreSold');
+  }
 }
 
 /* 副标题「每张卡牌 · 金本位分红 · 三倍出局」：逐字七彩 + 从左到右错峰上下波浪 */
