@@ -1635,7 +1635,10 @@ function updateBuyDisplay() {
     DOM.minusBtn.disabled = buyQuantity <= 1;
     DOM.plusBtn.disabled = buyQuantity >= Math.min(10, preLaunchRemain);
     uiText(DOM.preLaunchPay, (buyQuantity * 100) + ' USDT');
-    uiText(DOM.preLaunchBuyBtn, t('buyPreQty').replace('{n}', buyQuantity));
+    // 停售/售罄：按钮保持「已售罄」态，数量文案不覆盖（与 loadStats 同一口径）
+    const soldOut = (CONFIG.preSalePaused === true) || (preLaunchRemain === 0);
+    DOM.preLaunchBuyBtn.disabled = (paused === true) || soldOut;
+    DOM.preLaunchBuyBtn.innerText = soldOut ? t('buyPreSold') : t('buyPreQty').replace('{n}', buyQuantity);
   } else {
     uiText(DOM.buyQtyHint, buyQuantity);
     DOM.minusBtn.disabled = buyQuantity <= 1;
