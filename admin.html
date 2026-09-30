@@ -1345,12 +1345,14 @@ async function refreshWizard(isTokenAdmin) {
   add('NFT 铸币权唯一（MINTER == 销售合约）', mc === 1 ? 'ok' : 'bad',
     mc === -1 ? '无法读取' : `当前 ${mc} 个铸币者`);
 
-  // 代币储备（信息项）
+  // 代币储备（信息项，不挡开盘：储备只影响预售购买与管理员分发，开盘后买卡走代币支付无需储备）
   let reserve = null;
   try { reserve = await tokenC.balanceOf(saleC.address); } catch (e) {}
   add('销售合约代币储备（每张预售消耗 7000 枚）',
-    reserve === null ? 'warn' : (reserve.gt(0) ? 'ok' : 'bad'),
-    reserve === null ? '无法读取' : `当前 ${fmtAmt(reserve, tokenDecimals)} ${tokenSymbol}`);
+    reserve === null ? 'warn' : (reserve.gt(0) ? 'ok' : 'warn'),
+    reserve === null ? '无法读取' : (reserve.gt(0)
+      ? `当前 ${fmtAmt(reserve, tokenDecimals)} ${tokenSymbol}`
+      : `当前 0 ${tokenSymbol}（预售将回滚"储备不足"，开盘不受影响）`));
 
   // 渲染
   DOM.adminWizardChecks.innerHTML = items.map(it =>
