@@ -370,33 +370,30 @@ textarea.input{resize:vertical;min-height:96px;font-family:ui-monospace,monospac
 .pager-btn:hover:not(:disabled){background:rgba(34,211,238,.18);box-shadow:0 4px 14px rgba(34,211,238,.2)}
 .pager-btn:disabled{opacity:.35;cursor:not-allowed}
 .pager-info{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:700;border:1px solid var(--border);border-radius:99px;padding:6px 16px;background:rgba(255,255,255,.03)}
-/* ---------- 推荐奖励双卡（并排紧凑陈列，数字优先） ---------- */
-.reward-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-.reward-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(245,193,76,.16),rgba(251,113,133,.07) 55%,rgba(139,92,246,.12)),linear-gradient(180deg,rgba(26,27,44,.98),rgba(13,14,26,.99));border:1px solid rgba(245,193,76,.5);border-radius:18px;padding:16px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;box-shadow:0 10px 40px rgba(245,193,76,.12)}
-.reward-hero::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);transform:translateX(-260%);animation:shine 3.6s ease-in-out 1.2s infinite;pointer-events:none}
-.reward-hero.anim-restart::after{animation:none}
-/* 统一扫光：transform 合成层动画（GPU），不触发布局/重绘 */
+/* ---------- NDX 叙事介绍（地推版：起源故事 + 精华数字 + 战略时间轴） ---------- */
+.ndx-story{display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
+.story-hero{position:relative;overflow:hidden;text-align:center;padding:22px 18px 18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012));border:1px solid rgba(148,163,184,.14);border-radius:20px}
+.story-hero::before{content:'';position:absolute;top:-60%;left:50%;transform:translateX(-50%);width:130%;height:130%;background:radial-gradient(ellipse at center,rgba(34,211,238,.1),rgba(139,92,246,.06) 45%,transparent 70%);pointer-events:none}
+.story-kicker{position:relative;display:inline-block;font-size:10px;letter-spacing:3px;color:var(--cyan);border:1px solid rgba(34,211,238,.35);background:rgba(34,211,238,.08);padding:5px 16px;border-radius:99px;margin-bottom:12px;font-weight:700}
+.story-title{position:relative;font-size:21px;line-height:1.55;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,#f5c14c,#22d3ee,#8b5cf6,#f5c14c);background-size:220% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goldFlow 6s linear infinite;margin:0 0 10px}
+@keyframes goldFlow{to{background-position:220% center}}
+.story-lead{position:relative;font-size:12.5px;color:var(--muted);line-height:1.8;letter-spacing:.5px;margin:0}
+.story-quote{position:relative;padding:18px 18px 14px;background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(34,211,238,.06));border:1px solid rgba(139,92,246,.3);border-radius:16px}
+.story-quote p{margin:0;font-size:13px;line-height:1.95;color:#d8ddf0;letter-spacing:.4px}
+.story-qmark{position:absolute;top:-10px;left:14px;font-size:36px;line-height:1;color:var(--gold);opacity:.9;text-shadow:0 0 18px rgba(245,193,76,.5)}
+.story-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.story-stat{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 8px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.13);border-radius:14px;text-align:center}
+.story-stat::after{content:'';position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.08),transparent);transform:translateX(-260%);animation:shine 4s ease-in-out 1s infinite;pointer-events:none}
 @keyframes shine{0%{transform:translateX(-260%)}55%,100%{transform:translateX(430%)}}
-.reward-hero-ic{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#f5c14c,#fb7185);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(245,193,76,.4);flex-shrink:0}
-.reward-hero-ic .ic{width:22px;height:22px;stroke:#fff;stroke-width:1.6}
-.reward-hero-body{display:flex;flex-direction:column;gap:4px;min-width:0}
-.reward-hero-violet{background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(245,193,76,.05) 55%,rgba(59,130,246,.12)),linear-gradient(180deg,rgba(22,21,42,.98),rgba(13,14,26,.99));border:1px solid rgba(139,92,246,.45);box-shadow:0 10px 40px rgba(139,92,246,.14)}
-.reward-hero-violet .reward-hero-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 6px 20px rgba(139,92,246,.4)}
-.reward-mini{margin-top:2px;font-size:11.5px;color:var(--muted)}
-.reward-mini b{color:var(--gold);font-weight:700}
-.reward-label{font-size:11px;letter-spacing:2px;color:rgba(245,193,76,.95);font-weight:800;text-transform:uppercase}
-.reward-value{font-size:26px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums;line-height:1.1;word-break:break-all}
-/* 规则细则条：图标与对应奖励卡一致（缩小版）+ 标题明确区分预售/开盘后 + 亮色正文 */
-.reward-notes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.reward-note{display:flex;align-items:flex-start;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(245,193,76,.28);border-radius:12px;padding:11px 13px}
-.reward-note-violet{border-color:rgba(139,92,246,.3)}
-.rn-ic{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f5c14c,#fb7185);box-shadow:0 4px 12px rgba(245,193,76,.3);flex-shrink:0}
-.rn-ic .ic{width:14px;height:14px;stroke:#fff;stroke-width:1.7}
-.reward-note-violet .rn-ic{background:linear-gradient(135deg,#8b5cf6,#3b82f6);box-shadow:0 4px 12px rgba(139,92,246,.3)}
-.rn-body{display:flex;flex-direction:column;gap:3px;min-width:0}
-.rn-title{font-size:11.5px;font-weight:800;letter-spacing:1px;color:var(--gold)}
-.reward-note-violet .rn-title{color:#c4b5fd}
-.rn-txt{font-size:12px;color:#c7cedd;line-height:1.7;letter-spacing:.3px}
+.story-stat b{font-size:26px;font-weight:900;background:linear-gradient(90deg,#f5c14c,#ffe08a,#f5c14c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;font-variant-numeric:tabular-nums}
+.story-stat span{font-size:10.5px;color:var(--muted);letter-spacing:1px;line-height:1.65}
+.story-timeline{display:flex;flex-direction:column;padding:4px 6px 4px 4px}
+.tl-item{position:relative;display:flex;align-items:baseline;gap:12px;padding:9px 0 9px 26px;border-left:1px solid rgba(148,163,184,.18)}
+.tl-item:last-child{border-left-color:transparent}
+.tl-dot{position:absolute;left:-5px;top:15px;width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#8b5cf6);box-shadow:0 0 10px rgba(34,211,238,.55)}
+.tl-dot-gold{background:linear-gradient(135deg,#f5c14c,#fb7185);box-shadow:0 0 10px rgba(245,193,76,.55)}
+.tl-date{font-size:11px;font-weight:800;color:var(--cyan);white-space:nowrap;min-width:60px;font-variant-numeric:tabular-nums}
+.tl-txt{font-size:12.5px;color:#c7cedd;letter-spacing:.3px}
 /* ---------- 主按钮流光（入场延迟，避免切页瞬间闪光） ---------- */
 .btn-primary{position:relative;overflow:hidden}
 .btn-primary::after{content:'';position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.22),transparent);transform:translateX(-260%);animation:shine 3.4s ease-in-out 1.6s infinite;pointer-events:none}
@@ -559,8 +556,8 @@ body{-webkit-tap-highlight-color:transparent}
 .team-no{font-size:10.5px;letter-spacing:1px}
 .team-addr-main{font-size:13px;letter-spacing:.3px}
 .team-copy{width:31px;height:31px}
-.reward-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.reward-notes{grid-template-columns:1fr;gap:8px;margin-bottom:12px}
+.story-stats{grid-template-columns:1fr;gap:8px}
+.story-title{font-size:18px}
 .reward-hero{padding:12px 10px;border-radius:15px;gap:10px;flex-direction:column;text-align:center}
 .reward-hero-ic{width:38px;height:38px;border-radius:11px}
 .reward-hero-ic .ic{width:19px;height:19px}
@@ -987,40 +984,38 @@ body{-webkit-tap-highlight-color:transparent}
 
   <!-- ================= 团队 ================= -->
   <div id="teamPage" class="page">
-    <!-- 两块推荐奖励：并排双卡（紧凑陈列，数字优先） -->
-    <div class="reward-grid">
-      <div class="reward-hero">
-        <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></div>
-        <div class="reward-hero-body">
-          <span class="reward-label" data-i18n="teamPreLabel">预售直推奖励</span>
-          <span class="reward-value" id="teamPreReferralUsdt">0.00 U</span>
-          <span class="reward-mini"><span data-i18n="teamPreMiniA">直推购买</span> <b id="teamPreReferralCount">0</b> <span data-i18n="teamPreMiniB">张 · 已获奖励卡</span> <b id="teamBonusCards">0</b> <span data-i18n="unitCard">张</span></span>
+    <!-- NDX 叙事介绍（地推版）：起源故事 + 精华数字 + 战略时间轴 -->
+    <div class="ndx-story">
+      <div class="story-hero">
+        <span class="story-kicker" data-i18n="storyKicker">NDX · 一站式区块链金融生态</span>
+        <h3 class="story-title" data-i18n="storyTitle">把万有引力般的确定性，带入区块链的世界</h3>
+        <p class="story-lead" data-i18n="storyLead">每一张卡牌，都是一颗自带分红动能的小行星——持有即产出，循环即增长。</p>
+      </div>
+      <div class="story-quote">
+        <span class="story-qmark">“</span>
+        <p data-i18n="storyQuote">三百多年前，一颗苹果落地，牛顿找到了万物运行的确定规律。今天，NDX 把同样确定、可持续的规律，写进智能合约。</p>
+      </div>
+      <div class="story-stats">
+        <div class="story-stat">
+          <b>520</b>
+          <span data-i18n="statCards">全网卡牌 · 满额循环补位</span>
+        </div>
+        <div class="story-stat">
+          <b>100U</b>
+          <span data-i18n="statEntry">参与门槛 · 三倍出局</span>
+        </div>
+        <div class="story-stat">
+          <b>70%</b>
+          <span data-i18n="statBurn">买卡销毁 · 极致通缩</span>
         </div>
       </div>
-      <div class="reward-hero reward-hero-violet">
-        <div class="reward-hero-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></div>
-        <div class="reward-hero-body">
-          <span class="reward-label" data-i18n="teamPostLabel">开盘后推荐奖励</span>
-          <span class="reward-value" id="teamRewardEarned">0.00</span>
-          <span class="reward-mini" data-i18n="teamPostMini">直属下级购买实时到账</span>
-        </div>
-      </div>
-    </div>
-    <!-- 规则细则：两张卡的完整说明，独立成条挂在卡下方（图标/配色与对应卡一致，仅缩小） -->
-    <div class="reward-notes">
-      <div class="reward-note">
-        <span class="rn-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5.5"/><path d="M4.5 21c1.2-4.6 4-7 7.5-7s6.3 2.4 7.5 7"/><path d="M17.5 3.5v4M15.5 5.5h4"/></svg></span>
-        <div class="rn-body">
-          <span class="rn-title" data-i18n="teamPreLabel">预售直推奖励</span>
-          <span class="rn-txt" data-i18n="teamPreSub">直推金额每满 1000U（即 10 张卡）送 1 张卡</span>
-        </div>
-      </div>
-      <div class="reward-note reward-note-violet">
-        <span class="rn-ic"><svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 15.6c2.6.3 4.6 1.9 5.4 4.4"/></svg></span>
-        <div class="rn-body">
-          <span class="rn-title" data-i18n="teamPostLabel">开盘后推荐奖励</span>
-          <span class="rn-txt" data-i18n="teamPostSub">直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励</span>
-        </div>
+      <div class="story-timeline">
+        <div class="tl-item"><span class="tl-dot"></span><span class="tl-date">2026.09</span><span class="tl-txt" data-i18n="tl1">生态启航</span></div>
+        <div class="tl-item"><span class="tl-dot"></span><span class="tl-date">2026.10</span><span class="tl-txt" data-i18n="tl2">全开源 · 社区共建</span></div>
+        <div class="tl-item"><span class="tl-dot"></span><span class="tl-date">2027.01</span><span class="tl-txt" data-i18n="tl3">TLK 基金会合作 · 美国 MSB 牌照</span></div>
+        <div class="tl-item"><span class="tl-dot"></span><span class="tl-date">2027.03</span><span class="tl-txt" data-i18n="tl4">NDX 购物消费落地</span></div>
+        <div class="tl-item"><span class="tl-dot"></span><span class="tl-date">2027.06</span><span class="tl-txt" data-i18n="tl5">上线 10 家中心化交易所</span></div>
+        <div class="tl-item"><span class="tl-dot tl-dot-gold"></span><span class="tl-date">2027.10</span><span class="tl-txt" data-i18n="tl6">上线币安 · 新世界核心引擎</span></div>
       </div>
     </div>
     <div class="team-panel">
@@ -1290,8 +1285,7 @@ const DOM = {
   cardsTotalAccrued: $('cardsTotalAccrued'), cardsTotalClaimed: $('cardsTotalClaimed'), cardsTotalPending: $('cardsTotalPending'),
   myCardCount: $('myCardCount'), cardList: $('cardList'), claimAllBtn: $('claimAllBtn'),
   inviteMyReferrer: $('inviteMyReferrer'), inviteLink: $('inviteLink'), copyBtn: $('copyBtn'),
-  teamCount: $('teamCount'), teamList: $('teamList'), teamRewardEarned: $('teamRewardEarned'),
-  teamPreReferralUsdt: $('teamPreReferralUsdt'), teamPreReferralCount: $('teamPreReferralCount'), teamBonusCards: $('teamBonusCards'),
+  teamCount: $('teamCount'), teamList: $('teamList'),
   bindModal: $('bindModal'), bindModalAddr: $('bindModalAddr'),
   bindModalConfirm: $('bindModalConfirm'), bindModalCancel: $('bindModalCancel'),
   langBtn: $('langBtn'), langModal: $('langModal'), langConfirmBtn: $('langConfirmBtn')
@@ -1328,11 +1322,13 @@ const I18N = {
     footerDisclaimer:'免责声明：本项目仅提供去中心化技术服务，不构成任何投资建议；数字资产价格波动剧烈，参与前请充分了解风险，理性决策、风险自担。',
     statusDiv:'分红进行中', statusPaused:'已暂停', statusPre:'未开盘', switching:'开盘切换中…', pendingSwap:'待兑换 ', notBound:'未绑定',
     preGift1:'购卡立得 2000 枚', preGift2:'空投（价值 20U）· 每满 10 张直推再得 1 张卡',
-    teamPreLabel:'预售直推奖励',
-    teamPreSub:'直推金额每满 1000U（即 10 张卡）送 1 张卡',
-    teamPreMiniA:'直推购买', teamPreMiniB:'张 · 已获奖励卡', teamPostLabel:'开盘后推荐奖励',
-    teamPostMini:'直属下级购买实时到账',
-    teamPostSub:'直属下级好友每购买一张卡牌，您将实时获得 30% 代币奖励',
+    storyKicker:'NDX · 一站式区块链金融生态',
+    storyTitle:'把万有引力般的确定性，带入区块链的世界',
+    storyLead:'每一张卡牌，都是一颗自带分红动能的小行星——持有即产出，循环即增长。',
+    storyQuote:'三百多年前，一颗苹果落地，牛顿找到了万物运行的确定规律。今天，NDX 把同样确定、可持续的规律，写进智能合约。',
+    statCards:'全网卡牌 · 满额循环补位', statEntry:'参与门槛 · 三倍出局', statBurn:'买卡销毁 · 极致通缩',
+    tl1:'生态启航', tl2:'全开源 · 社区共建', tl3:'TLK 基金会合作 · 美国 MSB 牌照',
+    tl4:'NDX 购物消费落地', tl5:'上线 10 家中心化交易所', tl6:'上线币安 · 新世界核心引擎',
     teamPanelTitle:'直属下级', teamPanelSub:'实时上链',
     teamTotalA:'共', teamTotalB:'位', thRank:'排名', thAddr:'钱包地址', thAct:'操作', emptyTeam:'连接钱包后查看团队',
     bindModalTitle:'绑定邀请人', bindModalTip:'您是通过好友邀请链接进入的。绑定后不可更改，确认绑定该上级吗？',
@@ -1385,11 +1381,13 @@ const I18N = {
     footerDisclaimer:'DISCLAIMER: This protocol provides decentralized technical services only and does not constitute investment advice. Digital assets are highly volatile — please fully understand the risks before participating and make rational, independent decisions.',
     statusDiv:'Dividends Active', statusPaused:'Paused', statusPre:'Not Launched', switching:'Launch Switching…', pendingSwap:'To convert ', notBound:'Not bound',
     preGift1:'Get 2,000', preGift2:'airdrop (worth 20U) · every 10 direct cards earns 1 more card',
-    teamPreLabel:'Pre-sale Direct Rewards',
-    teamPreSub:'Earn 20U instantly per downline pre-sale card; every 1,000U (10 cards) of direct sales earns you 1 bonus card',
-    teamPreMiniA:'Direct buys', teamPreMiniB:'cards · bonus cards earned', teamPostLabel:'Post-launch Referral Rewards',
-    teamPostMini:'Earned per downline purchase',
-    teamPostSub:'Earn 30% of tokens instantly whenever your direct downlines buy a card',
+    storyKicker:'NDX · ONE-STOP BLOCKCHAIN FINANCE',
+    storyTitle:'Certainty, as reliable as gravity, brought into the blockchain world',
+    storyLead:'Every card is a small planet with its own dividend gravity — hold it, and value keeps flowing.',
+    storyQuote:'Three centuries ago, an apple fell and Newton found the law of certainty. Today, NDX writes the same certainty into smart contracts.',
+    statCards:'520 cards · rotation refill', statEntry:'100U entry · 3× exit', statBurn:'70% burned · deflationary',
+    tl1:'Ecosystem launch', tl2:'Open source · community', tl3:'TLK Foundation · US MSB license',
+    tl4:'NDX shopping live', tl5:'10 CEX listings', tl6:'Binance · core engine',
     teamPanelTitle:'Direct Referrals', teamPanelSub:'REAL-TIME ON-CHAIN',
     teamTotalA:'Total:', teamTotalB:'', thRank:'Rank', thAddr:'Wallet Address', thAct:'Action', emptyTeam:'Connect wallet to view team',
     bindModalTitle:'Bind Inviter', bindModalTip:'You arrived via a friend\u2019s invite link. Binding is permanent — confirm this referrer?',
@@ -1881,10 +1879,6 @@ function disconnectWallet() {
   DOM.inviteMyReferrer.innerText = '--';
   DOM.inviteLink.value = '';
   DOM.teamCount.innerText = '0';
-  DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
-  DOM.teamPreReferralUsdt.innerText = '0.00 U';
-  DOM.teamPreReferralCount.innerText = '0';
-  DOM.teamBonusCards.innerText = '0';
   DOM.teamList.innerHTML = '<div class="empty-tip">' + t('emptyTeam') + '</div>';
   teamPageNo = 1;
   teamRenderKey = '';
@@ -2193,35 +2187,11 @@ async function loadUser() {
   DOM.inviteLink.value = `${location.origin}${location.pathname}?ref=${userAddress}`;
 }
 
-/* 团队：一级下级人数、地址列表与两块推荐奖励 */
+/* 团队：一级下级人数与地址列表 */
 async function loadTeam() {
   if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   const epoch = connEpoch;
   const addr = userAddress;
-  // 块二：开盘后推荐奖励（30% 代币）
-  try {
-    const earned = await saleC.referralRewardsEarned(userAddress);
-    if (epoch === connEpoch && userAddress === addr) DOM.teamRewardEarned.innerText = fmtAmt(earned, tokenDecimals) + ' ' + tokenSymbol;
-  } catch (e) {
-    DOM.teamRewardEarned.innerText = '0.00 ' + tokenSymbol;
-  }
-
-  // 块一：预售直推奖励（直推金额每满 1000U 送 1 张卡）
-  try {
-    const [directCents, bonusCards] = await Promise.all([
-      saleC.directAmountOf(userAddress),
-      saleC.bonusCardsGranted(userAddress)
-    ]);
-    const directCards = directCents.div(10000); // 100U/张 → 张数
-    const usdtEarned = directCents.div(5);      // 每张 20U → U分 = 张数×2000分
-    DOM.teamPreReferralUsdt.innerText = (usdtEarned.toNumber() / 100).toFixed(2) + ' U';
-    DOM.teamPreReferralCount.innerText = directCards.toString();
-    DOM.teamBonusCards.innerText = bonusCards.toString();
-  } catch (e) {
-    DOM.teamPreReferralUsdt.innerText = '0.00 U';
-    DOM.teamPreReferralCount.innerText = '0';
-    DOM.teamBonusCards.innerText = '0';
-  }
 
   let cnt = 0;
   try {
