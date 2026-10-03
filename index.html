@@ -1802,6 +1802,7 @@ async function setupProvider(address) {
   // 签名交易仍走钱包注入的 signer。
   const readNodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId)).concat([provider]);
   readProvider = createReadProvider(readNodes);
+  uiText(DOM.buyDbg, 'dbg: 1 只读层就绪');
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
   nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
@@ -1840,8 +1841,13 @@ async function setupProvider(address) {
     }
   } catch (e) { usdtContract = null; }
 
+  uiText(DOM.buyDbg, 'dbg: 2 元数据完成，即将校验代次');
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
-  if (epoch !== connEpoch || userAddress !== address) return;
+  if (epoch !== connEpoch || userAddress !== address) {
+    uiText(DOM.buyDbg, 'dbg: 3 代次失效被废弃（epoch=' + epoch + '/' + connEpoch + ' addr=' + (userAddress === address) + '）');
+    return;
+  }
+  uiText(DOM.buyDbg, 'dbg: 3 代次校验通过，开始加载');
 
   loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
@@ -1973,7 +1979,8 @@ async function loadAll() {
 }
 
 async function loadStats() {
-  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
+  uiText(DOM.buyDbg, 'dbg: 4 loadStats 开始');
+  if (!userAddress) { uiText(DOM.buyDbg, 'dbg: 4b 无钱包地址，直接返回'); return; } // 异步竞态防护：断开后到达的过期加载直接丢弃
   const epoch = connEpoch;
   const addr = userAddress;
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
@@ -2083,7 +2090,7 @@ async function loadStats() {
 
   // 调试行（排查首次进入价格不显示用，稳定后移除）：
   dbgTick++;
-  uiText(DOM.buyDbg, 'dbg tick=' + dbgTick + ' unitPrice=' + (unitPrice === null ? 'null' : (unitPrice.isZero() ? '0' : 'ok')) + ' spot=' + (spotPriceWei ? 'ok' : 'null'));
+  uiText(DOM.buyDbg, 'dbg: 5 完成 tick=' + dbgTick + ' unitPrice=' + (unitPrice === null ? 'null' : (unitPrice.isZero() ? '0' : 'ok')) + ' spot=' + (spotPriceWei ? 'ok' : 'null') + ' slots=' + remainingSlots + ' qty=' + buyQuantity);
 
   // 慢数据（销毁量/流通量）：约每 60 秒刷新一次，不阻塞本轮
   slowTick = (slowTick + 1) % 6;
