@@ -836,12 +836,10 @@ body{-webkit-tap-highlight-color:transparent}
                 <div class="buy-stat">
                   <span class="bs-label"><span data-i18n="buyNeed">需支付</span>（<span id="buyQtyHint">1</span> <span data-i18n="unitCard">张</span>）</span>
                   <span class="bs-value hi" id="buyTokensNeeded">--</span>
-                  <span id="buyDbg" style="font-size:10px;opacity:.65;display:block;margin-top:2px"></span>
                 </div>
-                <div class="buy-stat" style="display:none">
+                <div class="buy-stat">
                   <span class="bs-label" data-i18n="myBalance">我的余额</span>
                   <span class="bs-value" id="buyBalanceHint">--</span>
-                  <span class="bs-sub" id="buyAddrHint" style="font-size:11px;opacity:.7;display:block;margin-top:2px"></span>
                 </div>
                 <div class="buy-stat">
                   <span class="bs-label" data-i18n="slotsLeft">剩余名额</span>
@@ -1088,7 +1086,6 @@ body{-webkit-tap-highlight-color:transparent}
 
   <div class="footer" data-i18n="footerKey">军工级合约防线 · 艺术品级前端精工 · 每一分钱链上可证</div>
   <div class="footer-disclaimer" data-i18n="footerDisclaimer">免责声明：本项目仅提供去中心化技术服务，不构成任何投资建议；数字资产价格波动剧烈，参与前请充分了解风险，理性决策、风险自担。</div>
-  <div class="footer-disclaimer" style="margin-top:2px;opacity:.85">前端版本 v20261003g（看到本行=新版页面已生效；看不到=手机仍缓存旧版）</div>
 </div>
 
 <script src="./ethers.lite.min.js"></script>
@@ -1276,7 +1273,7 @@ const DOM = {
   gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
-  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'), buyAddrHint: $('buyAddrHint'), buyDbg: $('buyDbg'),
+  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
   buyPriceHint: $('buyPriceHint'),
   minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
   buyModeBadge: $('buyModeBadge'), preLaunchBuyArea: $('preLaunchBuyArea'), tokenBuyArea: $('tokenBuyArea'),
@@ -1473,7 +1470,6 @@ let launchedNow = false;          // 是否已开盘（卡面徽标：等待开�
 let usdtContract = null;          // USDT 合约实例
 let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
 let spotPriceWei = null;          // 现货价兜底（U/枚 × 1e18）：TWAP 报价过期时价格展示的备胎（只读，永远可读）
-let dbgTick = 0;                  // 调试：loadStats 完成计数（首次进入不显示时判断刷新循环是否在跑）
 let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
 let estPerCardText = '';          // 每张卡预计可分（≈X U）
 let estPerCardNum = 0;            // 每张卡预计可分（数值 U）
@@ -1805,7 +1801,6 @@ async function setupProvider(address) {
   // 签名交易仍走钱包注入的 signer。
   const readNodes = CONFIG.rpcUrls.map(u => new ethers.providers.JsonRpcProvider(u, CONFIG.chainId)).concat([provider]);
   readProvider = createReadProvider(readNodes);
-  uiText(DOM.buyDbg, 'dbg: 1 只读层就绪');
 
   tokenC = new ethers.Contract(CONFIG.contracts.token, ABIS.token, readProvider);
   nftC = new ethers.Contract(CONFIG.contracts.nft, ABIS.nft, readProvider);
@@ -1844,13 +1839,8 @@ async function setupProvider(address) {
     }
   } catch (e) { usdtContract = null; }
 
-  uiText(DOM.buyDbg, 'dbg: 2 元数据完成，即将校验代次');
   // 元数据拉取期间用户可能已断开：过期代次直接废弃，不再写任何界面状态
-  if (epoch !== connEpoch || userAddress !== address) {
-    uiText(DOM.buyDbg, 'dbg: 3 代次失效被废弃（epoch=' + epoch + '/' + connEpoch + ' addr=' + (userAddress === address) + '）');
-    return;
-  }
-  uiText(DOM.buyDbg, 'dbg: 3 代次校验通过，开始加载');
+  if (epoch !== connEpoch || userAddress !== address) return;
 
   loadAll();
   loadSlowData(); // 连接/重连后立即拉取慢数据（已销毁/流通量），不等轮询周期
@@ -1881,7 +1871,6 @@ function disconnectWallet() {
   DOM.circulatingSupply.innerText = '--';
   // 购买模块
   DOM.buyBalanceHint.innerText = '--';
-  DOM.buyAddrHint.innerText = '';
   DOM.buyRemainingSlots.innerText = '-- / 520';
   DOM.buyPriceHint.innerText = '--';
   DOM.usdtBalanceHint.innerText = '--';
@@ -1982,28 +1971,20 @@ async function loadAll() {
 }
 
 async function loadStats() {
-  uiText(DOM.buyDbg, 'dbg: 4 loadStats 开始');
-  if (!userAddress) { uiText(DOM.buyDbg, 'dbg: 4b 无钱包地址，直接返回'); return; } // 异步竞态防护：断开后到达的过期加载直接丢弃
+  if (!userAddress) return; // 异步竞态防护：断开后到达的过期加载直接丢弃
   const epoch = connEpoch;
   const addr = userAddress;
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
-  const trace = [];
-  const mark = (s) => { trace.push(s); uiText(DOM.buyDbg, 'dbg: ' + trace.join('→')); };
-  mark('4a');
   const [poolStats, pendingSwap, poolNdxBal, lp, winActive, myBal, unitPrice, tradingOn] = await Promise.all([
-    poolC.getPoolStats().then(v => { mark('P✓'); return v; }).catch(() => { mark('P✗'); return null; }),
-    poolC.pendingSwapTokens().then(v => { mark('S✓'); return v; }).catch(() => { mark('S✗'); return null; }),
-    tokenC.balanceOf(CONFIG.contracts.pool).then(v => { mark('B✓'); return v; }).catch(() => { mark('B✗'); return null; }),
-    Promise.all([
-      saleC.launched().then(v => { mark('L✓'); return v; }).catch(() => { mark('L✗'); return false; }),
-      saleC.paused().then(v => { mark('Z✓'); return v; }).catch(() => { mark('Z✗'); return false; })
-    ]),
-    tokenC.launchWindowActive().then(v => { mark('W✓'); return v; }).catch(() => { mark('W✗'); return false; }),
-    userAddress ? tokenC.balanceOf(userAddress).then(v => { mark('M✓'); return v; }).catch(() => { mark('M✗'); return null; }) : Promise.resolve(null),
-    saleC.requiredTokensForCard().then(v => { mark('R✓'); return v; }).catch(() => { mark('R✗'); return null; }),
-    tokenC.tradingEnabled().then(v => { mark('T✓'); return v; }).catch(() => { mark('T✗'); return false; })
+    poolC.getPoolStats().catch(() => null),
+    poolC.pendingSwapTokens().catch(() => null),
+    tokenC.balanceOf(CONFIG.contracts.pool).catch(() => null),
+    Promise.all([saleC.launched().catch(() => false), saleC.paused().catch(() => false)]),
+    tokenC.launchWindowActive().catch(() => false),
+    userAddress ? tokenC.balanceOf(userAddress).catch(() => null) : Promise.resolve(null),
+    saleC.requiredTokensForCard().catch(() => null),
+    tokenC.tradingEnabled().catch(() => false)
   ]);
-  mark('4b');
   // 拉取期间可能已断开/换号：过期结果直接丢弃
   if (epoch !== connEpoch || userAddress !== addr) return;
 
@@ -2092,16 +2073,10 @@ async function loadStats() {
 
   // 我的代币余额（购买模块内展示）
   uiText(DOM.buyBalanceHint, myBal !== null ? fmtTokens(myBal) + ' ' + tokenSymbol : '--');
-  // 诊断行：显示站点实际连接的钱包 + 链上实际读数（排查「余额对不上」用）
-  uiText(DOM.buyAddrHint, (userAddress ? userAddress.slice(0, 6) + '…' + userAddress.slice(-4) : '未连接') + ' · 链上读数 ' + (myBal !== null ? fmtTokens(myBal) : '--'));
 
   // 购买所需代币（单价 × 数量实时联动）
   unitPriceTokens = unitPrice !== null ? unitPrice : null;
   updateBuyDisplay();
-
-  // 调试行（排查首次进入价格不显示用，稳定后移除）：
-  dbgTick++;
-  uiText(DOM.buyDbg, 'dbg: 5 完成 tick=' + dbgTick + ' unitPrice=' + (unitPrice === null ? 'null' : (unitPrice.isZero() ? '0' : 'ok')) + ' spot=' + (spotPriceWei ? 'ok' : 'null') + ' slots=' + remainingSlots + ' qty=' + buyQuantity);
 
   // 慢数据（销毁量/流通量）：约每 60 秒刷新一次，不阻塞本轮
   slowTick = (slowTick + 1) % 6;
