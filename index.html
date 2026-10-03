@@ -1967,11 +1967,11 @@ async function loadStats() {
   const epoch = connEpoch;
   const addr = userAddress;
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
-  const [poolStats, pendingSwap, lp, winActive, myBal, unitPrice, tradingOn] = await Promise.all([
+  const [poolStats, pendingSwap, poolNdxBal, lp, winActive, myBal, unitPrice, tradingOn] = await Promise.all([
     poolC.getPoolStats().catch(() => null),
     poolC.pendingSwapTokens().catch(() => null),
+    tokenC.balanceOf(CONFIG.contracts.pool).catch(() => null),
     Promise.all([saleC.launched().catch(() => false), saleC.paused().catch(() => false)]),
-    tokenC.launchWindowActive().catch(() => false),
     userAddress ? tokenC.balanceOf(userAddress).catch(() => null) : Promise.resolve(null),
     saleC.requiredTokensForCard().catch(() => null),
     tokenC.tradingEnabled().catch(() => false)
@@ -1986,11 +1986,13 @@ async function loadStats() {
   uiText(DOM.poolTokenBalance, poolOk ? fmtAmt(balBN, usdtDecimals) + ' U' : '--');
   uiText(DOM.activeCardsDisplay, poolOk ? `${activeCards.toString()} / 520` : '-- / 520');
   remainingSlots = poolOk ? Math.max(0, 520 - Number(activeCards.toString())) : 520;
-  uiText(DOM.poolBalanceU, t('pendingSwap') + (pendingSwap !== null ? fmtAmt(pendingSwap, tokenDecimals) : '0') + ' ' + tokenSymbol);
-  poolPendingTokens = pendingSwap !== null ? pendingSwap : ethers.BigNumber.from(0); // 兑换引信：待兑换>0 时允许点领取
-  _lastPendingSwap = pendingSwap;
+  // 待兑换 NDX 显示「池内真实到账手续费」（未归集 + 已归集积压 = balanceOf），到账即显示、不再滞后
+  const poolNdx = poolNdxBal !== null ? poolNdxBal : (pendingSwap !== null ? pendingSwap : BN.from(0));
+  uiText(DOM.poolBalanceU, t('pendingSwap') + fmtAmt(poolNdx, tokenDecimals) + ' ' + tokenSymbol);
+  poolPendingTokens = poolNdx; // 兑换引信：池内实际手续费>0 即允许点领取（领取会先归集再兑换）
+  _lastPendingSwap = poolNdx;
   _lastActiveCards = activeCards;
-  refreshEstimate(pendingSwap, activeCards); // 预计收益：后台异步估算，不阻塞主刷新；失败保持上次值
+  refreshEstimate(poolNdx, activeCards); // 预计收益：后台异步估算，不阻塞主刷新；失败保持上次值
   uiText(DOM.buyRemainingSlots, remainingSlots + ' / 520');
 
   // 开盘状态
