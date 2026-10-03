@@ -840,6 +840,7 @@ body{-webkit-tap-highlight-color:transparent}
                 <div class="buy-stat">
                   <span class="bs-label" data-i18n="myBalance">我的余额</span>
                   <span class="bs-value" id="buyBalanceHint">--</span>
+                  <span class="bs-sub" id="buyAddrHint" style="font-size:11px;opacity:.7;display:block;margin-top:2px"></span>
                 </div>
                 <div class="buy-stat">
                   <span class="bs-label" data-i18n="slotsLeft">剩余名额</span>
@@ -1276,7 +1277,7 @@ const DOM = {
   gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
-  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'),
+  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'), buyAddrHint: $('buyAddrHint'),
   buyPriceHint: $('buyPriceHint'),
   minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
   buyModeBadge: $('buyModeBadge'), preLaunchBuyArea: $('preLaunchBuyArea'), tokenBuyArea: $('tokenBuyArea'),
@@ -1871,6 +1872,7 @@ function disconnectWallet() {
   DOM.circulatingSupply.innerText = '--';
   // 购买模块
   DOM.buyBalanceHint.innerText = '--';
+  DOM.buyAddrHint.innerText = '';
   DOM.buyRemainingSlots.innerText = '-- / 520';
   DOM.buyPriceHint.innerText = '--';
   DOM.usdtBalanceHint.innerText = '--';
@@ -2072,6 +2074,8 @@ async function loadStats() {
 
   // 我的代币余额（购买模块内展示）
   uiText(DOM.buyBalanceHint, myBal !== null ? fmtTokens(myBal) + ' ' + tokenSymbol : '--');
+  // 诊断行：显示站点实际连接的钱包 + 链上实际读数（排查「余额对不上」用）
+  uiText(DOM.buyAddrHint, (userAddress ? userAddress.slice(0, 6) + '…' + userAddress.slice(-4) : '未连接') + ' · 链上读数 ' + (myBal !== null ? fmtTokens(myBal) : '--'));
 
   // 购买所需代币（单价 × 数量实时联动）
   unitPriceTokens = unitPrice !== null ? unitPrice : null;
