@@ -1766,13 +1766,16 @@ function applyTokenSymbols() {
 
 async function setupProvider(address) {
   // 并发去重：钱包 accountsChanged 与手动「连接钱包」可能同时为同一地址触发 setup，
-  // 800ms 内的重复调用直接跳过，避免两套只读层交错覆盖
+  // 1.5 秒内的重复调用直接跳过，避免多套只读层交错覆盖
   const key = (address || '').toLowerCase();
   const nowTs = Date.now();
-  if (lastSetup.addr === key && nowTs - lastSetup.ts < 800) return;
+  if (lastSetup.addr === key && nowTs - lastSetup.ts < 1500) return;
   lastSetup = { addr: key, ts: nowTs };
 
-  const epoch = ++connEpoch; // 本代次：若期间用户断开，本次收尾全部作废
+  // 代次只在「换号/断开」时递增：同一地址的并发 setup（TP 钱包首次进入会连发多次
+  // accountsChanged）不再互相作废 —— 否则后一个 setup 把前一个 loadStats 判死，
+  // 页面永远停在首次加载中间态（价格 -- / 数据不显示），必须手动重连才能恢复。
+  const epoch = (userAddress && userAddress.toLowerCase() === key) ? connEpoch : ++connEpoch;
   provider = new ethers.providers.Web3Provider(window.ethereum);
   signer = provider.getSigner();
   userAddress = address;
