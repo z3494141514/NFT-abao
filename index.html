@@ -1305,7 +1305,7 @@ const I18N = {
     buyTitle:'购买卡牌', qty:'数量', buyCost:'卡牌成本', buyNeed:'需支付', myUsdt:'我的 USDT', preLeft:'剩余额度',
     price:'实时价格', myBalance:'我的余额', slotsLeft:'剩余名额', splitBurn:'永久销毁',
     buyNote:'价格按 3 分钟 TWAP 自动折算 · 授权预留 130% 缓冲', buyPre:'USDT 预售购买', buyNow:'购买卡牌', buyPreSold:'已售罄', buyPrePaused:'预售暂停中，暂不可购买',
-    buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪',
+    buyPreQty:'预售购买 {n} 张', buyQtyBtn:'购买 {n} 张卡牌', priceNotReady:'价格未就绪', spotEst:'现货估算',
     launchProtect:'开盘保护 · 剩余 ', sec:' 秒',
     cardsTitle:'我的卡牌 · ', claimAll:'批量领取分红', liveRefresh:'实时 · 15s 刷新',
     ovTitle:'收益总览', ovSub:'Earnings Overview · 金本位分红', ovTotal:'总获得分红', ovClaimed:'已领取', ovPending:'待领取', ovBadge:'卡牌汇总分红情况',
@@ -1364,7 +1364,7 @@ const I18N = {
     buyTitle:'Buy Cards', qty:'Qty', buyCost:'Card Cost', buyNeed:'Pay for', myUsdt:'My USDT', preLeft:'Quota Left',
     price:'Live Price', myBalance:'My Balance', slotsLeft:'Slots Left', splitBurn:'Burned Forever',
     buyNote:'Price auto-converts via 3-min TWAP · 130% buffer approved', buyPre:'USDT Pre-sale Buy', buyNow:'Buy Cards', buyPreSold:'Sold Out', buyPrePaused:'Pre-sale paused temporarily',
-    buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready',
+    buyPreQty:'Pre-sale buy {n} cards', buyQtyBtn:'Buy {n} cards', priceNotReady:'price not ready', spotEst:'spot est.',
     launchProtect:'Launch Shield · ', sec:'s left',
     cardsTitle:'My Cards · ', claimAll:'Claim All', liveRefresh:'LIVE · 15s refresh',
     ovTitle:'Earnings', ovSub:'Earnings Overview · Gold-Standard', ovTotal:'Total Earned', ovClaimed:'Claimed', ovPending:'Pending', ovBadge:'TOTAL EARNINGS',
@@ -1471,6 +1471,7 @@ let isPreLaunch = false;          // 是否开盘前（USDT 预售模式）
 let launchedNow = false;          // 是否已开盘（卡面徽标：等待开盘中… 黄色 / 分红持续分发中… 绿色）
 let usdtContract = null;          // USDT 合约实例
 let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
+let spotPriceWei = null;          // 现货价兜底（U/枚 × 1e18）：TWAP 报价过期时价格展示的备胎（只读，永远可读）
 let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
 let estPerCardText = '';          // 每张卡预计可分（≈X U）
 let estPerCardNum = 0;            // 每张卡预计可分（数值 U）
@@ -1648,6 +1649,12 @@ function updateBuyDisplay() {
       // 隐含价格 = 100U×1e24 / 单张所需代币（与合约公式互逆，显示为 U/枚）
       const priceBN = BN.from(10000).mul(BN.from(10).pow(24)).div(unitPriceTokens);
       uiText(DOM.buyPriceHint, fmtPrice(priceBN) + ' / ' + t('unitToken'));
+    } else if (spotPriceWei && !spotPriceWei.isZero()) {
+      // TWAP 报价过期：现货估算兜底（纯展示；实际成交仍按成交时 TWAP 结算，买卡交易自带 poke 自愈）
+      const spot8 = spotPriceWei.div(BN.from(10).pow(10)); // 1e8 精度
+      const tokensEst = BN.from(10000).mul(BN.from(10).pow(24)).div(spot8); // 100U / 现货价
+      uiText(DOM.buyTokensNeeded, '≈ ' + fmtTokens(tokensEst.mul(buyQuantity)) + ' ' + tokenSymbol + '（' + t('spotEst') + '）');
+      uiText(DOM.buyPriceHint, fmtPrice(spot8) + ' / ' + t('unitToken') + '（' + t('spotEst') + '）');
     } else {
       uiText(DOM.buyTokensNeeded, '--（' + t('priceNotReady') + '）');
       uiText(DOM.buyPriceHint, '--');
@@ -1993,6 +2000,7 @@ async function loadStats() {
   _lastPendingSwap = poolNdx;
   _lastActiveCards = activeCards;
   refreshEstimate(poolNdx, activeCards); // 预计收益：后台异步估算，不阻塞主刷新；失败保持上次值
+  refreshSpotPrice(); // 现货价兜底：后台异步，失败保持上次值
   uiText(DOM.buyRemainingSlots, remainingSlots + ' / 520');
 
   // 开盘状态
@@ -2114,6 +2122,27 @@ async function refreshEstimate(pendingSwap, activeCards) {
       if (cardsAgg) applyCardsAgg(cardsAgg); // 收益总览/首页待领取同步
     }
   } catch (e) { /* 读取失败：保持上次预计，不清零 */ }
+}
+
+/* 现货价兜底（U/枚 × 1e18，只读、永远可读）：
+   预言机 TWAP 报价因市场安静超过 180 秒过期时，「实时价格」自动改用现货估算显示。
+   购买交易本身不受影响（mintCard 自带 poke 自愈），此函数纯为展示兜底。 */
+async function refreshSpotPrice() {
+  try {
+    const lpInfo = await tokenC.getLpPairInfo();
+    if (!lpInfo[0] || lpInfo[0] === ZERO_ADDR) return;
+    const pc = new ethers.Contract(lpInfo[0], [
+      'function getReserves() view returns (uint112, uint112, uint32)',
+      'function token0() view returns (address)'
+    ], readProvider);
+    const [res, t0] = await Promise.all([pc.getReserves(), pc.token0()]);
+    const tokSide = String(t0).toLowerCase() === CONFIG.contracts.token.toLowerCase();
+    const tokRes = tokSide ? res[0] : res[1];
+    const usdtRes = tokSide ? res[1] : res[0];
+    if (tokRes.isZero() || usdtRes.isZero()) return;
+    spotPriceWei = usdtRes.mul(ethers.BigNumber.from(10).pow(18)).div(tokRes); // U/枚 × 1e18
+    updateBuyDisplay(); // 立即联动「实时价格 / 需支付」两处显示
+  } catch (e) { /* 读取失败：保持上次现货价 */ }
 }
 
 /* 已销毁/流通量：独立刷新函数。
