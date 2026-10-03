@@ -1987,15 +1987,22 @@ async function loadStats() {
   const epoch = connEpoch;
   const addr = userAddress;
   // 快数据：所有独立读取并行，总耗时 = 最慢的那一个而非累加
+  const trace = [];
+  const mark = (s) => { trace.push(s); uiText(DOM.buyDbg, 'dbg: ' + trace.join('→')); };
+  mark('4a');
   const [poolStats, pendingSwap, poolNdxBal, lp, winActive, myBal, unitPrice, tradingOn] = await Promise.all([
-    poolC.getPoolStats().catch(() => null),
-    poolC.pendingSwapTokens().catch(() => null),
-    tokenC.balanceOf(CONFIG.contracts.pool).catch(() => null),
-    Promise.all([saleC.launched().catch(() => false), saleC.paused().catch(() => false)]),
-    userAddress ? tokenC.balanceOf(userAddress).catch(() => null) : Promise.resolve(null),
-    saleC.requiredTokensForCard().catch(() => null),
-    tokenC.tradingEnabled().catch(() => false)
+    poolC.getPoolStats().then(v => { mark('P✓'); return v; }).catch(() => { mark('P✗'); return null; }),
+    poolC.pendingSwapTokens().then(v => { mark('S✓'); return v; }).catch(() => { mark('S✗'); return null; }),
+    tokenC.balanceOf(CONFIG.contracts.pool).then(v => { mark('B✓'); return v; }).catch(() => { mark('B✗'); return null; }),
+    Promise.all([
+      saleC.launched().then(v => { mark('L✓'); return v; }).catch(() => { mark('L✗'); return false; }),
+      saleC.paused().then(v => { mark('Z✓'); return v; }).catch(() => { mark('Z✗'); return false; })
+    ]),
+    userAddress ? tokenC.balanceOf(userAddress).then(v => { mark('M✓'); return v; }).catch(() => { mark('M✗'); return null; }) : Promise.resolve(null),
+    saleC.requiredTokensForCard().then(v => { mark('R✓'); return v; }).catch(() => { mark('R✗'); return null; }),
+    tokenC.tradingEnabled().then(v => { mark('T✓'); return v; }).catch(() => { mark('T✗'); return false; })
   ]);
+  mark('4b');
   // 拉取期间可能已断开/换号：过期结果直接丢弃
   if (epoch !== connEpoch || userAddress !== addr) return;
 
