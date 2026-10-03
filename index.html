@@ -836,6 +836,7 @@ body{-webkit-tap-highlight-color:transparent}
                 <div class="buy-stat">
                   <span class="bs-label"><span data-i18n="buyNeed">需支付</span>（<span id="buyQtyHint">1</span> <span data-i18n="unitCard">张</span>）</span>
                   <span class="bs-value hi" id="buyTokensNeeded">--</span>
+                  <span id="buyDbg" style="font-size:10px;opacity:.65;display:block;margin-top:2px"></span>
                 </div>
                 <div class="buy-stat" style="display:none">
                   <span class="bs-label" data-i18n="myBalance">我的余额</span>
@@ -1275,7 +1276,7 @@ const DOM = {
   gotoTeamBtn: $('gotoTeamBtn'),
   bindArea: $('bindArea'), boundArea: $('boundArea'), referrerInput: $('referrerInput'),
   bindBtn: $('bindBtn'), myReferrerAddress: $('myReferrerAddress'),
-  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'), buyAddrHint: $('buyAddrHint'),
+  buyTokensNeeded: $('buyTokensNeeded'), buyBalanceHint: $('buyBalanceHint'), buyRemainingSlots: $('buyRemainingSlots'), buyBtn: $('buyBtn'), buyAddrHint: $('buyAddrHint'), buyDbg: $('buyDbg'),
   buyPriceHint: $('buyPriceHint'),
   minusBtn: $('minusBtn'), plusBtn: $('plusBtn'), quantity: $('quantity'), buyQtyHint: $('buyQtyHint'),
   buyModeBadge: $('buyModeBadge'), preLaunchBuyArea: $('preLaunchBuyArea'), tokenBuyArea: $('tokenBuyArea'),
@@ -1472,6 +1473,7 @@ let launchedNow = false;          // 是否已开盘（卡面徽标：等待开�
 let usdtContract = null;          // USDT 合约实例
 let poolPendingTokens = ethers.BigNumber.from(0); // 待兑换积压（代币）：>0 时「领取分红」可用作兑换引信
 let spotPriceWei = null;          // 现货价兜底（U/枚 × 1e18）：TWAP 报价过期时价格展示的备胎（只读，永远可读）
+let dbgTick = 0;                  // 调试：loadStats 完成计数（首次进入不显示时判断刷新循环是否在跑）
 let estPendingText = '';          // 预计待兑换收益展示（≈X U，按现货价估算，仅激励展示用）
 let estPerCardText = '';          // 每张卡预计可分（≈X U）
 let estPerCardNum = 0;            // 每张卡预计可分（数值 U）
@@ -2078,6 +2080,10 @@ async function loadStats() {
   // 购买所需代币（单价 × 数量实时联动）
   unitPriceTokens = unitPrice !== null ? unitPrice : null;
   updateBuyDisplay();
+
+  // 调试行（排查首次进入价格不显示用，稳定后移除）：
+  dbgTick++;
+  uiText(DOM.buyDbg, 'dbg tick=' + dbgTick + ' unitPrice=' + (unitPrice === null ? 'null' : (unitPrice.isZero() ? '0' : 'ok')) + ' spot=' + (spotPriceWei ? 'ok' : 'null'));
 
   // 慢数据（销毁量/流通量）：约每 60 秒刷新一次，不阻塞本轮
   slowTick = (slowTick + 1) % 6;
