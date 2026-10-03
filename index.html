@@ -1998,6 +1998,7 @@ async function loadStats() {
       saleC.launched().then(v => { mark('L✓'); return v; }).catch(() => { mark('L✗'); return false; }),
       saleC.paused().then(v => { mark('Z✓'); return v; }).catch(() => { mark('Z✗'); return false; })
     ]),
+    tokenC.launchWindowActive().then(v => { mark('W✓'); return v; }).catch(() => { mark('W✗'); return false; }),
     userAddress ? tokenC.balanceOf(userAddress).then(v => { mark('M✓'); return v; }).catch(() => { mark('M✗'); return null; }) : Promise.resolve(null),
     saleC.requiredTokensForCard().then(v => { mark('R✓'); return v; }).catch(() => { mark('R✗'); return null; }),
     tokenC.tradingEnabled().then(v => { mark('T✓'); return v; }).catch(() => { mark('T✗'); return false; })
